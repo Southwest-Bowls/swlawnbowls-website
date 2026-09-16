@@ -30,10 +30,9 @@
     <!-- NATIONALS 2026 BANNER — live scores, the Bowls USA livestream, and the
          official championship page, in one panel for the duration of Nationals.
          Purely static: no script, nothing to expire. When Nationals is over,
-         delete this <a> block and the .swd-nationals CSS below it.
-         CREW NAMES: the thank-you currently credits the crew collectively.
-         Giulia is sending the individual names — replace the sentence in
-         .swd-nationals__thanks with them, spelled exactly as supplied. -->
+         delete this <section> block and the .swd-nationals CSS below it.
+         Crew credits are transcribed from the Southwest Bowls Livestream TV
+         end card — leave the spellings as they are. -->
     <section class="swd-nationals">
       <p class="swd-nationals__kicker">2026 U.S. National Championships</p>
       <h2 class="swd-nationals__title">Follow every end from Southwest</h2>
@@ -54,10 +53,21 @@
            href="https://www.bowlsusa.us/national-championship.html"
            target="_blank" rel="noopener">Bowls USA Nationals</a>
       </div>
-      <p class="swd-nationals__thanks">
-        Our thanks to the Southwest livestreaming crew for the production — the
-        cameras, the commentary and the long days that put Nationals on your screen.
-      </p>
+      <div class="swd-nationals__crew">
+        <p class="swd-nationals__crew-lead">
+          Our thanks to the Southwest Bowls Livestream TV crew for the production.
+        </p>
+        <dl class="swd-nationals__credits">
+          <dt>Produced &amp; Directed by</dt><dd>Gary Barnes</dd>
+          <dt>Announcer</dt><dd>Scott Roberts</dd>
+          <dt>Cameras</dt><dd>Steve Narmontas</dd>
+          <dt>Live Scoring</dt><dd>Kelly Warren &amp; Sheila Conti</dd>
+          <dt>Setup &amp; equipment management</dt><dd>Gary Hiltunen, Joan Narmontas</dd>
+        </dl>
+        <p class="swd-nationals__crew-note">
+          Gary Barnes is Chair of Digital Media and Livestreaming for Southwest Bowls.
+        </p>
+      </div>
     </section>
 
     <!-- NOVICE ELIGIBILITY — TOP-OF-PAGE NOTICE -->
@@ -1288,19 +1298,48 @@
   @media (prefers-reduced-motion: reduce) {
     .swd-nationals__dot { animation: none; }
   }
-  .swd-nationals__thanks {
-    margin: 0;
-    padding-top: 16px;
+  .swd-nationals__crew {
+    padding-top: 18px;
     border-top: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  .swd-nationals__crew-lead {
+    margin: 0 0 14px;
     font-size: 15px;
-    font-style: italic;
     line-height: 1.55;
-    color: #b9cbe4;
+    color: #cfdcee;
+  }
+  /* Credits run as label/name pairs so the roles line up in a column on
+     desktop and stack readably on a phone. */
+  .swd-nationals__credits {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 22px;
+    margin: 0 0 12px;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .swd-nationals__credits dt {
+    margin: 0;
+    color: #93aac9;
+    font-weight: 600;
+  }
+  .swd-nationals__credits dd {
+    margin: 0;
+    color: #ffffff;
+    font-weight: 600;
+  }
+  .swd-nationals__crew-note {
+    margin: 0;
+    font-size: 14px;
+    font-style: italic;
+    color: #93aac9;
   }
   @media (max-width: 600px) {
     .swd-nationals { padding: 24px 20px 20px; }
     .swd-nationals__title { font-size: 26px; }
     .swd-nationals__text { font-size: 16px; }
+    .swd-nationals__credits { grid-template-columns: 1fr; gap: 2px; }
+    .swd-nationals__credits dd { margin-bottom: 10px; }
   }
 
   .swd-novice-alert {
