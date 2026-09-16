@@ -58,6 +58,13 @@
            target="_blank" rel="noopener">Bowls USA Nationals</a>
       </div>
       <div class="swd-nationals__crew">
+        <!-- The logo's lettering is dark green and red, so it sits on a white
+             chip rather than straight on the navy, where it would disappear. -->
+        <img class="swd-nationals__crew-logo"
+             src="/photos/home/livestream-tv-logo.png"
+             alt="Southwest Bowls Livestream TV"
+             width="328" height="312" loading="lazy">
+        <div class="swd-nationals__crew-body">
         <p class="swd-nationals__crew-lead">
           Our thanks to the Southwest Bowls Livestream TV crew for the production.
         </p>
@@ -71,6 +78,7 @@
         <p class="swd-nationals__crew-note">
           Gary Barnes is Chair of Digital Media and Livestreaming for Southwest Bowls.
         </p>
+        </div>
       </div>
     </section>
 
@@ -1315,8 +1323,21 @@
     .swd-nationals__dot { animation: none; }
   }
   .swd-nationals__crew {
+    display: flex;
+    align-items: flex-start;
+    gap: 22px;
     padding-top: 18px;
     border-top: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  .swd-nationals__crew-body { flex: 1 1 auto; min-width: 0; }
+  .swd-nationals__crew-logo {
+    flex: 0 0 auto;
+    width: 104px;
+    height: auto;
+    max-width: 100%;
+    padding: 9px;
+    border-radius: 12px;
+    background: #ffffff;
   }
   .swd-nationals__crew-lead {
     margin: 0 0 14px;
@@ -1354,6 +1375,8 @@
     .swd-nationals { padding: 24px 20px 20px; }
     .swd-nationals__title { font-size: 26px; }
     .swd-nationals__text { font-size: 16px; }
+    .swd-nationals__crew { flex-direction: column; gap: 16px; }
+    .swd-nationals__crew-logo { width: 88px; }
     .swd-nationals__credits { grid-template-columns: 1fr; gap: 2px; }
     .swd-nationals__credits dd { margin-bottom: 10px; }
   }
