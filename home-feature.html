@@ -27,31 +27,38 @@
       <p class="swd-tagline__line">26 Clubs · One Sport · One Community</p>
     </div>
 
-    <!-- DIVISION SHIRT STORE — CLOSES SEP 12. Ships hidden; the script at the
-         bottom reveals it only while the store is open, so it removes itself
-         rather than advertising a closed store. -->
-    <a class="swd-shop-alert" id="swd-shop-alert" hidden
-       href="https://aa.alleghenyapparel.com/southwest_lawn_bowls_store/shop/home"
-       target="_blank" rel="noopener">
-      <p class="swd-shop-alert__kicker">Online Shop Closing Soon</p>
-      <h2 class="swd-shop-alert__title">Order your Southwest Division shirt</h2>
-      <p class="swd-shop-alert__text">
-        Sales close <strong>Saturday, September 12 at 10:00 AM PDT</strong>. The new shirt
-        carries our official Southwest Bowls branding and colors — the blue swirl for the
-        rolling bowl and the California sky, the yellow sun, and our classic palm trees.
-        Made for everyday wear by social and tournament bowlers alike. <strong>$27.00 each</strong>,
-        made to order.
+    <!-- NATIONALS 2026 BANNER — live scores, the Bowls USA livestream, and the
+         official championship page, in one panel for the duration of Nationals.
+         Purely static: no script, nothing to expire. When Nationals is over,
+         delete this <a> block and the .swd-nationals CSS below it.
+         CREW NAMES: the thank-you currently credits the crew collectively.
+         Giulia is sending the individual names — replace the sentence in
+         .swd-nationals__thanks with them, spelled exactly as supplied. -->
+    <section class="swd-nationals">
+      <p class="swd-nationals__kicker">2026 U.S. National Championships</p>
+      <h2 class="swd-nationals__title">Follow every end from Southwest</h2>
+      <p class="swd-nationals__text">
+        Live scores, the national draw and results, and the Facebook livestream —
+        all in one place while Nationals is on.
       </p>
-      <p class="swd-shop-alert__text swd-shop-alert__fine">
-        Fit varies between brands — please don't assume your usual size. Lay out a shirt you
-        already like and follow the measuring instructions in the store. Shirts ship free to
-        your home club for pickup; choose your club at checkout and give your home address too.
+      <div class="swd-nationals__links">
+        <a class="swd-nationals__btn swd-nationals__btn--live"
+           href="https://bowls-nationals.netlify.app/nationals2026.html"
+           target="_blank" rel="noopener">
+          <span class="swd-nationals__dot" aria-hidden="true"></span>Live Scoring
+        </a>
+        <a class="swd-nationals__btn swd-nationals__btn--ghost"
+           href="https://www.facebook.com/BowlsUSA"
+           target="_blank" rel="noopener">Watch on Facebook Live</a>
+        <a class="swd-nationals__btn swd-nationals__btn--ghost"
+           href="https://www.bowlsusa.us/national-championship.html"
+           target="_blank" rel="noopener">Bowls USA Nationals</a>
+      </div>
+      <p class="swd-nationals__thanks">
+        Our thanks to the Southwest livestreaming crew for the production — the
+        cameras, the commentary and the long days that put Nationals on your screen.
       </p>
-      <span class="swd-shop-alert__cta">Order your shirt →</span>
-      <img class="swd-shop-alert__poster" src="/photos/home/swd-shirt-2026.png"
-           alt="New Southwest Division shirt - front and back, $27, order by September 12"
-           loading="lazy">
-    </a>
+    </section>
 
     <!-- NOVICE ELIGIBILITY — TOP-OF-PAGE NOTICE -->
     <a class="swd-novice-alert" href="https://www.swlawnbowls.org/2026-tournaments-events/swd-womens-vetnovice-triples26" target="_top">
@@ -1204,95 +1211,96 @@
     .swd-tagline__line { letter-spacing: 0.05em; }
   }
 
-  .swd-shop-alert {
+  /* NATIONALS 2026 BANNER — see the matching HTML block near the top. */
+  .swd-nationals {
     display: block;
-    text-decoration: none;
-    background: linear-gradient(135deg, #0f2440 0%, #1a365d 100%);
-    border-radius: 26px;
-    padding: 34px 38px 32px;
-    margin-bottom: 26px;
-    box-shadow: 0 14px 30px rgba(15,36,64,0.24);
+    margin: 0 0 34px;
+    padding: 30px 30px 24px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #122647 0%, #1a365d 55%, #24487a 100%);
+    color: #ffffff;
+    box-shadow: 0 10px 30px rgba(18, 38, 71, 0.22);
   }
-
-  .swd-shop-alert__kicker {
-    margin: 0 0 12px;
+  .swd-nationals__kicker {
+    margin: 0 0 10px;
     font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: #d4af37;
+    color: #f6c66a;
   }
-
-  .swd-shop-alert__title {
-    margin: 0 0 14px;
-    font-size: clamp(28px, 4.2vw, 48px);
-    line-height: 1.05;
-    letter-spacing: -0.02em;
+  .swd-nationals__title {
+    margin: 0 0 12px;
+    font-size: 34px;
+    line-height: 1.12;
+    font-weight: 800;
+    color: #ffffff;
+    text-wrap: balance;
+  }
+  .swd-nationals__text {
+    margin: 0 0 22px;
+    max-width: 58ch;
+    font-size: 17px;
+    line-height: 1.6;
+    color: #cfdcee;
+  }
+  .swd-nationals__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .swd-nationals__btn {
+    display: inline-block;
+    padding: 12px 20px;
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .swd-nationals__btn--live {
+    background: #e23b3b;
     color: #ffffff;
   }
-
-  .swd-shop-alert__text {
-    margin: 0 0 12px;
-    font-size: clamp(15px, 1.4vw, 18px);
-    line-height: 1.6;
-    color: rgba(255,255,255,0.90);
-    max-width: 760px;
+  .swd-nationals__btn--live:hover { background: #c92f2f; }
+  .swd-nationals__btn--ghost {
+    border-color: rgba(255, 255, 255, 0.45);
+    color: #ffffff;
   }
-
-  .swd-shop-alert__text strong { color: #d4af37; }
-  .swd-shop-alert__fine { font-size: 15px; color: rgba(255,255,255,0.76); }
-  .swd-shop-alert__fine strong { color: rgba(255,255,255,0.9); }
-
-  .swd-shop-alert__cta {
+  .swd-nationals__btn--ghost:hover { border-color: #ffffff; background: rgba(255,255,255,0.08); }
+  .swd-nationals__btn:focus-visible { outline: 3px solid #f6c66a; outline-offset: 3px; }
+  .swd-nationals__dot {
     display: inline-block;
-    margin-top: 18px;
-    background: #d4af37;
-    color: #0f2440;
+    width: 9px;
+    height: 9px;
+    margin-right: 8px;
+    vertical-align: 1px;
+    border-radius: 50%;
+    background: #ffd7d7;
+    animation: swd-nationals-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes swd-nationals-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .swd-nationals__dot { animation: none; }
+  }
+  .swd-nationals__thanks {
+    margin: 0;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
     font-size: 15px;
-    font-weight: 700;
-    padding: 13px 24px;
-    border-radius: 999px;
+    font-style: italic;
+    line-height: 1.55;
+    color: #b9cbe4;
   }
-
-  .swd-shop-alert:hover .swd-shop-alert__cta {
-    background: #ffffff;
-    color: #0f2440;
-  }
-
-  .swd-shop-alert__poster {
-    display: block;
-    width: 100%;
-    max-width: 320px;
-    height: auto;
-    margin: 26px auto 0;
-    border-radius: 14px;
-    box-shadow: 0 10px 24px rgba(0,0,0,0.28);
-  }
-
-  /* Side by side when there is room; poster below the copy on narrow screens. */
-  @media (min-width: 901px) {
-    .swd-shop-alert {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      grid-template-areas:
-        "kicker  poster"
-        "title   poster"
-        "text    poster"
-        "fine    poster"
-        "cta     poster";
-      column-gap: 34px;
-      align-items: start;
-    }
-    .swd-shop-alert__kicker { grid-area: kicker; }
-    .swd-shop-alert__title  { grid-area: title; }
-    .swd-shop-alert__text   { grid-area: text; }
-    .swd-shop-alert__fine   { grid-area: fine; }
-    .swd-shop-alert__cta    { grid-area: cta; justify-self: start; }
-    .swd-shop-alert__poster { grid-area: poster; margin: 0; max-width: 300px; }
-  }
-
-  @media (max-width: 900px) {
-    .swd-shop-alert { padding: 26px 22px 24px; }
+  @media (max-width: 600px) {
+    .swd-nationals { padding: 24px 20px 20px; }
+    .swd-nationals__title { font-size: 26px; }
+    .swd-nationals__text { font-size: 16px; }
   }
 
   .swd-novice-alert {
@@ -2000,19 +2008,7 @@
     [400, 1200, 3000].forEach(ms => setTimeout(reportHeight, ms));
   }
 
-  // The shirt store closes Saturday Sep 12 at 10:00 AM PDT. The banner ships
-  // hidden and is revealed only while the store is open, so it disappears on
-  // its own instead of pointing members at a closed store. Failing to run
-  // leaves the page with no banner, which is the safe way round.
-  function revealShopAlert() {
-    const el = document.getElementById("swd-shop-alert");
-    if (!el) return;
-    const closesAt = new Date("2026-09-12T10:00:00-07:00");
-    if (Date.now() < closesAt.getTime()) el.hidden = false;
-  }
-
   function initAll() {
-    revealShopAlert();
     renderUpcomingStreams();
     loadNews();
     watchHeight();
