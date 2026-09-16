@@ -34,7 +34,17 @@
          Crew credits are transcribed from the Southwest Bowls Livestream TV
          end card — leave the spellings as they are. -->
     <section class="swd-nationals">
-      <p class="swd-nationals__kicker">2026 U.S. National Championships</p>
+      <!-- Gary's title card. It carries the championship name and "End-by-End
+           Scoring" as artwork, so the heading below it does not repeat them.
+           Native size is 640x340 — do not upscale it, it only gets softer.
+           The card links to the scoring app, same as the button. -->
+      <a class="swd-nationals__hero"
+         href="https://bowls-nationals.netlify.app/nationals2026.html"
+         target="_blank" rel="noopener">
+        <img src="/photos/home/nationals-2026-scoring-title.jpg"
+             alt="2026 BUSA National Championships — End-by-End Scoring"
+             width="640" height="340" loading="lazy">
+      </a>
       <h2 class="swd-nationals__title">Follow every end from Southwest</h2>
       <p class="swd-nationals__text">
         Every match is being livestreamed, playoff rounds included, with live
@@ -1254,14 +1264,21 @@
     color: #ffffff;
     box-shadow: 0 10px 30px rgba(18, 38, 71, 0.22);
   }
-  .swd-nationals__kicker {
-    margin: 0 0 10px;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: #f6c66a;
+  .swd-nationals__hero {
+    display: block;
+    margin: 0 0 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    line-height: 0;
+    background: rgba(255, 255, 255, 0.06);
   }
+  .swd-nationals__hero img {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+  }
+  .swd-nationals__hero:focus-visible { outline: 3px solid #f6c66a; outline-offset: 3px; }
   .swd-nationals__title {
     margin: 0 0 12px;
     font-size: 34px;
