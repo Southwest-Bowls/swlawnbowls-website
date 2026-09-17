@@ -1,6 +1,25 @@
 {
   "tournaments": [
     {
+      "id": "newport-911-mixed-rinks-2026",
+      "title": "2026 Newport Harbor 911 Mixed Rinks",
+      "meta": "September 12 \u00b7 Newport Harbor LBC",
+      "navLabel": "Newport Harbor 911 Mixed Rinks",
+      "eventUrl": "/event?id=newport-911-mixed-rinks-2026",
+      "divisions": [
+        {
+          "label": null,
+          "columns": 2,
+          "places": [
+            { "rank": 1, "names": "S. Houston / B. Buchanan / J. Robbins / J. Buchanan", "photo": "/photos/newport-911-mixed-rinks-2026/1th-houston-buchanan-robbins-buchanan.jpg" },
+            { "rank": 2, "names": "R. Busciglio / P. Dunn / B. Sturgill / C. DeFazio", "photo": "/photos/newport-911-mixed-rinks-2026/2th-busciglio-dunn-sturgill-defazio.jpg" },
+            { "rank": 3, "names": "D. Warmington / A. Burton / C. Vose / C. Doolin", "photo": "/photos/newport-911-mixed-rinks-2026/3th-warmington-burton-vose-doolin.jpg" },
+            { "rank": 4, "names": "G. Poshepny / M. Urane / M. Urane / B. Hayes", "photo": "/photos/newport-911-mixed-rinks-2026/4th-poshepny-urane-urane-hayes.jpg" }
+          ]
+        }
+      ]
+    },
+    {
       "id": "all-comers-open-pairs-2026",
       "title": "2026 All Comers II",
       "meta": "September 5\u20137 \u00b7 Hermosa Beach LBC",
