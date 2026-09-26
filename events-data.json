@@ -683,7 +683,19 @@
       "liveScoring": {
         "pubUrl": "",
         "height": 1800,
-        "width": "100%"
+        "width": "100%",
+        "sheets": [
+          {
+            "label": "Laguna Beach",
+            "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vT7KFw10VP-Zhd8QK6LNg59TnIV8ZD2W6dJIk-NZrel4Vak7cVhAaa2Rt_8Bcx7AoMgvpgENsjKleJ1/pubhtml?widget=true&headers=false",
+            "height": 1800
+          },
+          {
+            "label": "MacKenzie Park",
+            "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTPcK3wREh25g411hY92xIsukHzBD0FqBBpIPhUCok1ctcAmfnBe2FgHX1SOa4ODVuRzQwng7HmWOY/pubhtml?widget=true&headers=false",
+            "height": 1800
+          }
+        ]
       }
     },
     {

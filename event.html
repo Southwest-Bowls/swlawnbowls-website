@@ -386,6 +386,18 @@ function initTournamentButton(config) {
       <div class="evt-section-h">Live Scoring</div>
       <div id="evt-live-scoring" class="evt-live-pending">Loading live scoring…</div>`;
     loadGatedScoring(event.id);
+  } else if (event.liveScoring?.sheets?.length) {
+    // An event played at several greens carries one labelled sheet per venue:
+    // `"sheets": [{ "label": "...", "url": "...", "height": 1800 }]`.
+    liveBlock = `
+      <div class="evt-section-h">Live Scoring</div>
+      ${event.liveScoring.sheets.map(sheet => `
+        <div class="evt-live-sheet">
+          <div class="evt-live-sheet-h">${esc(sheet.label)}</div>
+          <div class="evt-iframe-wrap">
+            <iframe src="${esc(sheet.url)}" height="${Number(sheet.height) || 800}" width="100%"></iframe>
+          </div>
+        </div>`).join('')}`;
   } else if (event.liveScoring?.pubUrl) {
     const h = event.liveScoring.height || 400;
     const w = event.liveScoring.width || '100%';
