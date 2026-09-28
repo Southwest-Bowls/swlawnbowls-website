@@ -1,6 +1,42 @@
 {
   "tournaments": [
     {
+      "id": "mens-vet-novice-pairs-2026",
+      "title": "2026 SWD Men's Vet-Novice Mix/Match Pairs",
+      "meta": "September 26 · Laguna Beach LBC & MacKenzie Park LBC",
+      "navLabel": "Men's Vet-Novice Pairs",
+      "eventUrl": "/event?id=mens-vet-novice-mix-match-pairs-2026",
+      "divisions": [
+        {
+          "label": "Laguna Beach — North Green",
+          "columns": 2,
+          "places": [
+            { "rank":  1, "names":  "Sadri Jazayeri & Steve Uribe", "photo":  "/photos/mens-vet-novice-pairs-2026/north-1th-jazayeri-uribe.jpg" },
+            { "rank":  2, "names":  "Chris Dodd & Claire Doolin", "photo":  "/photos/mens-vet-novice-pairs-2026/north-2th-dodd-doolin.jpg" },
+            { "rank":  3, "names":  "Bill Kelly & Brian Gable" }
+          ]
+        },
+        {
+          "label": "Laguna Beach — South Green",
+          "columns": 2,
+          "places": [
+            { "rank":  1, "names":  "Abe Pinnella & Kevin Lacey", "photo":  "/photos/mens-vet-novice-pairs-2026/south-1th-pinnella-lacey.jpg" },
+            { "rank":  2, "names":  "Darrell DeCastro & Steve Carriger", "photo":  "/photos/mens-vet-novice-pairs-2026/south-2th-decastro-carriger.jpg" },
+            { "rank":  3, "names":  "Terry Mar & Matt Farrar", "photo":  "/photos/mens-vet-novice-pairs-2026/south-3th-mar-farrar.jpg" }
+          ]
+        },
+        {
+          "label": "MacKenzie Park",
+          "columns": 2,
+          "places": [
+            { "rank":  1, "names":  "Barry Hand & Andy Martindale", "photo":  "/photos/mens-vet-novice-pairs-2026/mackenzie-1th-hand-martindale.jpg" },
+            { "rank":  2, "names":  "Dan McGilvray & Scott Roberts", "photo":  "/photos/mens-vet-novice-pairs-2026/mackenzie-2th-mcgilvray-roberts.jpg" },
+            { "rank":  3, "names":  "Linda Love & Alan Bullock", "photo":  "/photos/mens-vet-novice-pairs-2026/mackenzie-3th-love-bullock.jpg" }
+          ]
+        }
+      ]
+    },
+    {
       "id": "newport-911-mixed-rinks-2026",
       "title": "2026 Newport Harbor 911 Mixed Rinks",
       "meta": "September 12 \u00b7 Newport Harbor LBC",
