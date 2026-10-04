@@ -277,42 +277,42 @@
       "permanent": false
     },
     {
-      "source": "/ladies-day-2021/:post*",
+      "source": "/ladies-day-2021/:post+",
       "destination": "/ladies-day-2021",
       "permanent": false
     },
     {
-      "source": "/ladies-day-2022/:post*",
+      "source": "/ladies-day-2022/:post+",
       "destination": "/ladies-day-2022",
       "permanent": false
     },
     {
-      "source": "/ladies-day-2023/:post*",
+      "source": "/ladies-day-2023/:post+",
       "destination": "/ladies-day-2023",
       "permanent": false
     },
     {
-      "source": "/ladies-day-2024/:post*",
+      "source": "/ladies-day-2024/:post+",
       "destination": "/ladies-day-2024",
       "permanent": false
     },
     {
-      "source": "/ladies-day-2025/:post*",
+      "source": "/ladies-day-2025/:post+",
       "destination": "/ladies-day-2025",
       "permanent": false
     },
     {
-      "source": "/ladies-day-2026/:post*",
+      "source": "/ladies-day-2026/:post+",
       "destination": "/ladies-day-2026",
       "permanent": false
     },
     {
-      "source": "/cl-ld1/:post*",
+      "source": "/cl-ld1/:post+",
       "destination": "/cl-ld1",
       "permanent": false
     },
     {
-      "source": "/2026-tournaments-events/:slug*",
+      "source": "/2026-tournaments-events/:slug+",
       "destination": "/2026-tournaments-events",
       "permanent": false
     }
