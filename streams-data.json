@@ -1,0 +1,110 @@
+{
+  "_note": "SW TV livestream schedule. Read by the home page and the app. Add one entry per stream date (YYYY-MM-DD).",
+  "streams": [
+    {
+      "date": "2026-03-14",
+      "label": "Livestream",
+      "title": "Women’s Cal 5’s",
+      "venue": "Laguna Beach",
+      "venueKey": "laguna-beach",
+      "link": "https://www.youtube.com/@SouthwestLawnBowls"
+    },
+    {
+      "date": "2026-03-28",
+      "label": "Livestream",
+      "title": "SWD Mixed Pairs",
+      "venue": "Laguna Woods",
+      "venueKey": "laguna-woods",
+      "link": "https://www.youtube.com/@SouthwestLawnBowls"
+    },
+    {
+      "date": "2026-04-26",
+      "label": "SW Open",
+      "title": "SWD Open – Women’s Fours",
+      "venue": "Laguna Beach · Second Day",
+      "venueKey": "laguna-beach",
+      "link": "https://www.swlawnbowls.org/2026swo"
+    },
+    {
+      "date": "2026-04-28",
+      "label": "SW Open",
+      "title": "SWD Open – Women’s Pairs",
+      "venue": "Newport Harbor · Second Day",
+      "venueKey": "newport-harbor",
+      "link": "https://www.swlawnbowls.org/2026swo"
+    },
+    {
+      "date": "2026-04-30",
+      "label": "SW Open",
+      "title": "SWD Open – Women’s Singles",
+      "venue": "Laguna Woods · Second Day",
+      "venueKey": "laguna-woods",
+      "link": "https://www.swlawnbowls.org/2026swo"
+    },
+    {
+      "date": "2026-06-29",
+      "label": "Playdowns",
+      "title": "US National Playdowns – Men’s Singles",
+      "venue": "Long Beach · Final Day",
+      "venueKey": "long-beach",
+      "link": "https://www.youtube.com/@SouthwestLawnBowls"
+    },
+    {
+      "date": "2026-07-12",
+      "label": "Playdowns",
+      "title": "US National Playdowns – Women’s Pairs",
+      "venue": "Laguna Beach · Final Day",
+      "venueKey": "laguna-beach",
+      "link": "https://www.youtube.com/@SouthwestLawnBowls"
+    },
+    {
+      "date": "2026-08-02",
+      "label": "Playdowns",
+      "title": "US National Playdowns – Men’s Pairs",
+      "venue": "Laguna Beach · Second Day",
+      "venueKey": "laguna-beach",
+      "link": "https://www.youtube.com/@SouthwestLawnBowls"
+    },
+    {
+      "date": "2026-08-15",
+      "label": "Featured",
+      "title": "Laguna Beach Open Pairs",
+      "venue": "Laguna Beach · Men/Women · Six cameras",
+      "venueKey": "laguna-beach",
+      "note": "Need announcer",
+      "link": "https://www.youtube.com/@SouthwestLawnBowls"
+    },
+    {
+      "date": "2026-09-15",
+      "label": "Nationals",
+      "title": "Bowls USA National Championships",
+      "venue": "Laguna Beach · Six cameras",
+      "venueKey": "laguna-beach",
+      "link": "https://www.youtube.com/@SouthwestLawnBowls"
+    },
+    {
+      "date": "2026-10-18",
+      "label": "SWD",
+      "title": "SWD California Bears",
+      "venue": "Laguna Woods",
+      "venueKey": "laguna-woods",
+      "link": "https://www.youtube.com/@SouthwestLawnBowls"
+    },
+    {
+      "date": "2026-10-25",
+      "label": "SWD",
+      "title": "SWD Waterbury",
+      "venue": "Laguna Woods",
+      "venueKey": "laguna-woods",
+      "link": "https://www.youtube.com/@SouthwestLawnBowls"
+    },
+    {
+      "date": "2026-11-22",
+      "label": "All-Star",
+      "title": "SWD Five Man All-Star",
+      "venue": "Newport Harbor",
+      "venueKey": "newport-harbor",
+      "link": "https://www.youtube.com/@SouthwestLawnBowls"
+    }
+  ]
+}
