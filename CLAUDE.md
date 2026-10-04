@@ -75,10 +75,12 @@ it carries its own header, menu and footer.
 **Never hotlink Squarespace.** Images served from `images.squarespace-cdn.com`
 die the day the Squarespace subscription lapses. Copy them into `photos/`.
 
-**Do not rename the Vercel project.** `swd-google-calendar.vercel.app` is
-hardcoded in 186 places, 83 of them inside Squarespace pages we cannot edit
-programmatically. Renaming the project releases that hostname and breaks all of
-them. This is safe only at cutover, when everything moves to swlawnbowls.org.
+**Use `swlawnbowls-website.vercel.app` for new links.** Since 2026-10-03 the
+live site answers on that address as well as the old
+`swd-google-calendar.vercel.app`. Every link in this repo now uses the new one.
+The old address is still embedded in 83 Squarespace pages, so **never remove it
+and do not rename the Vercel project** — that would break all of them. It can
+go only once nothing points at it (after cutover to swlawnbowls.org).
 The GitHub repo has already been renamed to `swlawnbowls-website`; that was
 safe, and Vercel followed it.
 

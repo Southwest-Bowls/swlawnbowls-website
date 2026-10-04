@@ -146,7 +146,7 @@ function hasManualNonCollectionUrl(text) {
 async function fetchEventsData() {
   const base = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
-    : "https://swd-google-calendar.vercel.app";
+    : "https://swlawnbowls-website.vercel.app";
   try {
     const r = await fetch(`${base}/events-data.json`, { cache: "no-store" });
     if (!r.ok) return [];

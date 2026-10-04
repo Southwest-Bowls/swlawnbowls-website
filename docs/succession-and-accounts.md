@@ -44,7 +44,7 @@ the site without noticing.
 | Vercel project | Serves | Notes |
 |---|---|---|
 | `swd-google-calendar` | `swd-google-calendar-pi.vercel.app` | not the public hostname |
-| `swd-tournament-hub.vercel.app` | **`swd-google-calendar.vercel.app`** and `hub.swlawnbowls.org` | this is what members hit |
+| `swd-tournament-hub.vercel.app` | **`swlawnbowls-website.vercel.app`**, **`swd-google-calendar.vercel.app`** and `hub.swlawnbowls.org` | this is what members hit |
 
 Both deploy from this same repository. The public hostname that is hardcoded
 in 186 places is served by the project named `swd-tournament-hub.vercel.app`,
@@ -57,7 +57,7 @@ Consequences to remember:
   read "Ready" there while the live site has not moved at all.
 - Any change to the Git connection, environment variables or plan limits has
   to be made on **both** projects.
-- Verify a deploy by fetching a changed file from `swd-google-calendar.vercel.app`,
+- Verify a deploy by fetching a changed file from `swlawnbowls-website.vercel.app`,
   never by trusting the CLI's deployment list.
 
 Consolidating onto one project would remove this trap, but it touches the
@@ -76,7 +76,7 @@ down and releases the hardcoded hostname.
 |---|---|---|---|
 | Website code & history | GitHub `gallogiulia/swlawnbowls-website` | personal | **No** |
 | Hosting & deploys | Vercel `giulia-gallos-projects` | personal | **No** |
-| Public hostname | `swd-google-calendar.vercel.app` | Vercel project above | **No** |
+| Public hostname | `swlawnbowls-website.vercel.app` (old: `swd-google-calendar.vercel.app`, keep it) | Vercel project above | **No** |
 | Domain `swlawnbowls.org` | registrar / Squarespace | to confirm | **To confirm** |
 | Entry & scoring sheets | Google Sheets | `sw.bowls@gmail.com` | Yes |
 | The four member forms | Google Forms | `sw.bowls@gmail.com` | Yes |

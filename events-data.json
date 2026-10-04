@@ -2089,12 +2089,12 @@
         "mailTo": "Make checks payable to Doreen Hall. Text 562-756-0559 to reserve your spot and arrange check delivery."
       },
       "flyer": {
-        "externalUrl": "https://swd-google-calendar.vercel.app/photos/swd-pgpairs26/2026-PG_MAP-flyer-QR.pdf",
+        "externalUrl": "https://swlawnbowls-website.vercel.app/photos/swd-pgpairs26/2026-PG_MAP-flyer-QR.pdf",
         "localPath": "",
         "type": "pdf"
       },
       "cops": {
-        "externalUrl": "https://swd-google-calendar.vercel.app/photos/swd-pgpairs26/2026-PG_MAP-COP.pdf",
+        "externalUrl": "https://swlawnbowls-website.vercel.app/photos/swd-pgpairs26/2026-PG_MAP-COP.pdf",
         "localPath": ""
       },
       "paypal": {

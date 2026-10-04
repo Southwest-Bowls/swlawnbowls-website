@@ -31,7 +31,7 @@ let DATA_CACHE = { t: 0, data: null, diag: "" };
 async function loadDataEntries() {
   const now = Date.now();
   if (DATA_CACHE.data && now - DATA_CACHE.t < TTL) return DATA_CACHE;
-  const url = "https://swd-google-calendar.vercel.app/events-data.json";
+  const url = "https://swlawnbowls-website.vercel.app/events-data.json";
   try {
     const r = await fetch(url, { cache: "no-store" });
     if (!r.ok) {
