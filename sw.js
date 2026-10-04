@@ -15,7 +15,7 @@
 
    To force every phone to drop its saved copies, bump VERSION.
    ============================================================ */
-const VERSION = 'swd-v4';
+const VERSION = 'swd-v5';
 const PAGES = VERSION + '-pages';
 const MEDIA = VERSION + '-media';
 const MAX_MEDIA = 150;            // photos are big; keep the newest 150

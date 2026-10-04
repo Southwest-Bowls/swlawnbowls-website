@@ -97,7 +97,8 @@
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
     sliders: '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="9" cy="18" r="2"/>',
     news: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>',
-    flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>'
+    flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>'
   };
   function icon(name, cls) {
     return '<svg class="i' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (PATHS[name] || '') + '</svg>';
@@ -119,25 +120,31 @@
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', dark ? '#231120' : '#ffffff');
-    document.querySelectorAll('[data-theme-choice]').forEach(function (b) {
-      b.setAttribute('aria-pressed', b.getAttribute('data-theme-choice') === p);
-    });
+    markChecked('data-theme-choice', p);
   }
   if (darkMQ) {
     var onSystem = function () { if (themePref() === 'system') applyTheme(); };
     if (darkMQ.addEventListener) darkMQ.addEventListener('change', onSystem); else if (darkMQ.addListener) darkMQ.addListener(onSystem);
   }
-  function themeChoices() {
-    var p = themePref();
-    return '<div class="choices" role="group" aria-label="Appearance">' + [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']].map(function (o) {
-      return '<button type="button" data-theme-choice="' + o[0] + '" aria-pressed="' + (o[0] === p) + '">' + o[1] + '</button>';
+  // Light/Dark/System and the text sizes are each one choice from several,
+  // so they are radio groups: one checked, arrow keys move between them.
+  function radioGroup(label, attr, options, current) {
+    return '<div class="choices" role="radiogroup" aria-label="' + esc(label) + '">' + options.map(function (o) {
+      var on = o[0] === current;
+      return '<button type="button" role="radio" ' + attr + '="' + o[0] + '" aria-checked="' + on + '" tabindex="' + (on ? 0 : -1) + '">' + o[1] + '</button>';
     }).join('') + '</div>';
   }
+  function markChecked(attr, value) {
+    document.querySelectorAll('[' + attr + ']').forEach(function (b) {
+      var on = b.getAttribute(attr) === value;
+      b.setAttribute('aria-checked', on); b.setAttribute('tabindex', on ? 0 : -1);
+    });
+  }
+  function themeChoices() {
+    return radioGroup('Appearance', 'data-theme-choice', [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], themePref());
+  }
   function textChoices() {
-    var size = store('text') || 'standard';
-    return '<div class="choices" role="group" aria-label="Text size">' + [['standard', 'Standard'], ['large', 'Large'], ['xlarge', 'Extra large']].map(function (o) {
-      return '<button type="button" data-size="' + o[0] + '" aria-pressed="' + (o[0] === size) + '">' + o[1] + '</button>';
-    }).join('') + '</div>';
+    return radioGroup('Text size', 'data-size', [['standard', 'Standard'], ['large', 'Large'], ['xlarge', 'Extra large']], store('text') || 'standard');
   }
   function applyTextSize() {
     var v = store('text');
@@ -377,9 +384,10 @@
     if (on) s.push(id);
     store('saved', s);
     document.querySelectorAll('[data-save="' + id + '"]').forEach(function (b) {
-      b.setAttribute('aria-pressed', on);
+      b.setAttribute('data-on', on);
       var span = b.querySelector('span');
       if (span) span.textContent = on ? 'Saved' : 'Save';
+      b.setAttribute('aria-label', saveLabel(on, b.getAttribute('data-title') || title));
     });
     view.dispatchEvent(new CustomEvent('saved-change', { detail: { id: id, on: on } }));
     var name = title ? ' ' + title : '';
@@ -392,10 +400,11 @@
       toast('Removed from Home', '', function () { setSaved(id, true, title); }, 'Removed from Home:' + name + '.');
     }
   }
+  function saveLabel(on, title) { return (on ? 'Unsave ' : 'Save ') + title; }
   function saveBtn(id, title) {
     var on = isSaved(id);
-    return '<button class="iconbtn" type="button" data-save="' + esc(id) + '" data-title="' + esc(title) + '" aria-pressed="' + on + '" aria-label="Save ' +
-      esc(title) + '">' + icon('bookmark') + '</button>';
+    return '<button class="iconbtn" type="button" data-save="' + esc(id) + '" data-title="' + esc(title) + '" data-on="' + on + '" aria-label="' +
+      esc(saveLabel(on, title)) + '">' + icon('bookmark') + '</button>';
   }
 
   // Visual confirmation with an optional Undo; the words are announced
@@ -488,6 +497,7 @@
 
   // Tournament updates (events-data "alert"), shown in a dialog
   function noticesDialog(list) {
+    if (!list.length) { openDialog('Tournament updates', '<p>There are no tournament updates right now.</p>'); return; }
     openDialog('Tournament updates', list.map(function (x) {
       return '<h3>' + esc(x.e.alertLabel || 'Update') + ' · ' + esc(x.short) + '</h3><p>' + esc(x.e.alert) + '</p>' +
         '<a class="btn btn--ghost" href="/app/events/' + encodeURIComponent(x.id) + '">View tournament</a>';
@@ -554,7 +564,8 @@
       var ph = st.photo || {};
       html += '<article class="story" aria-labelledby="h-story">' +
         (safeUrl(ph.src) ? '<figure class="story__fig"><img class="story__img" src="' + esc(ph.src) + '" alt="' + esc(ph.alt || '') + '"' +
-          (ph.focus ? ' style="object-position:' + esc(ph.focus) + '"' : '') + ' data-hide-on-error>' +
+          (ph.width && ph.height ? ' width="' + (+ph.width) + '" height="' + (+ph.height) + '"' : '') + ' fetchpriority="high" decoding="async"' +
+          ' style="' + (ph.aspect ? 'aspect-ratio:' + esc(ph.aspect) + ';' : '') + (ph.focus ? 'object-position:' + esc(ph.focus) : '') + '" data-hide-on-error>' +
           '</figure>' : '') +
         (st.eyebrow ? '<p class="eyebrow">' + esc(st.eyebrow) + '</p>' : '') +
         '<h2 class="story__title" id="h-story">' + esc(st.headline) + '</h2>' +
@@ -567,17 +578,16 @@
 
     // 4. Your next games — up to two upcoming saved events
     html += '<section class="section" aria-labelledby="h-next"><div class="section__head"><h2 class="section__title" id="h-next" tabindex="-1">Your next games</h2>' +
-      (mine.length ? '<a class="section__more" href="/app/events?show=saved">View saved (' + mine.length + ')' + icon('chev', 'i--sm') + '</a>' : '') + '</div>';
+      (mine.length ? '<a class="section__more" href="/app/events?show=saved">View saved' + icon('chev', 'i--sm') + '</a>' : '') + '</div>';
     if (mineNext.length) {
-      html += '<ul class="list">' + mineNext.slice(0, 2).map(function (x) { return gameRow(x, today); }).join('') + '</ul>' +
-        (mineNext.length > 2 ? '<p class="muted">+ ' + (mineNext.length - 2) + ' more saved</p>' : '');
+      html += '<ul class="list">' + mineNext.slice(0, 2).map(function (x) { return gameRow(x, today); }).join('') + '</ul>';
     } else if (mine.length) {
-      html += '<div class="invite"><b>No upcoming saved events.</b><p>Your saved events have all been played.</p>' +
+      html += '<div class="invite"><p class="invite__lead">No upcoming saved events.</p>' +
         '<a class="btn btn--split" href="/app/events?show=saved">View saved events' + icon('chev') + '</a></div>';
     } else {
-      html += '<div class="invite"><b>Keep your next games here.</b><p>Tap the bookmark on any tournament and it appears here, with its date and entry deadline.</p>' +
+      html += '<div class="invite"><p class="invite__lead">Save events to see your next games here.</p>' +
         '<a class="btn btn--split" href="/app/events">Find an event' + icon('chev') + '</a>' +
-        '<p class="invite__small">Saving doesn’t register you or turn on reminders.</p></div>';
+        '<p class="invite__small">Saving doesn’t register you.</p></div>';
     }
     html += '</section>';
 
@@ -594,7 +604,7 @@
         '<span class="achieve__event">' + esc(shortTitle(r.t.title)) + '</span>' +
         (r.t.meta ? '<span class="achieve__meta">' + esc(r.t.meta) + '</span>' : '') +
         (f.length > 1 ? '<span class="achieve__meta">+ ' + (f.length - 1) + ' more division winner' + (f.length > 2 ? 's' : '') + '</span>' : '') +
-        '</span></a></section>';
+        '</span>' + CHEV + '</a></section>';
     }
 
     // 6. This week — one timely item, only when there is one
@@ -616,13 +626,13 @@
   // A saved event on Home: date, club, the real entry status, any alert
   function gameRow(x, today) {
     var e = x.e, st = entryStatus(x, today);
-    return '<li class="evrow evrow--game">' + dateBlock(x) +
-      '<div class="evrow__main"><span class="evrow__title">' + esc(x.short) + '</span>' +
+    return '<li class="evrow">' + dateBlock(x) +
+      '<a class="evrow__main" href="/app/events/' + encodeURIComponent(x.id) + '">' +
+      '<span class="evrow__title">' + esc(x.short) + '</span>' +
       '<span class="evrow__meta">' + esc([dateRangeLabel(x.dates, true), x.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
-      (st ? statusLine(st) : '<span class="status">' + icon('info') + 'Entry deadline not published</span>') +
+      (st ? statusLine(st) : '') +
       (e.alert ? '<span class="status status--update">' + icon('bell') + esc(e.alertLabel || 'Update') + '</span>' : '') +
-      '<a class="textlink" href="/app/events/' + encodeURIComponent(x.id) + '">View event<span class="sr-only">: ' + esc(x.short) + '</span>' + icon('chev', 'i--sm') + '</a>' +
-      '</div>' + saveBtn(x.id, x.short) + '</li>';
+      '</a>' + saveBtn(x.id, x.short) + '</li>';
   }
 
   // Priority: a stream YouTube says is live › an entry deadline in the next
@@ -893,8 +903,8 @@
     if (e.club && safeUrl(e.club.mapUrl)) acts.push('<a class="btn btn--ghost" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>');
     if (x.dates && phase !== 'past') acts.push('<a class="btn btn--ghost" href="' + icsHref(x) + '" download="' + esc(x.id) + '.ics">' + icon('cal') + 'Add to calendar</a>');
     var on = isSaved(x.id);
-    acts.push('<button class="btn btn--ghost" type="button" data-save="' + esc(x.id) + '" data-title="' + esc(x.short) + '" aria-pressed="' + on + '">' + icon('bookmark') +
-      '<span>' + (on ? 'Saved' : 'Save') + '</span></button>');
+    acts.push('<button class="btn btn--ghost" type="button" data-save="' + esc(x.id) + '" data-title="' + esc(x.short) + '" data-on="' + on + '" aria-label="' + esc(saveLabel(on, x.short)) + '">' + icon('bookmark') +
+      '<span aria-hidden="true">' + (on ? 'Saved' : 'Save') + '</span></button>');
     h += '<div class="actions">' + acts.join('') + '</div>';
     h += '<p class="note">Saving an event keeps it in your list. It does not register your team.</p>';
 
@@ -1208,66 +1218,119 @@
   }
 
   /* ---------------------------------------------------------------
-     MORE — appearance, division information, clubs
+     MORE — a short grouped menu; the website's longer menu lives in
+     subsections. Website addresses and years come from nav-data.json,
+     so a new season's links follow the website menu automatically.
      --------------------------------------------------------------- */
-  var SKIP_IN_MORE = ['/', '/2026-tournaments-events', '/2026-tournament-results'];
-  // Website pages the app has its own screen for
-  var IN_APP = { '/club-info': '/app/more/clubs' };
+  // A menu row: icon, label, chevron. Website destinations open in a new
+  // window and say so; everything else is an in-app screen.
+  function menuRow(href, iconName, label, meta) {
+    var web = /^https?:/i.test(href) || !/^\/app\b/.test(href);
+    return '<li><a class="row" href="' + esc(href) + '"' + (web ? ' target="_blank" rel="noopener"' : '') + '>' +
+      icon(iconName || 'chev') + '<span class="row__main"><span class="row__title">' + esc(label) + '</span>' +
+      (meta ? '<span class="row__meta">' + esc(meta) + '</span>' : '') + '</span>' +
+      (web ? extLabel(isExternal(href) ? 'External' : 'Website') : CHEV) + '</a></li>';
+  }
+  function menuGroup(id, title, rows) {
+    return '<section class="menu" aria-labelledby="' + id + '"><h2 class="menu__head" id="' + id + '">' + esc(title) + '</h2><ul class="rows rows--menu">' + rows + '</ul></section>';
+  }
+  // Find a website menu entry by its address (top level or inside a group)
+  function navFind(nav, test) {
+    var hit = null;
+    (nav.items || []).forEach(function (it) {
+      if (!hit && it.href && test(it.href)) hit = it;
+      (it.children || []).forEach(function (c) { if (!hit && c.href && test(c.href)) hit = c; });
+    });
+    return hit;
+  }
+  function yearOf(label) { var m = /\b(20\d{2})\b/.exec(label || ''); return m ? m[1] : ''; }
+
+  // Each subsection: path, heading, icon, and its rows built from nav-data
+  var SUBSECTIONS = {
+    play: { title: 'Play & learn', icon: 'flag', rows: function () {
+      return [['/app/page/learnmore', 'Learn to bowl'], ['/app/page/coachinghub', 'Coaching'], ['/app/page/umpires', 'Umpires'], ['/app/page/markers', 'Markers']];
+    } },
+    division: { title: 'Division information', icon: 'info', rows: function (nav) {
+      var st = navFind(nav, function (h) { return h === '/standings'; });
+      var ag = navFind(nav, function (h) { return /^\/20\d{2}-season-agenda$/.test(h); });
+      var y = yearOf(st && st.label);
+      return [['/app/page/about-us', 'About Southwest'],
+        ['/app/page/standings', (y ? y + ' standings' : 'Standings')],
+        ['/us-nationals-teams', 'U.S. Nationals teams'],
+        ['/app/page/bowlsdevelopmnetfund', 'Bowls Development Fund'],
+        ['/policies-and-procedures', 'Policies & procedures'],
+        ['/delegate-information', 'Delegate information']]
+        .concat(ag ? [[ag.href, 'Season agenda' + (yearOf(ag.label) ? ' ' + yearOf(ag.label) : '')]] : []);
+    } },
+    'ladies-day': { title: 'Ladies Day', icon: 'people', rows: function () {
+      return [['/app/page/ladies-day-sign-up', 'Sign up'], ['/app/page/ladies-day-results', 'Results'], ['/app/page/ie-ladies-day', 'Inland Empire']];
+    } },
+    archives: { title: 'Archives', icon: 'archive', rows: function (nav) {
+      // Every year the website menu lists, newest first
+      var rows = [], seen = {};
+      (nav.items || []).forEach(function (it) {
+        (it.children || [it]).forEach(function (c) {
+          if (!c.href || !/^\/archive\b/.test(c.href) || seen[c.href]) return;
+          seen[c.href] = 1;
+          var y = /year=(\d{4})/.exec(c.href);
+          rows.push([c.href, y ? y[1] + ' results' : 'Results archive', y ? +y[1] : 9999]);
+        });
+      });
+      return rows.sort(function (a, b) { return b[2] - a[2]; });
+    } },
+    follow: { title: 'Follow us', icon: 'people', rows: function () {
+      return [[YT_CHANNEL_URL, 'YouTube · SW TV', 'tv'], [FACEBOOK_URL, 'Facebook', 'people']];
+    } }
+  };
+  // Which subsection an information page belongs to, for its Back link
+  function parentOf(pageId) {
+    var hit = null;
+    ['play', 'division', 'ladies-day'].forEach(function (k) {
+      SUBSECTIONS[k].rows({ items: [] }).forEach(function (r) { if (r[0] === '/app/page/' + pageId) hit = k; });
+    });
+    if (pageId === 'standings') hit = 'division';
+    return hit ? { href: '/app/more/' + hit, label: SUBSECTIONS[hit].title } : { href: '/app/more', label: 'More' };
+  }
+
   function more() {
     setTitle('More');
     var today = todayISO();
-    return Promise.all([getJSON('/nav-data.json'), loadEvents().catch(function () { return []; })]).then(function (all) {
-      var nav = all[0];
-      currentNotices = all[1].filter(function (x) { var p = eventPhase(x, today); return x.e.alert && (p === 'upcoming' || p === 'now'); });
-      var groups = [], loose = [];
-      (nav.items || []).forEach(function (it) {
-        if (it.children) groups.push(it);
-        else if (SKIP_IN_MORE.indexOf(it.href) < 0 && !/youtube/i.test(it.href || '')) loose.push(it);
-      });
-      var links = [];
-      groups.forEach(function (g) { g.children.forEach(function (c) { links.push(c); }); });
-      loose.forEach(function (c) { links.push(c); });
-      // Which menu pages exist as app-readable content? Ask once, in parallel.
-      var slugs = links.filter(function (l) { return !l.external && /^\/[a-z0-9-]+$/.test(l.href || ''); }).map(function (l) { return l.href.slice(1); });
-      return Promise.all(slugs.map(function (s) {
-        return fetch('/content/' + s + '.json', { method: 'HEAD' }).then(function (r) { return r.ok ? s : null; }).catch(function () { return null; });
-      })).then(function (found) {
-        var native = {}; found.forEach(function (s) { if (s) native[s] = 1; });
-        function navRow(l) {
-          var slug = (l.href || '').slice(1);
-          if (SKIP_IN_MORE.indexOf(l.href) >= 0 || /youtube/i.test(l.href || '')) return '';
-          if (IN_APP[l.href]) return linkRow(IN_APP[l.href], '', l.label);
-          if (native[slug]) return linkRow('/app/page/' + slug, '', l.label);
-          var href = safeUrl(l.href); if (!href) return '';
-          return linkRow(href, '', l.label, '', { ext: true, extText: isExternal(href) ? 'External' : 'Website' });
-        }
-        var n = saved().length;
-        var html = '<div class="intro" style="margin-bottom:0"><h1>More</h1><p>Settings, clubs and division information.</p></div>' +
-          '<section class="settings" aria-labelledby="h-app"><h2 id="h-app">Appearance</h2><p>Choose a look that feels right.</p>' + themeChoices() +
-          '<h2 style="margin-top:24px" id="h-text">Text size</h2><p>Makes all the text in the app bigger.</p>' + textChoices() + '</section>';
-        html += '<ul class="rows">' +
-          (currentNotices.length ? '<li><button class="row" type="button" data-notices aria-haspopup="dialog">' + icon('bell') + '<span class="row__main"><span class="row__title">Tournament updates</span><span class="row__meta">' + currentNotices.length + ' current</span></span>' + CHEV + '</button></li>' : '') +
-          linkRow('/app/events?show=saved', 'bookmark', 'Saved events', n ? n + ' on this phone' : '') +
-          linkRow('/app/more/clubs', 'pin', 'Clubs', 'Find a club near you') +
-          linkRow('/app/more/news', 'news', 'News') +
-          (native['contact-us'] ? linkRow('/app/page/contact-us', 'mail', 'Contact Southwest Bowls') : '') +
-          '</ul>';
-        groups.forEach(function (g) {
-          var rows = g.children.map(navRow).join('');
-          if (rows) html += '<h2 class="group-title">' + esc(g.label) + '</h2><ul class="rows">' + rows + '</ul>';
-        });
-        var looseRows = loose.map(navRow).join('');
-        if (looseRows) html += '<h2 class="group-title">Also on the website</h2><ul class="rows">' + looseRows + '</ul>';
-        html += '<h2 class="group-title">Follow us</h2><ul class="rows">' +
-          linkRow(YT_CHANNEL_URL, 'tv', 'YouTube · SW TV', '', { ext: true, extText: 'External' }) +
-          linkRow(FACEBOOK_URL, 'people', 'Facebook', '', { ext: true, extText: 'External' }) +
-          '</ul>';
-        html += '<ul class="rows" style="margin-top:32px">' +
-          linkRow('/app/more/settings', 'sliders', 'App settings', 'Saved events, offline copies') +
-          linkRow('/', 'globe', 'Southwest Bowls website', '', { ext: true }) +
-          '</ul>';
-        view.innerHTML = html;
-      });
+    return loadEvents().catch(function () { return []; }).then(function (events) {
+      currentNotices = events.filter(function (x) { var p = eventPhase(x, today); return x.e.alert && (p === 'upcoming' || p === 'now'); });
+      var n = currentNotices.length;
+      var html = '<div class="intro"><h1>More</h1></div>' +
+        menuGroup('h-quick', 'Quick access',
+          menuRow('/app/events?show=saved', 'bookmark', 'Saved events') +
+          menuRow('/app/more/clubs', 'pin', 'Find a club') +
+          '<li><button class="row" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
+            '<span class="row__main"><span class="row__title">Tournament updates</span>' + (n ? '<span class="row__meta">' + n + ' current</span>' : '') + '</span>' + CHEV + '</button></li>') +
+        menuGroup('h-explore', 'Explore Southwest',
+          menuRow('/app/more/play', 'flag', 'Play & learn') +
+          menuRow('/app/more/news', 'news', 'News') +
+          menuRow('/app/more/division', 'info', 'Division information') +
+          menuRow('/app/more/ladies-day', 'people', 'Ladies Day') +
+          menuRow('/app/more/archives', 'archive', 'Archives')) +
+        menuGroup('h-help', 'Help & settings',
+          menuRow('/app/page/contact-us', 'mail', 'Contact') +
+          menuRow('/app/more/settings', 'sliders', 'App settings')) +
+        '<ul class="rows rows--menu rows--quiet">' +
+          menuRow('/app/more/follow', 'tv', 'Follow us') +
+          menuRow('/', 'globe', 'Southwest website') +
+        '</ul>';
+      view.innerHTML = html;
+    });
+  }
+
+  function subsection(params, key) {
+    var sec = SUBSECTIONS[key];
+    if (!sec) { history.replaceState(history.state, '', '/app/more'); return more(); }
+    setTitle(sec.title);
+    return getJSON('/nav-data.json').catch(function () { return { items: [] }; }).then(function (nav) {
+      var rows = sec.rows(nav);
+      view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>' + esc(sec.title) + '</h1></div>' +
+        (rows.length ? '<ul class="rows rows--menu">' + rows.map(function (r) {
+          return menuRow(r[0], r[2] && typeof r[2] === 'string' ? r[2] : key === 'archives' ? 'archive' : 'doc', r[1]);
+        }).join('') + '</ul>' : state('empty', 'Nothing here yet', ''));
     });
   }
 
@@ -1335,11 +1398,13 @@
     var standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     var n = saved().length;
     view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>App settings</h1></div>' +
-      '<section class="settings"><h2>Saved events</h2><p>' + (n ? n + ' event' + (n === 1 ? '' : 's') + ' saved on this phone. Saving an event doesn’t enter you in it.' : 'No events saved yet.') + '</p>' +
-      (n ? '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-saved>Clear saved events</button></div>' : '') + '</section>' +
-      '<section class="settings"><h2>Offline copies</h2><p>Pages you open are kept so they work without a signal. Clearing them frees space; they come back as you browse.</p>' +
+      '<section class="settings" aria-labelledby="h-appear"><h2 id="h-appear">Appearance</h2>' + themeChoices() + '</section>' +
+      '<section class="settings" aria-labelledby="h-text"><h2 id="h-text">Text size</h2>' + textChoices() + '</section>' +
+      '<section class="settings" aria-labelledby="h-off"><h2 id="h-off">Offline copies</h2><p>Pages you open are kept so they work without a signal. Clearing them frees space; they come back as you browse.</p>' +
       '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-cache>Clear offline copies</button></div></section>' +
-      (!standalone ? '<section class="settings"><h2>Add to your home screen</h2><p>Get the Southwest Bowls icon on your phone.</p><div class="actions"><a class="btn" href="/get-the-app" target="_blank" rel="noopener">How to add it</a></div></section>' : '') +
+      '<section class="settings" aria-labelledby="h-sv"><h2 id="h-sv">Saved events</h2><p>' + (n ? n + ' event' + (n === 1 ? '' : 's') + ' saved on this phone. Saving an event doesn’t enter you in it.' : 'No events saved yet.') + '</p>' +
+      (n ? '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-saved>Clear saved events</button></div>' : '') + '</section>' +
+      (!standalone ? '<section class="settings" aria-labelledby="h-inst"><h2 id="h-inst">Add to your home screen</h2><p>Get the Southwest Bowls icon on your phone.</p><div class="actions"><a class="btn" href="/get-the-app" target="_blank" rel="noopener">How to add it</a></div></section>' : '') +
       '<p class="footnote">Southwest Bowls app · information from swlawnbowls.org</p>';
     view.addEventListener('click', function (ev) {
       if (ev.target.closest('[data-clear-saved]')) { store('saved', []); toast('Saved events cleared'); render(); }
@@ -1405,7 +1470,8 @@
           }).join('') + '</ul>';
         }
       };
-      view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>' + esc(d.title || '') + '</h1>' + (d.subtitle ? '<p>' + esc(d.subtitle) + '</p>' : '') + '</div>' +
+      var up = parentOf(id);
+      view.innerHTML = backLink(up.href, up.label) + '<div class="intro"><h1>' + esc(d.title || '') + '</h1>' + (d.subtitle ? '<p>' + esc(d.subtitle) + '</p>' : '') + '</div>' +
         (d.sections || []).map(function (s) {
           var r = R[s.type]; if (!r) return '';
           var inner = r(s); if (!inner) return '';
@@ -1429,6 +1495,7 @@
     [/^\/app\/more\/clubs\/([^/]+)\/?$/, clubDetail, 'more'],
     [/^\/app\/more\/news\/?$/, newsList, 'more'],
     [/^\/app\/more\/settings\/?$/, settings, 'more'],
+    [/^\/app\/more\/(play|division|ladies-day|archives|follow)\/?$/, subsection, 'more'],
     [/^\/app\/page\/([a-z0-9-]+)\/?$/, infoPage, 'more']
   ];
   var scrollMemory = {};
@@ -1470,7 +1537,7 @@
     try { history.replaceState(Object.assign({}, history.state, { y: window.scrollY }), ''); } catch (e) {}
     var depth = (history.state && history.state.depth) || 0;
     if (replace) history.replaceState({ depth: depth }, '', href);
-    else history.pushState({ depth: depth + 1 }, '', href);
+    else history.pushState({ depth: depth + 1, from: cur }, '', href);
     render().then(function () { view.focus({ preventScroll: true }); });
   }
 
@@ -1491,7 +1558,7 @@
     var sz = ev.target.closest('[data-size]');
     if (sz) {
       store('text', sz.getAttribute('data-size')); applyTextSize();
-      document.querySelectorAll('[data-size]').forEach(function (x) { x.setAttribute('aria-pressed', x === sz); });
+      markChecked('data-size', sz.getAttribute('data-size'));
       return;
     }
     if (ev.target.closest('[data-notices]')) { noticesDialog(currentNotices); return; }
@@ -1523,7 +1590,11 @@
     if (dlg.contains(a)) closeDialog();
     // Back link: go back in history when we came from inside the app,
     // so the list keeps its filters and scroll position
-    if (a.hasAttribute('data-back') && history.state && history.state.depth > 0) { history.back(); return; }
+    if (a.hasAttribute('data-back')) {
+      var from = history.state && history.state.from;
+      if (from && from.split('?')[0] === href.split('?')[0]) { history.back(); return; }
+      return go(href);
+    }
     // Tapping the current tab again returns to the top of that tab
     var tab = a.getAttribute('data-tab');
     if (tab && a.getAttribute('aria-current') === 'page') {
@@ -1533,6 +1604,15 @@
     }
     if (tab && tabMemory[tab]) return go(tabMemory[tab]);
     go(href);
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    var r = ev.target.closest && ev.target.closest('[role="radio"]');
+    if (!r || ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].indexOf(ev.key) < 0) return;
+    ev.preventDefault();
+    var all = Array.prototype.slice.call(r.parentNode.querySelectorAll('[role="radio"]'));
+    var next = all[(all.indexOf(r) + (ev.key === 'ArrowRight' || ev.key === 'ArrowDown' ? 1 : all.length - 1)) % all.length];
+    next.focus(); next.click();
   });
 
   applyTheme();

@@ -152,8 +152,8 @@ svg { flex: none; }
   background: none; border: 0; color: var(--text); cursor: pointer;
 }
 .iconbtn--soft { width: 48px; height: 48px; background: var(--subtle); }
-.iconbtn[aria-pressed="true"] { color: var(--heading); }
-.iconbtn[aria-pressed="true"] .i { fill: currentColor; }
+.iconbtn[data-on="true"] { color: var(--heading); }
+.iconbtn[data-on="true"] .i { fill: currentColor; }
 
 /* ---------- Network / freshness bar -------------------------------- */
 .netbar {
@@ -200,8 +200,8 @@ svg { flex: none; }
 .btn:active { filter: brightness(.9); }
 .btn--split { justify-content: space-between; text-align: left; }
 .btn--ghost { background: var(--subtle); color: var(--text); font-weight: 400; }
-.btn--ghost[aria-pressed="true"] { color: var(--heading); font-weight: 700; }
-.btn--ghost[aria-pressed="true"] .i { fill: currentColor; }
+.btn--ghost[data-on="true"] { color: var(--heading); font-weight: 700; }
+.btn--ghost[data-on="true"] .i { fill: currentColor; }
 .btn--block { width: 100%; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s4); }
 .actions > * { flex: 1 1 140px; }
@@ -297,7 +297,8 @@ svg { flex: none; }
 
 .story { margin-top: var(--s2); }
 .story__fig { margin: 0 0 var(--s4); }
-.story__img { width: 100%; height: 164px; object-fit: cover; border-radius: 18px; background: var(--subtle); }
+/* Shape and focal point come per photo from app-home-data.json; the default is a taller 4:3 so people aren't cut at the shoulders */
+.story__img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 18px; background: var(--subtle); }
 .story__title { font-size: 1.625rem; line-height: 1.2; letter-spacing: -.02em; margin-top: 6px; }
 .story__text { color: var(--text-2); margin-top: var(--s2); }
 
@@ -307,22 +308,18 @@ svg { flex: none; }
   color: var(--link); font-weight: 700; font-size: .9375rem; text-decoration: none;
 }
 
-.evrow--game { align-items: flex-start; padding-top: var(--s3); }
-.evrow--game .evrow__main { padding-top: 0; padding-bottom: 0; }
-.evrow--game .dateblock { margin-top: 2px; }
-.evrow--game .textlink { margin-top: 2px; font-size: var(--fs-sm); }
 
 .invite { background: var(--subtle); border-radius: var(--r-panel); padding: 18px; margin-top: var(--s2); }
-.invite b { display: block; font-size: var(--fs-lg); }
-.invite p { color: var(--text-2); font-size: .9375rem; margin-top: 6px; }
+.invite__lead { font-weight: 700; }
+.invite__small { color: var(--text-2); font-size: var(--fs-sm); margin-top: var(--s3); }
 .invite .btn { margin-top: var(--s4); }
-.invite__small { font-size: var(--fs-sm) !important; }
 
 .achieve { display: flex; gap: var(--s4); align-items: center; margin-top: var(--s2); color: var(--text); text-decoration: none; }
 .achieve__frame { width: 136px; height: 176px; flex: none; overflow: hidden; border-radius: var(--r-control); background: var(--subtle); }
 /* Result photos are taken from a distance; a gentle zoom keeps the people, not the signage, in view */
 .achieve__img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; transform: scale(1.45); transform-origin: 50% 42%; }
-.achieve__body { min-width: 0; display: block; }
+.achieve__body { flex: 1; min-width: 0; display: block; }
+.achieve > .chev { align-self: center; }
 .achieve__who { display: block; font-size: var(--fs-lg); font-weight: 700; line-height: 1.25; color: var(--heading); margin-top: 6px; overflow-wrap: anywhere; }
 .achieve__event { display: block; font-weight: 700; margin-top: 6px; }
 .achieve__meta { display: block; font-size: var(--fs-sm); color: var(--text-2); margin-top: 2px; }
@@ -341,7 +338,6 @@ svg { flex: none; }
 .champs b { display: block; font-size: var(--fs-lg); }
 
 @media (max-width: 370px) {
-  .story__img { height: 156px; }
   .story__title { font-size: 1.5rem; }
   .achieve__frame { width: 112px; height: 148px; }
 }
@@ -490,9 +486,21 @@ details.fold[open] > summary .chev { transform: rotate(90deg); }
   flex: 1 1 80px; min-height: 48px; border: 0; border-radius: 10px; background: var(--subtle); color: var(--text);
   font-size: var(--fs-sm); cursor: pointer; padding: 0 var(--s2);
 }
-.choices button[aria-pressed="true"] { background: var(--selected); color: var(--selected-ink); font-weight: 700; }
+.choices button[aria-checked="true"] { background: var(--selected); color: var(--selected-ink); font-weight: 700; }
 .group-title { font-size: var(--fs-lg); margin-top: var(--s8); }
 .footnote { color: var(--text-2); font-size: var(--fs-sm); margin-top: var(--s8); }
+
+/* ---------- More menu ---------------------------------------------
+   Full-width rows under small group headings; the whole row is the
+   target. No box around each row — a subtle separator only. */
+.menu { margin-top: var(--s6); }
+.menu__head { font-size: var(--fs-sm); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); margin-bottom: var(--s1); }
+.rows--menu > li { border-bottom: 1px solid var(--line); }
+.rows--menu > li:first-child { border-top: 1px solid var(--line); }
+.rows--menu .row { min-height: 56px; padding: var(--s2) 0; gap: var(--s4); }
+.rows--menu .row__title { font-weight: 400; }
+.rows--quiet { margin-top: var(--s8); }
+.rows--quiet .row__title { color: var(--text-2); }
 
 /* ---------- Content pages (More) ----------------------------------- */
 .page-sec { margin-top: var(--s6); }

@@ -1,13 +1,16 @@
 {
-  "_readme": "The community story at the top of the phone app's Home (/app). Edit this file to change it. Every line must be supported by the source story linked in 'source'. Photos must already be in photos/ (never hotlink). The summary sits under the photo and doubles as its caption, so name who is pictured. 'focus' is where the photo is anchored when it is cropped to a wide strip: keep faces and medals in view. Remove the whole 'feature' block to hide the story.",
+  "_readme": "The community story at the top of the phone app's Home (/app). Edit this file to change it. Every line must be supported by the source story linked in 'source', and should say which year it is about. Photos must already be in photos/ (never hotlink); give their real width and height. 'aspect' is the shape shown on Home and 'focus' is the point kept in view when cropping — choose them per photo so faces (and certificates or medals) stay in frame, and check on a phone. Remove the whole 'feature' block to hide the story.",
   "feature": {
-    "eyebrow": "Our people · National champions",
+    "eyebrow": "Our people · 2026 national champions",
     "headline": "Three national titles for Southwest.",
-    "summary": "Javier Goez and Angel Gomez, pictured, won the Men’s Pairs: one of three 2026 national titles for Southwest Division bowlers.",
+    "summary": "Javier Goez and Angel Gomez won Men’s Pairs⁠—one of Southwest’s three national titles.",
     "photo": {
       "src": "/photos/home/nationals-2026-mens-pairs-goez-gomez.jpg",
-      "alt": "Javier Goez and Angel Gomez with their 2026 national championship certificates",
-      "focus": "50% 18%"
+      "alt": "Javier Goez and Angel Gomez holding their 2026 national championship certificates",
+      "width": 1000,
+      "height": 1000,
+      "aspect": "4 / 3",
+      "focus": "50% 47%"
     },
     "actionLabel": "Meet the champions",
     "champions": [
