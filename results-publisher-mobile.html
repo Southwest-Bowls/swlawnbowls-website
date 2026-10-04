@@ -7,9 +7,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>SWD Results Publisher</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --red: #c1272d; --red-dark: #9a1f24; --red-soft: #f7e7e8;
@@ -22,7 +19,7 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; }
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
     background: var(--paper); color: var(--ink);
     min-height: 100vh; min-height: 100dvh;
     padding-bottom: env(safe-area-inset-bottom);
@@ -41,9 +38,9 @@
     background: white; border-radius: 8px; overflow: hidden;
   }
   .brand-mark img { width: 100%; height: 100%; object-fit: contain; }
-  .brand-text { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; line-height: 1.1; }
+  .brand-text { font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-weight: 600; font-size: 15px; line-height: 1.1; }
   .brand-text small {
-    display: block; font-family: 'Inter', sans-serif;
+    display: block; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
     font-size: 10px; color: var(--mute);
     letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; margin-top: 1px;
   }
@@ -56,7 +53,7 @@
   .login-logo-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
   .login-logo { width: 96px; height: auto; filter: drop-shadow(0 4px 12px rgba(58, 174, 224, 0.25)); }
   .hero h1 {
-    font-family: 'Fraunces', serif; font-weight: 800;
+    font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-weight: 800;
     font-size: clamp(28px, 8vw, 38px);
     letter-spacing: -0.03em; margin: 0 0 8px; line-height: 1.05;
   }
@@ -99,7 +96,7 @@
     letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px;
   }
   .step h2 {
-    font-family: 'Fraunces', serif; font-weight: 600;
+    font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-weight: 600;
     font-size: 20px; letter-spacing: -0.02em; margin: 0 0 4px;
   }
   .step .sub { font-size: 13px; color: var(--mute); margin: 0 0 14px; }
@@ -112,7 +109,7 @@
   }
   .event-card.active { border-color: var(--red); background: var(--red-soft); }
   .event-card .e-date {
-    font-family: 'Fraunces', serif; font-weight: 800;
+    font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-weight: 800;
     font-size: 12px; color: var(--palm);
     min-width: 50px; line-height: 1.1; text-align: center;
   }
@@ -156,7 +153,7 @@
     width: 24px; height: 24px; border-radius: 50%;
     display: grid; place-items: center;
     font-size: 12px; font-weight: 800; color: white;
-    font-family: 'Fraunces', serif; flex-shrink: 0;
+    font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; flex-shrink: 0;
   }
   .place-medal.gold { background: var(--sun); }
   .place-medal.silver { background: #a8a8a8; }
@@ -212,7 +209,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .hidden { display: none !important; }
   .foot { text-align: center; font-size: 11px; color: var(--mute); padding: 24px 16px 12px; letter-spacing: 0.02em; }
-  .foot em { font-family: 'Fraunces', serif; color: var(--red); }
+  .foot em { font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; color: var(--red); }
   .add-btn {
     display: inline-flex; align-items: center; gap: 6px;
     background: transparent; border: 1.5px dashed var(--line);

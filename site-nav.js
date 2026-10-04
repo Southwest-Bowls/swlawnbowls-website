@@ -36,7 +36,7 @@
 
   var CSS = [
     ':root{--swdnav-ink:#172033;--swdnav-soft:#4a5568;--swdnav-navy:#1a365d;',
-    '--swdnav-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;',
+    '--swdnav-font:Arial,"Helvetica Neue",Helvetica,sans-serif;',
     '--swdnav-line:rgba(15,23,42,.10);--swdnav-line2:rgba(15,23,42,.16);',
     '--swdnav-bg:#f5f7fa;--swdnav-deep:#0f2440;}',
     '#swd-site-header{position:sticky;top:0;z-index:900;background:var(--swdnav-bar,#fff);',

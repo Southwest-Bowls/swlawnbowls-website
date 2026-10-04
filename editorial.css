@@ -44,8 +44,8 @@
   --c-other:    #0f6f7a;
 
   --radius:     14px;
-  --font-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
-  --font-text:    "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --font-display: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  --font-text:    Arial, "Helvetica Neue", Helvetica, sans-serif;
 
   /* Re-skin the shared header/footer to match */
   --swdnav-font: var(--font-text);
