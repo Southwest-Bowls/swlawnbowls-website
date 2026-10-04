@@ -369,26 +369,52 @@
      --------------------------------------------------------------- */
   function saved() { return store('saved') || []; }
   function isSaved(id) { return saved().indexOf(id) >= 0; }
-  function toggleSaved(id) {
-    var s = saved(), i = s.indexOf(id);
-    if (i >= 0) s.splice(i, 1); else s.push(id);
+  // One place changes saved state, so Home, Events and event details
+  // always agree. Saving is a bookmark: it never registers anyone or
+  // turns on reminders.
+  function setSaved(id, on, title) {
+    var s = saved().filter(function (x) { return x !== id; });
+    if (on) s.push(id);
     store('saved', s);
-    toast(i >= 0 ? 'Removed from Saved' : 'Saved on this phone. This doesn’t enter you in the event.');
-    return i < 0;
+    document.querySelectorAll('[data-save="' + id + '"]').forEach(function (b) {
+      b.setAttribute('aria-pressed', on);
+      var span = b.querySelector('span');
+      if (span) span.textContent = on ? 'Saved' : 'Save';
+    });
+    view.dispatchEvent(new CustomEvent('saved-change', { detail: { id: id, on: on } }));
+    var name = title ? ' ' + title : '';
+    if (on) {
+      var first = !store('savedExplained');
+      store('savedExplained', true);
+      toast('Saved to Home', first ? 'Saving keeps this event handy. It doesn’t register you or turn on reminders.' : '',
+        function () { setSaved(id, false, title); }, 'Saved to Home:' + name + '.');
+    } else {
+      toast('Removed from Home', '', function () { setSaved(id, true, title); }, 'Removed from Home:' + name + '.');
+    }
   }
   function saveBtn(id, title) {
     var on = isSaved(id);
-    return '<button class="iconbtn" type="button" data-save="' + esc(id) + '" data-title="' + esc(title) + '" aria-pressed="' + on + '" aria-label="' +
-      (on ? 'Saved: ' : 'Save ') + esc(title) + '">' + icon('bookmark') + '</button>';
+    return '<button class="iconbtn" type="button" data-save="' + esc(id) + '" data-title="' + esc(title) + '" aria-pressed="' + on + '" aria-label="Save ' +
+      esc(title) + '">' + icon('bookmark') + '</button>';
   }
 
+  // Visual confirmation with an optional Undo; the words are announced
+  // through a separate polite live region that is always present.
   var toastTimer;
-  function toast(msg) {
+  function toast(msg, detail, undo, spoken) {
     var t = document.getElementById('toast');
-    if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
-    t.textContent = msg; t.hidden = false;
+    var live = document.getElementById('announce');
+    if (!t) {
+      t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; t.hidden = true;
+      document.body.appendChild(t);
+    }
+    t.innerHTML = '<span class="toast__text"><b>' + esc(msg) + '</b>' + (detail ? '<span>' + esc(detail) + '</span>' : '') + '</span>' +
+      (undo ? '<button type="button" class="toast__undo">Undo</button>' : '');
+    if (undo) t.querySelector('.toast__undo').addEventListener('click', function () { t.hidden = true; undo(); });
+    t.hidden = false;
+    if (live) { live.textContent = ''; setTimeout(function () { live.textContent = (spoken || msg) + (detail ? ' ' + detail : ''); }, 50); }
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.hidden = true; }, 3200);
+    toastTimer = setTimeout(function () { t.hidden = true; }, detail ? 7000 : undo ? 5000 : 3200);
   }
 
   /* ---------------------------------------------------------------
@@ -472,77 +498,177 @@
   /* ---------------------------------------------------------------
      HOME
      --------------------------------------------------------------- */
+  // Home is the overview — community, your saved games, the latest result
+  // and one timely item. Events stays the complete directory.
+  //   1 greeting · 2 alerts on saved events · 3 community story
+  //   4 Your next games · 5 Around the greens · 6 This week · 7 small links
+  var CRITICAL = /cancel|postpon|venue|reschedul|new date|moved/i;
+  function isCritical(x) { return !!x.e.alert && CRITICAL.test((x.e.alertLabel || '') + ' ' + x.e.alert); }
+
   function home() {
     setTitle('');
     var today = todayISO();
     return Promise.all([
       loadEvents(),
       loadResults().catch(function () { return []; }),
-      getJSON('/streams-data.json').catch(function () { return { streams: [] }; })
+      getJSON('/streams-data.json').catch(function () { return { streams: [] }; }),
+      getJSON('/app-home-data.json').catch(function () { return {}; })
     ]).then(function (all) {
-      var events = all[0], results = all[1], streams = all[2].streams || [];
-      var live = events.filter(function (x) { var p = eventPhase(x, today); return p === 'upcoming' || p === 'now'; });
-      var html = '<div class="intro"><p class="eyebrow">Your Southwest community</p><h1>Let’s bowl.</h1>' +
-        '<p>Tournaments, results, and your next game.</p></div>';
-
-      // 1. Updates — one compact line; the details open in a dialog
-      currentNotices = live.filter(function (x) { return x.e.alert; });
-      if (currentNotices.length) {
-        html += '<button class="noticebtn" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
-          '<span>' + currentNotices.length + ' tournament update' + (currentNotices.length === 1 ? '' : 's') + '</span>' + CHEV + '</button>';
-      }
-
-      // 2. Featured: the event with the soonest open entry deadline,
-      //    otherwise the nearest event. Never "how to enter" once started.
-      var open = live.map(function (x) { return { x: x, st: entryStatus(x, today) }; })
-        .filter(function (o) { return o.st && o.st.kind === 'open'; })
-        .sort(function (a, b) { return a.st.close < b.st.close ? -1 : a.st.close > b.st.close ? 1 : 0; });
-      var feat = open.length ? open[0].x : live[0];
-      if (feat) {
-        var e = feat.e, st = entryStatus(feat, today), phase = eventPhase(feat, today);
-        var kicker = open.length ? 'Next to enter' : phase === 'now' ? 'Today' : 'Next tournament';
-        var line = st && st.kind === 'open' ? 'Entries close <b>' + esc(fmt(st.close, { month: 'long', day: 'numeric' })) + '</b>'
-          : st && st.kind === 'today' ? esc(st.label)
-          : st ? esc(st.label) : e.time ? esc(e.time) : '';
-        html += '<section aria-labelledby="h-feat"><article class="feature"><div class="feature__body">' +
-          '<div class="feature__top"><span class="eyebrow">' + esc(kicker) + '</span>' +
-          (feat.dates ? '<span class="feature__when">' + esc(dateRangeLabel(feat.dates)) + '</span>' : '') + '</div>' +
-          '<div class="feature__main">' + dateBlock(feat, true) + '<div><h2 class="feature__title" id="h-feat">' + esc(feat.short) + '</h2>' +
-          (feat.clubLabel ? '<p class="feature__venue">' + esc(feat.clubLabel) + '</p>' : '') + '</div></div>' +
-          (line ? '<p class="feature__line">' + line + '</p>' : '') + '</div>' +
-          '<div class="feature__foot"><a class="btn btn--split" href="/app/events/' + encodeURIComponent(feat.id) + '">View tournament' + icon('chev') + '</a>' +
-          saveBtn(feat.id, feat.short) + '</div></article></section>';
-      }
-
-      // 3. On the calendar
-      var soon = live.filter(function (x) { return x !== feat; }).slice(0, 3);
-      if (soon.length) {
-        html += '<section class="section" aria-labelledby="h-soon">' + sectionHead('h-soon', 'On the calendar', '/app/events') +
-          '<ul class="list">' + soon.map(function (x) { return eventRow(x, today); }).join('') + '</ul></section>';
-      }
-
-      // 4. Recent results
-      if (results.length) {
-        html += '<section class="section" aria-labelledby="h-res">' + sectionHead('h-res', 'Recent results', '/app/results') +
-          championPanel(results[0]) + '</section>';
-      }
-
-      // 5. SW TV — the next scheduled broadcast (replaced by LIVE when YouTube says so)
-      var nextStream = streams.filter(function (s) { return s.date >= today; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
-      html += '<section class="section" aria-labelledby="h-tv">' + sectionHead('h-tv', 'On SW TV', '/app/watch', 'Watch') +
-        '<ul class="rows"><li id="home-live">' +
-        (nextStream
-          ? '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="row__title"><b>' + esc(nextStream.title) + '</b></span>' +
-            '<span class="row__meta">Scheduled broadcast · ' + esc(nextStream.date === today ? 'Today' : fmt(nextStream.date, { weekday: 'short', month: 'short', day: 'numeric' })) +
-            (nextStream.venue ? ' · ' + esc(nextStream.venue) : '') + '</span></span>' + CHEV + '</a>'
-          : '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="row__title"><b>Recent videos and replays</b></span>' +
-            '<span class="row__meta">Lessons and past livestreams from SW TV</span></span>' + CHEV + '</a>') +
-        '</li></ul></section>';
-
-      view.innerHTML = html;
-      checkLiveForHome();
+      var data = { events: all[0], results: all[1], streams: all[2].streams || [], story: all[3].feature || null, today: today };
+      drawHome(data);
+      // Saving or unsaving anywhere on Home redraws it straight away
+      view.addEventListener('saved-change', function (ev) {
+        var y = window.scrollY;
+        drawHome(data);
+        window.scrollTo(0, y);
+        if (ev.detail && !ev.detail.on) { var h = document.getElementById('h-next'); if (h) h.focus({ preventScroll: true }); }
+      });
+      checkLiveForHome(data);
     });
   }
+
+  function drawHome(d) {
+    var today = d.today;
+    var live = d.events.filter(function (x) { var p = eventPhase(x, today); return p === 'upcoming' || p === 'now'; });
+    var ids = saved();
+    var mine = d.events.filter(function (x) { return ids.indexOf(x.id) >= 0; });
+    var mineNext = mine.filter(function (x) { return live.indexOf(x) >= 0; });   // already in date order
+
+    // 1. Greeting
+    var html = '<div class="intro"><h1>Your Southwest.</h1><p>On the green. In the game. Together.</p></div>';
+
+    // 2. A cancellation or venue change on something you saved comes first
+    var myAlerts = mineNext.filter(isCritical);
+    html += myAlerts.map(function (x) {
+      return '<a class="alert" href="/app/events/' + encodeURIComponent(x.id) + '">' + icon('alert') +
+        '<span><b>' + esc(x.e.alertLabel || 'Update') + ' · ' + esc(x.short) + '</b><span class="alert__text">' + esc(x.e.alert) + '</span></span></a>';
+    }).join('');
+    currentNotices = live.filter(function (x) { return x.e.alert; });
+    var others = currentNotices.filter(function (x) { return myAlerts.indexOf(x) < 0; });
+    d.otherNotices = others.length ? '<button class="noticebtn noticebtn--quiet" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
+      '<span>' + others.length + (myAlerts.length ? ' more' : '') + ' tournament update' + (others.length === 1 ? '' : 's') + '</span>' + CHEV + '</button>' : '';
+
+    // 3. Community story — one photograph, one headline, one action
+    var st = d.story;
+    if (st && st.headline) {
+      var ph = st.photo || {};
+      html += '<article class="story" aria-labelledby="h-story">' +
+        (safeUrl(ph.src) ? '<figure class="story__fig"><img class="story__img" src="' + esc(ph.src) + '" alt="' + esc(ph.alt || '') + '"' +
+          (ph.focus ? ' style="object-position:' + esc(ph.focus) + '"' : '') + ' data-hide-on-error>' +
+          '</figure>' : '') +
+        (st.eyebrow ? '<p class="eyebrow">' + esc(st.eyebrow) + '</p>' : '') +
+        '<h2 class="story__title" id="h-story">' + esc(st.headline) + '</h2>' +
+        (st.summary ? '<p class="story__text">' + esc(st.summary) + '</p>' : '') +
+        (st.champions && st.champions.length
+          ? '<button class="textlink" type="button" data-story aria-haspopup="dialog">' + esc(st.actionLabel || 'Read more') + icon('chev', 'i--sm') + '</button>'
+          : st.source && safeUrl(st.source.url) ? '<a class="textlink" href="' + esc(st.source.url) + '" target="_blank" rel="noopener">' + esc(st.actionLabel || 'Read more') + icon('ext', 'i--sm') + '</a>' : '') +
+        '</article>';
+    }
+
+    // 4. Your next games — up to two upcoming saved events
+    html += '<section class="section" aria-labelledby="h-next"><div class="section__head"><h2 class="section__title" id="h-next" tabindex="-1">Your next games</h2>' +
+      (mine.length ? '<a class="section__more" href="/app/events?show=saved">View saved (' + mine.length + ')' + icon('chev', 'i--sm') + '</a>' : '') + '</div>';
+    if (mineNext.length) {
+      html += '<ul class="list">' + mineNext.slice(0, 2).map(function (x) { return gameRow(x, today); }).join('') + '</ul>' +
+        (mineNext.length > 2 ? '<p class="muted">+ ' + (mineNext.length - 2) + ' more saved</p>' : '');
+    } else if (mine.length) {
+      html += '<div class="invite"><b>No upcoming saved events.</b><p>Your saved events have all been played.</p>' +
+        '<a class="btn btn--split" href="/app/events?show=saved">View saved events' + icon('chev') + '</a></div>';
+    } else {
+      html += '<div class="invite"><b>Keep your next games here.</b><p>Tap the bookmark on any tournament and it appears here, with its date and entry deadline.</p>' +
+        '<a class="btn btn--split" href="/app/events">Find an event' + icon('chev') + '</a>' +
+        '<p class="invite__small">Saving doesn’t register you or turn on reminders.</p></div>';
+    }
+    html += '</section>';
+
+    // 5. Around the greens — the actual latest published result
+    var r = d.results[0];
+    if (r) {
+      var f = firsts(r), w = f[0];
+      var label = !w ? '' : f.length === 1 ? (w.where ? w.where + ' champions' : 'Champions') : w.where + ' winners';
+      html += '<section class="section" aria-labelledby="h-greens">' + sectionHead('h-greens', 'Around the greens', '/app/results', 'All results') +
+        '<a class="achieve" href="/app/results/' + encodeURIComponent(r.id) + '">' +
+        (w && w.photo ? '<span class="achieve__frame"><img class="achieve__img" src="' + esc(w.photo) + '" alt="' + esc(w.who) + '" loading="lazy" data-hide-on-error></span>' : '') +
+        '<span class="achieve__body"><span class="eyebrow">' + esc(label || 'Latest result') + '</span>' +
+        (w ? '<span class="achieve__who">' + esc(w.who) + '</span>' : '') +
+        '<span class="achieve__event">' + esc(shortTitle(r.t.title)) + '</span>' +
+        (r.t.meta ? '<span class="achieve__meta">' + esc(r.t.meta) + '</span>' : '') +
+        (f.length > 1 ? '<span class="achieve__meta">+ ' + (f.length - 1) + ' more division winner' + (f.length > 2 ? 's' : '') + '</span>' : '') +
+        '</span></a></section>';
+    }
+
+    // 6. This week — one timely item, only when there is one
+    html += '<div id="this-week">' + thisWeek(d, d.liveVideo) + '</div>';
+
+    // 7. Small secondary links (existing in-app routes)
+    html += '<nav class="minor" aria-label="Get started"><a href="/app/more/clubs">Find a club' + icon('chev', 'i--sm') + '</a>' +
+      '<a href="/app/page/learnmore">Learn to bowl' + icon('chev', 'i--sm') + '</a></nav>';
+
+    view.innerHTML = html;
+    // Text and actions must still work when a photo doesn't load
+    view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) {
+      img.addEventListener('error', function () { (img.closest('.story__fig') || img.closest('.achieve__frame') || img).hidden = true; });
+    });
+    var sb = view.querySelector('[data-story]');
+    if (sb) sb.addEventListener('click', function () { storyDialog(d.story); });
+  }
+
+  // A saved event on Home: date, club, the real entry status, any alert
+  function gameRow(x, today) {
+    var e = x.e, st = entryStatus(x, today);
+    return '<li class="evrow evrow--game">' + dateBlock(x) +
+      '<div class="evrow__main"><span class="evrow__title">' + esc(x.short) + '</span>' +
+      '<span class="evrow__meta">' + esc([dateRangeLabel(x.dates, true), x.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
+      (st ? statusLine(st) : '<span class="status">' + icon('info') + 'Entry deadline not published</span>') +
+      (e.alert ? '<span class="status status--update">' + icon('bell') + esc(e.alertLabel || 'Update') + '</span>' : '') +
+      '<a class="textlink" href="/app/events/' + encodeURIComponent(x.id) + '">View event<span class="sr-only">: ' + esc(x.short) + '</span>' + icon('chev', 'i--sm') + '</a>' +
+      '</div>' + saveBtn(x.id, x.short) + '</li>';
+  }
+
+  // Priority: a stream YouTube says is live › an entry deadline in the next
+  // 7 days › a scheduled broadcast in the next 7 days › an event today.
+  function thisWeek(d, liveVideo) {
+    var today = d.today, horizon = addDays(today, 7), item = null;
+    if (liveVideo) {
+      item = { href: '/app/watch', tag: '<span class="live-tag">LIVE</span>', title: liveVideo.title, meta: 'Streaming now on SW TV' };
+    }
+    if (!item) {
+      var dl = d.events.map(function (x) { return { x: x, st: entryStatus(x, today) }; })
+        .filter(function (o) { return o.st && o.st.kind === 'open' && o.st.close <= horizon; })
+        .sort(function (a, b) { return a.st.close < b.st.close ? -1 : a.st.close > b.st.close ? 1 : 0; })[0];
+      if (dl) item = { href: '/app/events/' + encodeURIComponent(dl.x.id), date: dl.st.close, kicker: 'Entry deadline',
+        title: dl.x.short, meta: 'Entries close ' + fmt(dl.st.close, { weekday: 'long', month: 'long', day: 'numeric' }) + (dl.x.clubLabel ? ' · ' + dl.x.clubLabel : '') };
+    }
+    if (!item) {
+      var s = d.streams.filter(function (s) { return s.date >= today && s.date <= horizon; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
+      if (s) item = { href: '/app/watch', date: s.date, kicker: 'Scheduled broadcast', title: s.title,
+        meta: (s.date === today ? 'Today' : fmt(s.date, { weekday: 'long', month: 'long', day: 'numeric' })) + (s.venue ? ' · ' + s.venue : '') + ' · not live yet' };
+    }
+    if (!item) {
+      var t = d.events.filter(function (x) { return eventPhase(x, today) === 'now'; })[0];
+      if (t) item = { href: '/app/events/' + encodeURIComponent(t.id), date: today, kicker: 'Today', title: t.short,
+        meta: [t.clubLabel, startTime(t.e.time)].filter(Boolean).join(' · ') };
+    }
+    var notes = d.otherNotices || '';
+    if (!item && !notes) return '';
+    return '<section class="section" aria-labelledby="h-week">' + sectionHead('h-week', 'This week') +
+      (item ? '<a class="week" href="' + esc(item.href) + '">' +
+      (item.date ? '<span class="dateblock" aria-hidden="true"><small>' + fmt(item.date, { month: 'short' }) + '</small><b>' + fmt(item.date, { day: 'numeric' }) + '</b></span>' : icon('tv')) +
+      '<span class="week__body">' + (item.tag || '<span class="eyebrow">' + esc(item.kicker) + '</span>') +
+      '<span class="week__title">' + esc(item.title) + '</span><span class="week__meta">' + esc(item.meta) + '</span></span>' + CHEV + '</a>' : '') +
+      notes + '</section>';
+  }
+
+  function storyDialog(st) {
+    openDialog(st.headline, (st.summary ? '<p>' + esc(st.summary) + '</p>' : '') +
+      '<ul class="champs">' + (st.champions || []).map(function (c) {
+        return '<li>' + (safeUrl(c.photo) ? '<img src="' + esc(c.photo) + '" alt="' + esc(c.alt || c.names) + '" loading="lazy">' : '') +
+          '<span><span class="eyebrow">' + esc(c.title) + '</span><b>' + esc(c.names) + '</b></span></li>';
+      }).join('') + '</ul>' +
+      (st.note ? '<p class="muted">' + esc(st.note) + '</p>' : '') +
+      (st.source && safeUrl(st.source.url) ? '<a class="btn btn--ghost btn--block" href="' + esc(st.source.url) + '" target="_blank" rel="noopener">' + icon('ext') + esc(st.source.label || 'Read more') + '</a>' : ''));
+  }
+
   // Turn a website link into the matching app screen where there is one.
   function appLink(u) {
     u = safeUrl(u);
@@ -617,9 +743,19 @@
             : state('empty', 'No events match', filtered ? 'Try a different search or clear the filters.' : '',
                 filtered ? '<button class="btn btn--ghost" type="button" data-clear>Clear filters</button>' : '');
         } else {
-          out.innerHTML = '<p class="count" aria-live="polite">' + list.length + ' event' + (list.length === 1 ? '' : 's') +
-            (filtered ? ' <button class="clear" type="button" data-clear>Clear filters</button>' : '') + '</p>' +
-            '<ul class="list">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>';
+          var head = '<p class="count" aria-live="polite">' + list.length + (show === 'saved' ? ' saved event' : ' event') + (list.length === 1 ? '' : 's') +
+            (filtered ? ' <button class="clear" type="button" data-clear>Clear filters</button>' : '') + '</p>';
+          if (show === 'saved') {
+            // Upcoming saves first; played ones stay available under Past
+            var up = list.filter(function (x) { return eventPhase(x, today) !== 'past'; });
+            var past = list.filter(function (x) { return eventPhase(x, today) === 'past'; }).reverse();
+            out.innerHTML = head +
+              (up.length ? '<ul class="list">' + up.map(function (x) { return eventRow(x, today); }).join('') + '</ul>'
+                : '<p class="muted" style="margin:12px 0">No upcoming saved events.</p>') +
+              (past.length ? '<h2 class="group-title" id="h-past">Past</h2><ul class="list" aria-labelledby="h-past">' + past.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '');
+          } else {
+            out.innerHTML = head + '<ul class="list">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>';
+          }
         }
         var u = new URLSearchParams();
         if (show !== 'upcoming') u.set('show', show);
@@ -1006,14 +1142,12 @@
           });
       });
   }
-  function checkLiveForHome() {
+  function checkLiveForHome(d) {
     ytData().then(function (vids) {
       var live = vids.filter(function (v) { return v.state === 'live'; })[0];
-      var slot = document.getElementById('home-live');
-      if (live && slot) {
-        slot.innerHTML = '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="live-tag">LIVE</span>' +
-          '<span class="row__title" style="margin-top:4px"><b>' + esc(live.title) + '</b></span><span class="row__meta">Streaming now on SW TV</span></span>' + CHEV + '</a>';
-      }
+      var slot = document.getElementById('this-week');
+      d.liveVideo = live || null;
+      if (live && slot) slot.innerHTML = thisWeek(d, live);
     }).catch(function () {});
   }
   function fmtTime(isoStr, withTime) {
@@ -1108,7 +1242,7 @@
           return linkRow(href, '', l.label, '', { ext: true, extText: isExternal(href) ? 'External' : 'Website' });
         }
         var n = saved().length;
-        var html = '<div class="intro" style="margin-bottom:0"><h1>Your Southwest</h1><p>Learn. Play. Compete. Belong.</p></div>' +
+        var html = '<div class="intro" style="margin-bottom:0"><h1>More</h1><p>Settings, clubs and division information.</p></div>' +
           '<section class="settings" aria-labelledby="h-app"><h2 id="h-app">Appearance</h2><p>Choose a look that feels right.</p>' + themeChoices() +
           '<h2 style="margin-top:24px" id="h-text">Text size</h2><p>Makes all the text in the app bigger.</p>' + textChoices() + '</section>';
         html += '<ul class="rows">' +
@@ -1348,14 +1482,7 @@
     if (sv) {
       ev.preventDefault();
       var sid = sv.getAttribute('data-save');
-      var on = toggleSaved(sid);
-      document.querySelectorAll('[data-save="' + sid + '"]').forEach(function (b) {
-        b.setAttribute('aria-pressed', on);
-        var span = b.querySelector('span');
-        if (span) span.textContent = on ? 'Saved' : 'Save';
-        else b.setAttribute('aria-label', (on ? 'Saved: ' : 'Save ') + (b.getAttribute('data-title') || ''));
-      });
-      view.dispatchEvent(new CustomEvent('saved-change'));
+      setSaved(sid, !isSaved(sid), sv.getAttribute('data-title') || '');
       return;
     }
     // Appearance and text size

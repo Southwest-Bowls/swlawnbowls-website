@@ -139,14 +139,12 @@ svg { flex: none; }
    it would take too much of a phone screen. */
 .topbar {
   background: var(--bg);
-  padding: calc(var(--s4) + var(--safe-t)) calc(var(--gutter) + var(--safe-r)) var(--s3) calc(var(--gutter) + var(--safe-l));
+  padding: calc(var(--s3) + var(--safe-t)) calc(var(--gutter) + var(--safe-r)) var(--s3) calc(var(--gutter) + var(--safe-l));
 }
 .topbar__inner { max-width: calc(640px - 2 * var(--gutter)); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .brand { display: flex; align-items: center; gap: 18px; min-width: 0; text-decoration: none; color: var(--heading); }
-.logo-plate { background: #fff; padding: 8px; border-radius: var(--r-control); line-height: 0; flex: none; }
+.logo-plate { background: #fff; padding: 12px; border-radius: var(--r-control); line-height: 0; flex: none; }
 .logo-plate img { height: 75px; width: auto; }   /* guide: never below 75px on screen */
-.brand__name { font-size: 1.25rem; font-weight: 700; line-height: 1.25; color: var(--heading); }
-.brand__tag { display: block; margin-top: var(--s2); font-size: .6875rem; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--text); }
 
 .iconbtn {
   display: inline-grid; place-items: center; flex: none;
@@ -281,6 +279,72 @@ svg { flex: none; }
 .chev { color: var(--text-2); }
 .ext { font-size: var(--fs-xs); color: var(--text-2); white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; }
 .thumb { width: 64px; height: 64px; border-radius: var(--r-control); object-fit: cover; flex: none; background: var(--subtle); }
+
+/* ---------- Home ----------------------------------------------------
+   Varied on purpose: a broad photo story, compact personal rows, a photo
+   + caption result, quiet text links. Not every section is a card. */
+.alert {
+  display: flex; gap: var(--s3); align-items: flex-start; margin-bottom: var(--s3);
+  padding: var(--s3) var(--s4); border-radius: var(--r-control);
+  background: var(--subtle); border-left: 4px solid var(--brand-red); color: var(--text); text-decoration: none; font-size: var(--fs-sm);
+}
+:root[data-theme="dark"] .alert { border-left-color: var(--sun-orange); }
+.alert > .i { color: var(--brand-red); margin-top: 1px; }
+:root[data-theme="dark"] .alert > .i { color: var(--sun-orange); }
+.alert b { display: block; font-size: var(--fs-md); }
+.alert__text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.noticebtn--quiet { margin: var(--s3) 0 0; }
+
+.story { margin-top: var(--s2); }
+.story__fig { margin: 0 0 var(--s4); }
+.story__img { width: 100%; height: 164px; object-fit: cover; border-radius: 18px; background: var(--subtle); }
+.story__title { font-size: 1.625rem; line-height: 1.2; letter-spacing: -.02em; margin-top: 6px; }
+.story__text { color: var(--text-2); margin-top: var(--s2); }
+
+.textlink {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 44px;
+  padding: 0; border: 0; background: none; cursor: pointer;
+  color: var(--link); font-weight: 700; font-size: .9375rem; text-decoration: none;
+}
+
+.evrow--game { align-items: flex-start; padding-top: var(--s3); }
+.evrow--game .evrow__main { padding-top: 0; padding-bottom: 0; }
+.evrow--game .dateblock { margin-top: 2px; }
+.evrow--game .textlink { margin-top: 2px; font-size: var(--fs-sm); }
+
+.invite { background: var(--subtle); border-radius: var(--r-panel); padding: 18px; margin-top: var(--s2); }
+.invite b { display: block; font-size: var(--fs-lg); }
+.invite p { color: var(--text-2); font-size: .9375rem; margin-top: 6px; }
+.invite .btn { margin-top: var(--s4); }
+.invite__small { font-size: var(--fs-sm) !important; }
+
+.achieve { display: flex; gap: var(--s4); align-items: center; margin-top: var(--s2); color: var(--text); text-decoration: none; }
+.achieve__frame { width: 136px; height: 176px; flex: none; overflow: hidden; border-radius: var(--r-control); background: var(--subtle); }
+/* Result photos are taken from a distance; a gentle zoom keeps the people, not the signage, in view */
+.achieve__img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; transform: scale(1.45); transform-origin: 50% 42%; }
+.achieve__body { min-width: 0; display: block; }
+.achieve__who { display: block; font-size: var(--fs-lg); font-weight: 700; line-height: 1.25; color: var(--heading); margin-top: 6px; overflow-wrap: anywhere; }
+.achieve__event { display: block; font-weight: 700; margin-top: 6px; }
+.achieve__meta { display: block; font-size: var(--fs-sm); color: var(--text-2); margin-top: 2px; }
+
+.week { display: flex; align-items: center; gap: var(--s3); min-height: 72px; color: var(--text); text-decoration: none; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: var(--s3) 0; margin-top: var(--s2); }
+.week__body { flex: 1; min-width: 0; display: block; }
+.week__title { display: block; font-weight: 700; margin-top: 2px; overflow-wrap: anywhere; }
+.week__meta { display: block; font-size: var(--fs-sm); color: var(--text-2); margin-top: 2px; }
+
+.minor { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s2) var(--s5); margin-top: var(--s8); padding-top: var(--s4); border-top: 1px solid var(--line); }
+.minor a { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; color: var(--link); font-weight: 700; text-decoration: none; }
+
+.champs { list-style: none; margin: var(--s4) 0 0; padding: 0; display: grid; gap: var(--s4); }
+.champs li { display: flex; gap: var(--s3); align-items: center; }
+.champs img { width: 88px; height: 88px; border-radius: var(--r-control); object-fit: cover; object-position: 50% 25%; flex: none; }
+.champs b { display: block; font-size: var(--fs-lg); }
+
+@media (max-width: 370px) {
+  .story__img { height: 156px; }
+  .story__title { font-size: 1.5rem; }
+  .achieve__frame { width: 112px; height: 148px; }
+}
 
 /* ---------- Results panels ----------------------------------------- */
 .panel { display: block; background: var(--subtle); border-radius: var(--r-panel); padding: 18px; color: var(--text); text-decoration: none; }
@@ -472,9 +536,17 @@ dialog.dlg::backdrop { background: var(--backdrop); }
 
 .toast {
   position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + var(--safe-b) + 16px); z-index: 40;
-  transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px);
-  background: var(--selected); color: var(--selected-ink); padding: 10px 16px; border-radius: var(--r-control);
+  transform: translateX(-50%); width: max-content; max-width: min(440px, calc(100% - 32px));
+  display: flex; align-items: center; gap: var(--s3);
+  background: var(--selected); color: var(--selected-ink); padding: 8px 8px 8px 16px; border-radius: var(--r-control);
   font-size: var(--fs-sm);
+}
+.toast[hidden] { display: none; }
+.toast__text { flex: 1; min-width: 0; padding: 4px 0; }
+.toast__text span { display: block; margin-top: 2px; }
+.toast__undo {
+  flex: none; min-height: 44px; min-width: 64px; padding: 0 var(--s3); border: 0; border-radius: 10px; cursor: pointer;
+  background: transparent; color: inherit; font-weight: 700; text-decoration: underline;
 }
 
 /* ---------- Bottom tab bar ----------------------------------------- */
@@ -503,7 +575,6 @@ html[data-text="xlarge"] .tabbar a { font-size: .6875rem; }
 @media (max-width: 360px) {
   :root { --gutter: 16px; }
   .brand { gap: 10px; }
-  .brand__name { font-size: 1.125rem; }
   .feature__body { padding: var(--s4); }
   .feature__foot { padding: 0 var(--s4) var(--s4); }
   .feature__main { gap: var(--s3); }

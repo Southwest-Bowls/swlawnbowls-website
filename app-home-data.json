@@ -1,0 +1,39 @@
+{
+  "_readme": "The community story at the top of the phone app's Home (/app). Edit this file to change it. Every line must be supported by the source story linked in 'source'. Photos must already be in photos/ (never hotlink). The summary sits under the photo and doubles as its caption, so name who is pictured. 'focus' is where the photo is anchored when it is cropped to a wide strip: keep faces and medals in view. Remove the whole 'feature' block to hide the story.",
+  "feature": {
+    "eyebrow": "Our people · National champions",
+    "headline": "Three national titles for Southwest.",
+    "summary": "Javier Goez and Angel Gomez, pictured, won the Men’s Pairs: one of three 2026 national titles for Southwest Division bowlers.",
+    "photo": {
+      "src": "/photos/home/nationals-2026-mens-pairs-goez-gomez.jpg",
+      "alt": "Javier Goez and Angel Gomez with their 2026 national championship certificates",
+      "focus": "50% 18%"
+    },
+    "actionLabel": "Meet the champions",
+    "champions": [
+      {
+        "title": "Women’s Singles",
+        "names": "Anne Nunes",
+        "photo": "/photos/home/nationals-2026-womens-singles-nunes.jpg",
+        "alt": "Anne Nunes, 2026 Women’s Singles National Champion"
+      },
+      {
+        "title": "Men’s Singles",
+        "names": "Charlie Herbert",
+        "photo": "/photos/home/nationals-2026-mens-singles-herbert.jpg",
+        "alt": "Charlie Herbert, 2026 Men’s Singles National Champion"
+      },
+      {
+        "title": "Men’s Pairs",
+        "names": "Javier Goez & Angel Gomez",
+        "photo": "/photos/home/nationals-2026-mens-pairs-goez-gomez.jpg",
+        "alt": "Javier Goez and Angel Gomez, 2026 Men’s Pairs National Champions"
+      }
+    ],
+    "note": "Congratulations also to Women’s Pairs champions Anna Witt and Rebecca Nguyen of the Central Division.",
+    "source": {
+      "label": "The full story on the website",
+      "url": "/home-feature"
+    }
+  }
+}
