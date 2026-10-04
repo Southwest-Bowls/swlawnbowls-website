@@ -1,0 +1,60 @@
+{
+  "id": "app",
+  "title": "Southwest Bowls on your phone",
+  "subtitle": "Add the website to your home screen and it opens like an app — no app store, no download, nothing to update.",
+  "sections": [
+    {
+      "type": "prose",
+      "heading": "What you get",
+      "body": [
+        "A Southwest Bowls icon on your phone that opens straight to the tournaments, results and season agenda, full screen, without the browser around it.",
+        "It is always up to date: the moment a result or a tournament is published on the website, it is in the app too.",
+        "Pages you have already opened keep working when the signal at the green is poor."
+      ]
+    },
+    {
+      "type": "list",
+      "heading": "iPhone or iPad",
+      "ordered": true,
+      "items": [
+        "Open swlawnbowls.org in Safari.",
+        "Tap the Share button (the square with an arrow pointing up) at the bottom of the screen.",
+        "Scroll down and tap “Add to Home Screen”.",
+        "Tap “Add” in the top corner. The Southwest Bowls icon appears on your home screen."
+      ]
+    },
+    {
+      "type": "list",
+      "heading": "Android",
+      "ordered": true,
+      "items": [
+        "Open swlawnbowls.org in Chrome.",
+        "Tap “Add SW Bowls to your phone” at the bottom of the home page, or open the ⋮ menu and tap “Install app” (on some phones it says “Add to Home screen”).",
+        "Tap “Install”. The Southwest Bowls icon appears with your other apps."
+      ]
+    },
+    {
+      "type": "list",
+      "heading": "Computer",
+      "ordered": true,
+      "items": [
+        "Open swlawnbowls.org in Chrome or Edge.",
+        "Click the install icon at the right-hand end of the address bar, then “Install”."
+      ]
+    },
+    {
+      "type": "prose",
+      "heading": "Removing it",
+      "body": [
+        "Delete it like any other app: press and hold the icon, then choose Remove (iPhone) or Uninstall (Android)."
+      ]
+    },
+    {
+      "type": "buttons",
+      "items": [
+        { "label": "Go to the home page", "url": "/" },
+        { "label": "2026 tournaments", "url": "/2026-tournaments-events" }
+      ]
+    }
+  ]
+}

@@ -26,6 +26,14 @@
 
   if (document.getElementById('swd-site-header')) return;   // already added
 
+  // Make every page installable as an app (manifest, icon, offline helper).
+  if (!document.querySelector('script[src="/pwa.js"]')) {
+    var pwa = document.createElement('script');
+    pwa.src = '/pwa.js';
+    pwa.defer = true;
+    document.head.appendChild(pwa);
+  }
+
   var CSS = [
     ':root{--swdnav-ink:#172033;--swdnav-soft:#4a5568;--swdnav-navy:#1a365d;',
     '--swdnav-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;',
