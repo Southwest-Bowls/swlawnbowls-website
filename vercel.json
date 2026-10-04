@@ -35,6 +35,286 @@
       "source": "/cl-ld1",
       "destination": "/ie-ladies-day-results",
       "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-amador-martinez-mixed-triples",
+      "destination": "/event?id=martinez-triples-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-bill-hiscock-2-bowl-triples",
+      "destination": "/event?id=bill-hiscock-mixed-triples-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-cambria-pairs",
+      "destination": "/event?id=cambria-open-pairs-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-crowncitycup",
+      "destination": "/event?id=coronado-crown-city-cup-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-maccabee-pairs",
+      "destination": "/event?id=maccabee-pairs-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-oaks-north-mixed-triples",
+      "destination": "/event?id=oaks-north-mixed-triples-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-ralph-ecton-triples",
+      "destination": "/event?id=ralph-ecton-triples-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-swd-mens-socal-rinks",
+      "destination": "/event?id=mens-southern-california-rinks-championship-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-swd-mixed-pairs",
+      "destination": "/event?id=mixed-pairs-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-swd-women-cal-5s",
+      "destination": "/event?id=womens-cal-5s-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-swd-womens-heidi-rittner-australian-pairs",
+      "destination": "/event?id=womens-heidi-rittner-australian-pairs-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-swd-womens-vetnovice-pairs",
+      "destination": "/event?id=womens-vet-novice-pairs-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-swdmumma-mixed-pairs",
+      "destination": "/event?id=mumma-mixed-pairs-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026-the-groves-mixed-triples",
+      "destination": "/event?id=groves-mixed-triples-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/2026newportrinks",
+      "destination": "/event?id=newport-911-mixed-rinks-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/all-comers-open-pairs-2026",
+      "destination": "/event?id=all-comers-open-pairs-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/fossati-and-friends26",
+      "destination": "/event?id=fossati-friends-womens-triples-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-izzie-forbes-vetnovice-triples26",
+      "destination": "/event?id=izzie-forbes-vet-novice-triples-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-mens-cary-macdonald-3-bowl-pairs26",
+      "destination": "/event?id=cary-macdonald-mens-pairs-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-mens-five-man-allstar26",
+      "destination": "/event?id=mens-5-man-all-star-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-mens-murray-allison-singles26",
+      "destination": "/event?id=mens-murray-allison-singles-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-mens-novice-pairs26",
+      "destination": "/event?id=mens-novice-pairs-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-mens-novice-singles26",
+      "destination": "/event?id=mens-novice-singles-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-mens-so-cal-triples26",
+      "destination": "/event?id=mens-so-california-triples-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-mens-vetnovicepairs26",
+      "destination": "/event?id=mens-vet-novice-mix-match-pairs-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-usplaydownsmenspairs26",
+      "destination": "/event?id=mens-us-nationals-pairs-playdowns-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-usplaydownsmenssingles26",
+      "destination": "/event?id=mens-us-nationals-singles-playdowns-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-usplaydownswomenspairs26",
+      "destination": "/event?id=womens-us-nationals-pairs-playdowns-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-women-california-bears26",
+      "destination": "/event?id=womens-ca-bears-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-womens-division-rinks26",
+      "destination": "/event?id=womens-division-rinks-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swd-womens-vetnovice-triples26",
+      "destination": "/event?id=womens-vet-novice-triples-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/swdwomensplaydownssingles26",
+      "destination": "/event?id=womens-us-nationals-singles-playdowns-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2026swo",
+      "destination": "/event?id=mens-southwest-division-open-2026",
+      "permanent": false
+    },
+    {
+      "source": "/swd-getaway26",
+      "destination": "/event?id=open-2-2-getaway-rinks-2026",
+      "permanent": false
+    },
+    {
+      "source": "/swd-mens-pairs26",
+      "destination": "/event?id=mens-southwest-division-open-2026",
+      "permanent": false
+    },
+    {
+      "source": "/swd-mens-rinks26",
+      "destination": "/event?id=mens-southwest-division-open-2026",
+      "permanent": false
+    },
+    {
+      "source": "/swd-mens-singles26",
+      "destination": "/event?id=mens-southwest-division-open-2026",
+      "permanent": false
+    },
+    {
+      "source": "/swd-womens-pairs26",
+      "destination": "/event?id=womens-sw-open-2026",
+      "permanent": false
+    },
+    {
+      "source": "/swd-womens-rinks26",
+      "destination": "/event?id=womens-sw-open-2026",
+      "permanent": false
+    },
+    {
+      "source": "/swd-womens-singles26",
+      "destination": "/event?id=womens-sw-open-2026",
+      "permanent": false
+    },
+    {
+      "source": "/2023-results-old",
+      "destination": "/2023-results",
+      "permanent": false
+    },
+    {
+      "source": "/2024results-old",
+      "destination": "/2024results",
+      "permanent": false
+    },
+    {
+      "source": "/2025-tournament-results-old",
+      "destination": "/2025-tournament-results",
+      "permanent": false
+    },
+    {
+      "source": "/results-2022-old",
+      "destination": "/results-2022",
+      "permanent": false
+    },
+    {
+      "source": "/home",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/home-two",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/live-scoring",
+      "destination": "/2026-tournaments-events",
+      "permanent": false
+    },
+    {
+      "source": "/schedule",
+      "destination": "/2026-season-agenda",
+      "permanent": false
+    },
+    {
+      "source": "/ladies-day-2021/:post*",
+      "destination": "/ladies-day-2021",
+      "permanent": false
+    },
+    {
+      "source": "/ladies-day-2022/:post*",
+      "destination": "/ladies-day-2022",
+      "permanent": false
+    },
+    {
+      "source": "/ladies-day-2023/:post*",
+      "destination": "/ladies-day-2023",
+      "permanent": false
+    },
+    {
+      "source": "/ladies-day-2024/:post*",
+      "destination": "/ladies-day-2024",
+      "permanent": false
+    },
+    {
+      "source": "/ladies-day-2025/:post*",
+      "destination": "/ladies-day-2025",
+      "permanent": false
+    },
+    {
+      "source": "/ladies-day-2026/:post*",
+      "destination": "/ladies-day-2026",
+      "permanent": false
+    },
+    {
+      "source": "/cl-ld1/:post*",
+      "destination": "/cl-ld1",
+      "permanent": false
+    },
+    {
+      "source": "/2026-tournaments-events/:slug*",
+      "destination": "/2026-tournaments-events",
+      "permanent": false
     }
   ],
   "rewrites": [
