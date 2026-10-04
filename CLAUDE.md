@@ -111,7 +111,7 @@ Do not re-run `scripts/create-swd-forms.gs` — it would create a second set.
 
 With the forms live, **cutover is the only remaining step**: point
 swlawnbowls.org at this deployment, rebuild the navigation, rewrite the
-hardcoded `swd-google-calendar.vercel.app` links, and retire the subscription.
+hardcoded `swd-google-calendar.vercel.app` links. The Squarespace subscription is being kept as a fallback — do not cancel it.
 
 **Retired pages.** `content/home-two.json`, `live-scoring.json` and
 `schedule.json` carry `"retired": true` and have no route in `vercel.json`.
