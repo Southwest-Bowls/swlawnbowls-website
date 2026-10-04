@@ -7,23 +7,26 @@
    results-data.json and the app shows it the next time it opens.
 
    Screens (all under /app):
-     /app                     Home dashboard
+     /app                     Home
      /app/events              Event list   (?q= &month= &cat= &club= &show=)
-     /app/events/<id>         Event detail (?tab=overview|entries|draw|results)
-     /app/results             Results list (?q= &cat=)
+     /app/events/<id>         Event detail (?tab=overview|entry|entries|draw|results)
+     /app/results             Results list (?q= &cat= &year=)
      /app/results/<id>        Results for one tournament
      /app/watch               Live, scheduled and recent video
-     /app/more                Division information, clubs, settings
+     /app/more                Appearance, division information, clubs
      /app/more/clubs[/<slug>] Club directory
-     /app/more/settings       Text size, saved events, offline copies
+     /app/more/news           News
+     /app/more/settings       Saved events, offline copies
      /app/page/<id>           An information page from content/<id>.json
 
    Rules this file keeps:
    - Dates are worked out in California time (America/Los_Angeles).
    - Entry status comes only from a real deadline. A future event is
      never assumed to be open.
-   - "Live" is shown only when YouTube itself says a stream is live.
+   - A day-level date says "Today". "Live" is shown only when YouTube
+     itself says a stream is live.
    - Saved copies used offline are labelled with when they were saved.
+   - Saving an event is a bookmark on this phone, never an entry.
    ============================================================ */
 (function () {
   'use strict';
@@ -35,10 +38,11 @@
   var FACEBOOK_URL = 'https://www.facebook.com/profile.php?id=61574126130618';
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                 'August', 'September', 'October', 'November', 'December'];
+  var CATS = ["Women's", "Men's", 'Mixed', 'Open'];
 
   var view = document.getElementById('view');
-  var topbar = document.getElementById('topbar');
   var netbar = document.getElementById('netbar');
+  var dlg = document.getElementById('dlg');
 
   /* ---------------------------------------------------------------
      Small helpers
@@ -64,37 +68,96 @@
     } catch (e) { return null; }
   }
   function isExternal(u) { return /^https?:/i.test(u) && u.indexOf(location.origin) !== 0; }
+  function cap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+  function tel(p) { return 'tel:' + String(p).replace(/[^0-9+]/g, ''); }
 
-  var ICON = {
-    chev: '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>',
-    back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>',
-    ext: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
-    cal: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>',
-    pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
-    clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-    people: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/></svg>',
-    fee: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/></svg>',
-    alert: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>',
-    check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>',
-    hourglass: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12M6 21h12M7 3c0 5 10 6 10 9s-10 4-10 9M17 3c0 5-10 6-10 9"/></svg>',
-    lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
-    star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
-    bookmark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>',
-    map: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z"/><path d="M9 4v13M15 7v13"/></svg>',
-    doc: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 17h7"/></svg>',
-    mail: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6 8.5 7 8.5-7"/></svg>',
-    phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg>',
-    globe: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
-    search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
-    trophy: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/></svg>',
-    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
-    tv: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="13" rx="2.5"/><path d="m10 9 5 2.5-5 2.5z"/></svg>',
-    info: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>',
-    gear: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
-    flag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>'
+  // Line icons: one stroke style everywhere (from the design handoff)
+  var PATHS = {
+    chev: '<path d="m9 5 7 7-7 7"/>',
+    back: '<path d="m15 5-7 7 7 7"/>',
+    ext: '<path d="M14 3h7v7m0-7L10 14M9 3H3v18h18v-6"/>',
+    cal: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18"/>',
+    pin: '<path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    people: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/>',
+    alert: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>',
+    bell: '<path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5Zm5 3h4"/>',
+    check: '<path d="m5 12 4.5 4.5L19 7"/>',
+    hourglass: '<path d="M6 3h12M6 21h12M7 3c0 5 10 6 10 9s-10 4-10 9M17 3c0 5-10 6-10 9"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    bookmark: '<path d="M6 3h12v18l-6-4-6 4Z"/>',
+    map: '<path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z"/><path d="M9 4v13M15 7v13"/>',
+    doc: '<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 17h7"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6 8.5 7 8.5-7"/>',
+    phone: '<path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    search: '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',
+    trophy: '<path d="M8 3h8v6a4 4 0 0 1-8 0ZM8 5H4v3a4 4 0 0 0 4 4m8-7h4v3a4 4 0 0 1-4 4M12 13v6m-4 2h8"/>',
+    tv: '<rect x="3" y="4" width="18" height="14" rx="3"/><path d="m10 8 5 3-5 3Zm-3 8h10"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
+    sliders: '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="9" cy="18" r="2"/>',
+    news: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>',
+    flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>'
   };
-  function rowIcon(name) { return ICON[name].replace('<svg ', '<svg class="row__icon" '); }
-  function extLabel(text) { return '<span class="ext">' + ICON.ext + esc(text || 'Opens website') + '</span>'; }
+  function icon(name, cls) {
+    return '<svg class="i' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (PATHS[name] || '') + '</svg>';
+  }
+  var CHEV = icon('chev', 'chev i--sm');
+  function extLabel(text) { return '<span class="ext">' + icon('ext', 'i--sm') + esc(text || 'Website') + '</span>'; }
+  function playSvg() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>'; }
+
+  /* ---------------------------------------------------------------
+     Appearance — Light / Dark / System. Defaults to System; an
+     explicit choice is remembered. The page's <head> applies it
+     before first paint; this keeps it up to date afterwards.
+     --------------------------------------------------------------- */
+  var darkMQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+  function themePref() { var p = store('theme'); return p === 'light' || p === 'dark' ? p : 'system'; }
+  function applyTheme() {
+    var p = themePref();
+    var dark = p === 'dark' || (p === 'system' && darkMQ && darkMQ.matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', dark ? '#231120' : '#ffffff');
+    document.querySelectorAll('[data-theme-choice]').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-theme-choice') === p);
+    });
+  }
+  if (darkMQ) {
+    var onSystem = function () { if (themePref() === 'system') applyTheme(); };
+    if (darkMQ.addEventListener) darkMQ.addEventListener('change', onSystem); else if (darkMQ.addListener) darkMQ.addListener(onSystem);
+  }
+  function themeChoices() {
+    var p = themePref();
+    return '<div class="choices" role="group" aria-label="Appearance">' + [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']].map(function (o) {
+      return '<button type="button" data-theme-choice="' + o[0] + '" aria-pressed="' + (o[0] === p) + '">' + o[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  function textChoices() {
+    var size = store('text') || 'standard';
+    return '<div class="choices" role="group" aria-label="Text size">' + [['standard', 'Standard'], ['large', 'Large'], ['xlarge', 'Extra large']].map(function (o) {
+      return '<button type="button" data-size="' + o[0] + '" aria-pressed="' + (o[0] === size) + '">' + o[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  function applyTextSize() {
+    var v = store('text');
+    if (v === 'large' || v === 'xlarge') document.documentElement.setAttribute('data-text', v);
+    else document.documentElement.removeAttribute('data-text');
+  }
+
+  /* ---------------------------------------------------------------
+     Dialog (tournament updates, appearance)
+     --------------------------------------------------------------- */
+  function openDialog(title, html) {
+    document.getElementById('dlg-body').innerHTML = '<h2 id="dlg-title">' + esc(title) + '</h2>' + html;
+    if (dlg.showModal) { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute('open', '');
+  }
+  function closeDialog() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
+  document.getElementById('dlg-close').addEventListener('click', closeDialog);
+  dlg.addEventListener('click', function (ev) { if (ev.target === dlg) closeDialog(); });
+  document.getElementById('theme-btn').addEventListener('click', function () {
+    openDialog('Appearance', '<p>Light, dark, or match your phone’s setting.</p>' + themeChoices());
+  });
 
   /* ---------------------------------------------------------------
      Dates — always California time
@@ -146,6 +209,20 @@
     return a + ' – ' + b + (long ? ', ' + d.end.slice(0, 4) : '');
   }
 
+  // The entry deadline, only when the text really states one.
+  // "Registration opens July 1 · Entry deadline Saturday, August 1, 2026"
+  // must give August 1, and "Entries open August 26" gives nothing.
+  function deadlineDate(x) {
+    var t = String(x.e.deadline || '');
+    if (!t || !x.dates) return null;
+    var key = /(deadline|last date|received by|close[sd]?\b|no later than|\bby\b)/i.exec(t);
+    if (key) t = t.slice(key.index);
+    else if (/\b(open|opens|limited|capped)\b/i.test(t)) return null;
+    if (!/\b20\d{2}\b/.test(t)) t += ' ' + x.dates.start.slice(0, 4);
+    var d = parseDates(t);
+    return d ? d.start : null;
+  }
+
   /* ---------------------------------------------------------------
      Data — the website's own files
      --------------------------------------------------------------- */
@@ -180,6 +257,28 @@
     netbar.textContent = 'You’re offline. Saved information is still available; entries, draws and scores may have changed.';
   });
 
+  // Clubs are written several ways ("Laguna Beach LBC", "Laguna Beach Lawn
+  // Bowling Club"). Group the spellings of one club under one id, but never
+  // merge different venues ("Laguna Beach / MacKenzie Park" stays separate).
+  var CLUB_SUFFIX = /\s+(lawn\s+bowl(?:ing|s)?\s+clubs?|lbc)$/i;
+  function clubKey(name) {
+    var n = String(name || '').trim().replace(/\s+/g, ' ');
+    return slugify(n.replace(CLUB_SUFFIX, ''));
+  }
+  function clubLabel(name) {
+    var n = String(name || '').trim().replace(/\s+/g, ' ');
+    if (/\//.test(n) || !CLUB_SUFFIX.test(n)) return n;
+    return n.replace(CLUB_SUFFIX, '') + ' LBC';
+  }
+  function categoryOf(text) {
+    text = String(text || '').toLowerCase();
+    return /women/.test(text) ? "Women's" : /\bmen['’]?s?\b/.test(text) ? "Men's" : /mixed|mix\/match|mix-match/.test(text) ? 'Mixed' : 'Open';
+  }
+  // Shorter display title for lists; the official name stays in full on details.
+  function shortTitle(t) {
+    return String(t || '').replace(/^20\d{2}\s+/, '').replace(/^SWD\s+/, '').replace(/^\d+(st|nd|rd|th)\s+Annual\s+/i, '');
+  }
+
   var EVENTS = null;
   function loadEvents() {
     return getJSON('/events-data.json').then(function (d) {
@@ -192,10 +291,11 @@
     });
   }
   function decorateEvent(e) {
-    var dates = parseDates(e.date);
-    var text = (e.title + ' ' + (e.subtitle || '')).toLowerCase();
-    var cat = /women/.test(text) ? "Women's" : /\bmen['’]?s?\b/.test(text) ? "Men's" : /mixed|mix\/match|mix-match/.test(text) ? 'Mixed' : 'Open';
-    return { e: e, id: e.id, dates: dates, cat: cat, club: (e.club && e.club.name) || '' };
+    var club = (e.club && e.club.name) || '';
+    var x = { e: e, id: e.id, dates: parseDates(e.date), cat: categoryOf(e.title + ' ' + (e.subtitle || '')),
+      club: club, clubId: club ? clubKey(club) : '', clubLabel: club ? clubLabel(club) : '', short: shortTitle(e.title) };
+    x.deadline = deadlineDate(x);
+    return x;
   }
   function eventPhase(x, today) {
     if (!x.dates) return 'unknown';
@@ -203,23 +303,30 @@
     if (x.dates.start <= today) return 'now';
     return 'upcoming';
   }
+  // The start time from "9:00 AM announcements · 9:15 AM start"
+  function startTime(t) {
+    var parts = String(t || '').split(/\s*·\s*/).filter(Boolean);
+    var s = parts.filter(function (p) { return /start|trial ends/i.test(p); })[0] || parts[parts.length - 1] || '';
+    return s;
+  }
   // Entry status: only from a real, parseable deadline.
   function entryStatus(x, today) {
-    var e = x.e, phase = eventPhase(x, today);
-    if (phase === 'past') return { kind: 'done', label: 'Completed', icon: 'check', cls: '' };
-    if (phase === 'now') return { kind: 'now', label: 'Happening now', icon: 'flag', cls: 'badge--blue' };
-    var dl = e.deadline ? parseDates(!/\b20\d{2}\b/.test(e.deadline) && x.dates ? e.deadline + ' ' + x.dates.start.slice(0, 4) : e.deadline) : null;
-    if (!dl) return null;
-    var close = dl.start;
-    if (today > close) return { kind: 'closed', label: 'Entry deadline passed', icon: 'lock', cls: 'badge--red' };
-    var left = daysBetween(today, close);
+    var phase = eventPhase(x, today);
+    if (phase === 'past') return { kind: 'done', label: 'Completed', icon: 'check' };
+    if (phase === 'now') {
+      var st = startTime(x.e.time);
+      return { kind: 'today', label: x.dates.start === today && st ? 'Today · ' + st : 'Today', icon: 'flag' };
+    }
+    if (!x.deadline) return null;
+    if (today > x.deadline) return { kind: 'closed', label: 'Entry deadline passed', icon: 'lock' };
+    var left = daysBetween(today, x.deadline);
     var label = left === 0 ? 'Entries close today' : left === 1 ? 'Entries close tomorrow'
-      : 'Entries close ' + fmt(close, { month: 'short', day: 'numeric' });
-    return { kind: 'closing', label: label, icon: 'hourglass', cls: left <= 7 ? 'badge--orange' : 'badge--green' };
+      : 'Entries close ' + fmt(x.deadline, { month: 'short', day: 'numeric' });
+    return { kind: 'open', label: label, icon: 'hourglass', close: x.deadline };
   }
-  function badge(st) {
+  function statusLine(st) {
     if (!st) return '';
-    return '<span class="badge ' + st.cls + '">' + ICON[st.icon] + esc(st.label) + '</span>';
+    return '<span class="status' + (st.kind === 'open' ? ' status--open' : '') + '">' + icon(st.icon) + esc(st.label) + '</span>';
   }
 
   var RESULTS = null;
@@ -228,12 +335,10 @@
       if (RESULTS && RESULTS.src === d) return RESULTS.list;
       var list = (d.tournaments || []).map(function (t, i) {
         var m = /id=([^&]+)/.exec(t.eventUrl || '');
-        var text = (t.title || '').toLowerCase();
         var year = (/\b(20\d{2})\b/.exec(t.title + ' ' + t.id) || [])[1] || '';
         return {
           t: t, id: t.id, order: i, eventId: m ? decodeURIComponent(m[1]) : '', year: year,
-          cat: /women/.test(text) ? "Women's" : /\bmen['’]?s?\b/.test(text) ? "Men's" : /mixed|mix\/match/.test(text) ? 'Mixed' : 'Open',
-          names: (t.divisions || []).map(divisionNames).join(' ')
+          cat: categoryOf(t.title), names: (t.divisions || []).map(divisionNames).join(' ')
         };
       });
       RESULTS = { src: d, list: list };
@@ -247,17 +352,16 @@
   function divisionNames(dv) {
     return divisionPlaces(dv).map(function (g) { return g.places.map(function (p) { return p.names || ''; }).join(' '); }).join(' ');
   }
-  function winnersLine(r) {
-    var firsts = [];
+  // First place in each division (top flight). Several divisions mean several
+  // winners — they are never presented as one event champion.
+  function firsts(r) {
+    var out = [];
     (r.t.divisions || []).forEach(function (dv) {
       var g = divisionPlaces(dv)[0];
       var p = g && g.places.filter(function (x) { return +x.rank === 1; })[0];
-      if (p) firsts.push({ who: p.names, where: dv.label });
+      if (p) out.push({ who: p.names, where: dv.label || '', photo: safeUrl(p.photo) });
     });
-    if (!firsts.length) return '';
-    var html = '<b>' + esc(firsts[0].who) + '</b>' + (firsts.length > 1 ? ' · ' + esc(firsts[0].where) : '');
-    if (firsts.length > 1) html += ' <span>+ ' + (firsts.length - 1) + ' more</span>';
-    return html;
+    return out;
   }
 
   /* ---------------------------------------------------------------
@@ -274,8 +378,8 @@
   }
   function saveBtn(id, title) {
     var on = isSaved(id);
-    return '<button class="iconbtn" type="button" data-save="' + esc(id) + '" aria-pressed="' + on + '" aria-label="' +
-      (on ? 'Remove ' : 'Save ') + esc(title) + (on ? ' from Saved' : ' to Saved') + '">' + ICON.bookmark + '</button>';
+    return '<button class="iconbtn" type="button" data-save="' + esc(id) + '" data-title="' + esc(title) + '" aria-pressed="' + on + '" aria-label="' +
+      (on ? 'Saved: ' : 'Save ') + esc(title) + '">' + icon('bookmark') + '</button>';
   }
 
   var toastTimer;
@@ -290,168 +394,154 @@
   /* ---------------------------------------------------------------
      Shared pieces of markup
      --------------------------------------------------------------- */
+  function dateBlock(x, accent) {
+    if (!x.dates) return '<span class="dateblock' + (accent ? ' dateblock--accent' : '') + '" aria-hidden="true"><small>TBA</small><b>–</b></span>';
+    return '<span class="dateblock' + (accent ? ' dateblock--accent' : '') + '" aria-hidden="true"><small>' +
+      fmt(x.dates.start, { month: 'short' }) + '</small><b>' + fmt(x.dates.start, { day: 'numeric' }) + '</b></span>';
+  }
   function eventRow(x, today) {
     var e = x.e, phase = eventPhase(x, today);
-    var tile = x.dates
-      ? '<span class="datetile' + (phase === 'past' ? ' datetile--past' : '') + '" aria-hidden="true"><small>' +
-        fmt(x.dates.start, { month: 'short' }) + '</small><b>' + fmt(x.dates.start, { day: 'numeric' }) + '</b></span>'
-      : '<span class="datetile" aria-hidden="true"><small>TBA</small><b>–</b></span>';
-    var meta = [dateRangeLabel(x.dates), x.club].filter(Boolean).join(' · ');
-    return '<li><div class="row" style="padding-right:4px">' +
-      '<a class="row" style="padding:0;min-height:0" href="/app/events/' + encodeURIComponent(x.id) + '">' + tile +
-      '<span class="row__main"><span class="row__title">' + esc(e.title) + '</span>' +
-      '<span class="row__meta" style="display:block">' + esc(meta) + (e.format ? ' · ' + esc(cap(e.format)) : '') + '</span>' +
-      '<span class="badges">' + badge(entryStatus(x, today)) + (e.alert && phase !== 'past' ? '<span class="badge badge--orange">' + ICON.alert + esc(e.alertLabel || 'Update') + '</span>' : '') + '</span>' +
-      '</span></a>' + saveBtn(x.id, e.title) + '</div></li>';
+    var meta = [x.clubLabel, e.format && cap(e.format)].filter(Boolean).join(' · ');
+    var update = e.alert && phase !== 'past'
+      ? '<span class="status status--update">' + icon('bell') + esc(e.alertLabel || 'Update') + '</span>' : '';
+    return '<li class="evrow">' + dateBlock(x) +
+      '<a class="evrow__main" href="/app/events/' + encodeURIComponent(x.id) + '">' +
+      '<span class="evrow__title">' + esc(x.short) + '</span>' +
+      '<span class="sr-only">' + esc(dateRangeLabel(x.dates, true)) + '. </span>' +
+      '<span class="evrow__meta">' + esc(meta) + (x.dates && x.dates.start !== x.dates.end ? ' · ' + esc(dateRangeLabel(x.dates)) : '') + '</span>' +
+      statusLine(entryStatus(x, today)) + update + '</a>' + saveBtn(x.id, x.short) + '</li>';
   }
-  function cap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+  function sectionHead(id, title, href, label) {
+    return '<div class="section__head"><h2 class="section__title" id="' + id + '">' + esc(title) + '</h2>' +
+      (href ? '<a class="section__more" href="' + href + '">' + esc(label || 'View all') + '<span class="sr-only"> ' + esc(title) + '</span>' + icon('chev', 'i--sm') + '</a>' : '') + '</div>';
+  }
+  function backLink(href, label) {
+    return '<a class="back" href="' + esc(href) + '" data-back>' + icon('back', 'i--sm') + esc(label) + '</a>';
+  }
+  function linkRow(href, iconName, title, meta, opts) {
+    opts = opts || {};
+    var ext = opts.ext;
+    return '<li><a class="row" href="' + esc(href) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + (opts.attrs || '') + '>' +
+      (iconName ? icon(iconName) : '') + '<span class="row__main"><span class="row__title">' + esc(title) + '</span>' +
+      (meta ? '<span class="row__meta">' + esc(meta) + '</span>' : '') + '</span>' + (ext ? extLabel(opts.extText) : CHEV) + '</a></li>';
+  }
 
-  function championPhoto(r) {
-    var photo = '';
-    (r.t.divisions || []).some(function (dv) {
-      var g = divisionPlaces(dv)[0];
-      var p = g && g.places.filter(function (x) { return +x.rank === 1 && safeUrl(x.photo); })[0];
-      if (p) photo = p.photo;
-      return !!photo;
-    });
-    return photo;
+  function championPanel(r, cls) {
+    var f = firsts(r);
+    if (!f.length) return '';
+    var eyebrow = f.length === 1 ? (f[0].where ? f[0].where + ' champions' : 'Champions') : f[0].where + ' winners';
+    return '<a class="panel' + (cls ? ' ' + cls : '') + '" href="/app/results/' + encodeURIComponent(r.id) + '">' +
+      '<span class="eyebrow">' + esc(eyebrow) + '</span>' +
+      '<span class="panel__title">' + esc(f[0].who) + '</span>' +
+      '<span class="panel__sub">' + esc(shortTitle(r.t.title)) + '</span>' +
+      (r.t.meta ? '<span class="panel__meta">' + esc(r.t.meta) + '</span>' : '') +
+      (f.length > 1 ? '<span class="panel__meta">+ ' + (f.length - 1) + ' more division winner' + (f.length > 2 ? 's' : '') + '</span>' : '') +
+      '</a>';
   }
   function resultRow(r) {
-    var ph = championPhoto(r);
-    return '<li><a class="row" href="/app/results/' + encodeURIComponent(r.id) + '">' +
-      (ph ? '<img class="thumb" src="' + esc(ph) + '" alt="" loading="lazy" width="64" height="64">' : rowIcon('trophy')) +
-      '<span class="row__main"><span class="row__title">' + esc(r.t.title) + '</span>' +
-      '<span class="row__meta" style="display:block">' + esc(r.t.meta || '') + '</span>' +
-      (winnersLine(r) ? '<span class="winner" style="display:block">Winners: ' + winnersLine(r) + '</span>' : '') +
-      '</span>' + ICON.chev + '</a></li>';
+    var f = firsts(r);
+    var who = !f.length ? '' : f.length === 1 ? f[0].who : f[0].where + ' winners: ' + f[0].who;
+    return '<li><a class="resrow" href="/app/results/' + encodeURIComponent(r.id) + '">' +
+      '<span class="resrow__title">' + esc(shortTitle(r.t.title)) + '</span>' +
+      (r.t.meta ? '<span class="resrow__meta">' + esc(r.t.meta) + '</span>' : '') +
+      (who ? '<span class="resrow__who">' + esc(who) + '</span>' : '') +
+      (f.length > 1 ? '<span class="resrow__meta">+ ' + (f.length - 1) + ' more division winner' + (f.length > 2 ? 's' : '') + '</span>' : '') +
+      '</a></li>';
   }
 
   function state(kind, title, body, action) {
     return '<div class="' + kind + '" role="status"><b>' + esc(title) + '</b>' + (body ? '<p>' + esc(body) + '</p>' : '') + (action || '') + '</div>';
   }
-  function errorState(err) {
+  function errorState() {
     return state('error', navigator.onLine ? 'This didn’t load' : 'You’re offline',
       navigator.onLine ? 'Check your connection and try again.' : 'This hasn’t been saved on your phone yet. Try again when you have a signal.',
       '<button class="btn" type="button" data-retry>Try again</button>');
   }
   function loading() { return '<div class="loading" role="status"><span class="spinner" aria-hidden="true"></span>Loading…</div>'; }
+  function setTitle(t) { document.title = (t ? t + ' · ' : '') + 'Southwest Bowls'; }
 
-  /* ---------------------------------------------------------------
-     Top bar
-     --------------------------------------------------------------- */
-  function setTop(opts) {
-    var inner;
-    if (opts.brand) {
-      var hour = +new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', hour12: false }).format(new Date()) % 24;
-      var hello = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-      inner = '<div class="topbar__brand"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="65" height="76">' +
-        '<div class="hello"><p class="hello__hi">' + hello + '</p>' +
-        '<p class="hello__date">' + esc(fmt(todayISO(), { weekday: 'long', month: 'long', day: 'numeric' })) + '</p>' +
-        '<p class="hello__tag">Lawn Bowls – A Sport for Life!</p></div></div>';
-    } else {
-      inner = (opts.back ? '<a class="back" href="' + esc(opts.back.href) + '" data-back>' + ICON.back + '<span>' + esc(opts.back.label) + '</span></a>' : '') +
-        '<h1 class="topbar__title">' + esc(opts.title || '') + '</h1>';
-    }
-    topbar.innerHTML = '<div class="topbar__inner">' + inner + '</div>';
-    topbar.classList.toggle('topbar--home', !!opts.brand);
-    document.title = (opts.title ? opts.title + ' · ' : '') + 'Southwest Bowls';
+  // Tournament updates (events-data "alert"), shown in a dialog
+  function noticesDialog(list) {
+    openDialog('Tournament updates', list.map(function (x) {
+      return '<h3>' + esc(x.e.alertLabel || 'Update') + ' · ' + esc(x.short) + '</h3><p>' + esc(x.e.alert) + '</p>' +
+        '<a class="btn btn--ghost" href="/app/events/' + encodeURIComponent(x.id) + '">View tournament</a>';
+    }).join(''));
   }
+  var currentNotices = [];
 
   /* ---------------------------------------------------------------
      HOME
      --------------------------------------------------------------- */
   function home() {
-    setTop({ brand: true });
+    setTitle('');
     var today = todayISO();
-    view.innerHTML = '<h1 class="sr-only">Southwest Bowls home</h1>' + loading();
     return Promise.all([
       loadEvents(),
       loadResults().catch(function () { return []; }),
-      getJSON('/news-data.json').catch(function () { return { items: [] }; }),
       getJSON('/streams-data.json').catch(function () { return { streams: [] }; })
     ]).then(function (all) {
-      var events = all[0], results = all[1], news = all[2].items || [], streams = all[3].streams || [];
+      var events = all[0], results = all[1], streams = all[2].streams || [];
       var live = events.filter(function (x) { var p = eventPhase(x, today); return p === 'upcoming' || p === 'now'; });
-      var html = '<h1 class="sr-only">Southwest Bowls home</h1>';
+      var html = '<div class="intro"><p class="eyebrow">Your Southwest community</p><h1>Let’s bowl.</h1>' +
+        '<p>Tournaments, results, and your next game.</p></div>';
 
-      // 1. Notices — one compact card, one line each (only when one exists)
-      var notices = live.filter(function (x) { return x.e.alert; }).slice(0, 3);
-      var noticesHtml = notices.length ? '<section class="section" aria-labelledby="h-upd"><div class="updates">' +
-        '<p class="updates__head" id="h-upd">' + ICON.alert + 'Updates</p><ul>' + notices.map(function (x) {
-          return '<li><a href="/app/events/' + encodeURIComponent(x.id) + '"><span class="updates__text"><b>' + esc(x.e.alertLabel || 'Update') + '</b> · ' +
-            esc(shortTitle(x.e.title)) + '</span>' + ICON.chev + '</a></li>';
-        }).join('') + '</ul></div></section>' : '';
-
-      // 2. Next tournament
-      var next = live[0], heroHtml = '';
-      if (next) {
-        var e = next.e, st = entryStatus(next, today), phase = eventPhase(next, today);
-        var days = next.dates ? daysBetween(today, next.dates.start) : null;
-        var when = phase === 'now' ? 'Happening now' : days === 1 ? 'Next tournament · Tomorrow' : days != null ? 'Next tournament · In ' + days + ' days' : 'Next tournament';
-        heroHtml = '<section class="section" aria-labelledby="h-next"><article class="hero">' +
-          '<a class="hero__top" href="/app/events/' + encodeURIComponent(next.id) + '">' +
-          '<p class="hero__kicker" id="h-next">' + (phase === 'now' ? '<span class="dot" aria-hidden="true"></span>' : '') + esc(when) + '</p>' +
-          '<h2 class="hero__title">' + esc(e.title) + '</h2>' +
-          '<p class="hero__date">' + ICON.cal + esc(dateRangeLabel(next.dates, true) || e.date) + '</p></a>' +
-          '<div class="hero__body"><ul class="facts">' +
-          (e.time ? '<li>' + ICON.clock + '<span>' + esc(e.time) + '</span></li>' : '') +
-          (next.club ? '<li>' + ICON.pin + '<span>' + esc(next.club) + (e.club.address ? '<small>' + esc(e.club.address) + '</small>' : '') + '</span></li>' : '') +
-          (e.format ? '<li>' + ICON.people + '<span>' + esc(cap(e.format)) + (e.fee ? '<small>Entry ' + esc(e.fee) + '</small>' : '') + '</span></li>' : '') +
-          '</ul>' + (st && phase !== 'now' ? '<div class="badges" style="margin-top:12px">' + badge(st) + '</div>' : '') +
-          '<div class="actions"><a class="btn" href="/app/events/' + encodeURIComponent(next.id) + '">' + (phase === 'now' ? 'Event details' : 'Details & how to enter') + '</a>' +
-          (e.club && safeUrl(e.club.mapUrl) ? '<a class="btn btn--ghost" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener">' + ICON.map + 'Directions</a>' : '') +
-          '</div></div></article></section>';
+      // 1. Updates — one compact line; the details open in a dialog
+      currentNotices = live.filter(function (x) { return x.e.alert; });
+      if (currentNotices.length) {
+        html += '<button class="noticebtn" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
+          '<span>' + currentNotices.length + ' tournament update' + (currentNotices.length === 1 ? '' : 's') + '</span>' + CHEV + '</button>';
       }
-      html += heroHtml + noticesHtml;
 
-      // 3. Coming up
-      var soon = live.slice(1, 5);
+      // 2. Featured: the event with the soonest open entry deadline,
+      //    otherwise the nearest event. Never "how to enter" once started.
+      var open = live.map(function (x) { return { x: x, st: entryStatus(x, today) }; })
+        .filter(function (o) { return o.st && o.st.kind === 'open'; })
+        .sort(function (a, b) { return a.st.close < b.st.close ? -1 : a.st.close > b.st.close ? 1 : 0; });
+      var feat = open.length ? open[0].x : live[0];
+      if (feat) {
+        var e = feat.e, st = entryStatus(feat, today), phase = eventPhase(feat, today);
+        var kicker = open.length ? 'Next to enter' : phase === 'now' ? 'Today' : 'Next tournament';
+        var line = st && st.kind === 'open' ? 'Entries close <b>' + esc(fmt(st.close, { month: 'long', day: 'numeric' })) + '</b>'
+          : st && st.kind === 'today' ? esc(st.label)
+          : st ? esc(st.label) : e.time ? esc(e.time) : '';
+        html += '<section aria-labelledby="h-feat"><article class="feature"><div class="feature__body">' +
+          '<div class="feature__top"><span class="eyebrow">' + esc(kicker) + '</span>' +
+          (feat.dates ? '<span class="feature__when">' + esc(dateRangeLabel(feat.dates)) + '</span>' : '') + '</div>' +
+          '<div class="feature__main">' + dateBlock(feat, true) + '<div><h2 class="feature__title" id="h-feat">' + esc(feat.short) + '</h2>' +
+          (feat.clubLabel ? '<p class="feature__venue">' + esc(feat.clubLabel) + '</p>' : '') + '</div></div>' +
+          (line ? '<p class="feature__line">' + line + '</p>' : '') + '</div>' +
+          '<div class="feature__foot"><a class="btn btn--split" href="/app/events/' + encodeURIComponent(feat.id) + '">View tournament' + icon('chev') + '</a>' +
+          saveBtn(feat.id, feat.short) + '</div></article></section>';
+      }
+
+      // 3. On the calendar
+      var soon = live.filter(function (x) { return x !== feat; }).slice(0, 3);
       if (soon.length) {
-        html += '<section class="section" aria-labelledby="h-soon"><div class="section__head"><h2 class="section__title" id="h-soon">Coming up</h2>' +
-          '<a class="section__more" href="/app/events">View all</a></div><ul class="list">' +
-          soon.map(function (x) { return eventRow(x, today); }).join('') + '</ul></section>';
+        html += '<section class="section" aria-labelledby="h-soon">' + sectionHead('h-soon', 'On the calendar', '/app/events') +
+          '<ul class="list">' + soon.map(function (x) { return eventRow(x, today); }).join('') + '</ul></section>';
       }
 
       // 4. Recent results
       if (results.length) {
-        html += '<section class="section" aria-labelledby="h-res"><div class="section__head"><h2 class="section__title" id="h-res">Recent results</h2>' +
-          '<a class="section__more" href="/app/results">View all</a></div><ul class="list">' +
-          results.slice(0, 3).map(resultRow).join('') + '</ul></section>';
+        html += '<section class="section" aria-labelledby="h-res">' + sectionHead('h-res', 'Recent results', '/app/results') +
+          championPanel(results[0]) + '</section>';
       }
 
-      // 5. Livestream — the next planned date, from the SW TV schedule
+      // 5. SW TV — the next scheduled broadcast (replaced by LIVE when YouTube says so)
       var nextStream = streams.filter(function (s) { return s.date >= today; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
-      html += '<section class="section" aria-labelledby="h-tv"><div class="section__head"><h2 class="section__title" id="h-tv">SW TV</h2>' +
-        '<a class="section__more" href="/app/watch">Watch</a></div><ul class="list"><li id="home-live">' +
+      html += '<section class="section" aria-labelledby="h-tv">' + sectionHead('h-tv', 'On SW TV', '/app/watch', 'Watch') +
+        '<ul class="rows"><li id="home-live">' +
         (nextStream
-          ? '<a class="row" href="/app/watch">' + rowIcon('tv') + '<span class="row__main"><span class="row__title">' + esc(nextStream.title) + '</span>' +
-            '<span class="row__meta" style="display:block">Planned livestream · ' + esc(fmt(nextStream.date, { weekday: 'short', month: 'short', day: 'numeric' })) +
-            (nextStream.venue ? ' · ' + esc(nextStream.venue) : '') + '</span></span>' + ICON.chev + '</a>'
-          : '<a class="row" href="/app/watch">' + rowIcon('tv') + '<span class="row__main"><span class="row__title">Recent videos and replays</span>' +
-            '<span class="row__meta" style="display:block">Lessons and past livestreams from SW TV</span></span>' + ICON.chev + '</a>') +
+          ? '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="row__title"><b>' + esc(nextStream.title) + '</b></span>' +
+            '<span class="row__meta">Scheduled broadcast · ' + esc(nextStream.date === today ? 'Today' : fmt(nextStream.date, { weekday: 'short', month: 'short', day: 'numeric' })) +
+            (nextStream.venue ? ' · ' + esc(nextStream.venue) : '') + '</span></span>' + CHEV + '</a>'
+          : '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="row__title"><b>Recent videos and replays</b></span>' +
+            '<span class="row__meta">Lessons and past livestreams from SW TV</span></span>' + CHEV + '</a>') +
         '</li></ul></section>';
 
-      // 6. News
-      var items = news.slice().sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : 1; }).slice(0, 3);
-      if (items.length) {
-        html += '<section class="section news" aria-labelledby="h-news"><div class="section__head"><h2 class="section__title" id="h-news">News</h2></div><div class="list">' +
-          items.map(newsItem).join('') + '</div></section>';
-      }
-
-      html += '<p class="updated">Southwest Bowls Division · Lawn Bowls – A Sport for Life!</p>';
       view.innerHTML = html;
       checkLiveForHome();
     });
-  }
-  function shortTitle(t) { return String(t).replace(/^20\d{2}\s+(SWD\s+)?/, ''); }
-  function newsItem(n) {
-    var link = appLink(n.link || '');
-    return '<details style="border-top:1px solid var(--line)"><summary>' +
-      '<span class="row__main"><span class="row__title">' + esc(n.title) + '</span>' +
-      '<span class="row__meta" style="display:block">' + (n.date ? esc(fmt(n.date, { month: 'long', day: 'numeric', year: 'numeric' })) : '') + '</span></span>' + ICON.chev +
-      '</summary><div class="news__body"><p>' + esc(n.body || '') + '</p>' +
-      (link ? '<a class="btn btn--ghost" href="' + esc(link.href) + '"' + (link.ext ? ' target="_blank" rel="noopener"' : '') + '>' +
-        (link.ext ? ICON.ext : '') + esc(link.label) + '</a>' : '') + '</div></details>';
   }
   // Turn a website link into the matching app screen where there is one.
   function appLink(u) {
@@ -470,36 +560,38 @@
      EVENTS — list
      --------------------------------------------------------------- */
   function eventsList(params) {
-    setTop({ title: 'Events' });
+    setTitle('Events');
     var today = todayISO();
     return loadEvents().then(function (events) {
+      var hasPast = events.some(function (x) { return eventPhase(x, today) === 'past'; });
       var show = params.get('show') || 'upcoming';
+      if (show === 'past' && !hasPast) show = 'upcoming';
       var months = {}, clubs = {};
       events.forEach(function (x) {
         if (x.dates) months[x.dates.start.slice(0, 7)] = fmt(x.dates.start, { month: 'long', year: 'numeric' });
-        if (x.club) clubs[x.club] = 1;
+        if (x.clubId && !clubs[x.clubId]) clubs[x.clubId] = x.clubLabel;
       });
-      var f = { q: params.get('q') || '', month: params.get('month') || '', cat: params.get('cat') || '', club: params.get('club') || '' };
+      var f = { q: params.get('q') || '', month: params.get('month') || '', cat: params.get('cat') || '', club: clubKey(params.get('club') || '') };
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
+      var segs = [['upcoming', 'Upcoming']].concat(hasPast ? [['past', 'Completed']] : []).concat([['saved', 'Saved']]);
       view.innerHTML =
-        '<h1 class="sr-only">Events</h1>' +
-        '<div class="segmented" role="group" aria-label="Which events">' +
-        ['upcoming', 'past', 'saved'].map(function (k) {
-          return '<button type="button" data-show="' + k + '" aria-pressed="' + (k === show) + '">' + { upcoming: 'Upcoming', past: 'Completed', saved: 'Saved' }[k] + '</button>';
+        '<div class="intro" style="margin-bottom:0"><h1>Events</h1><p>Find your next game.</p></div>' +
+        '<div class="segmented" role="group" aria-label="Which events">' + segs.map(function (k) {
+          return '<button type="button" data-show="' + k[0] + '" aria-pressed="' + (k[0] === show) + '">' + k[1] + '</button>';
         }).join('') + '</div>' +
-        '<label class="search">' + ICON.search + '<span class="sr-only">Search events</span>' +
-        '<input type="search" id="q" placeholder="Search tournaments, clubs, players" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
+        '<label class="search">' + icon('search') + '<span class="sr-only">Search events or clubs</span>' +
+        '<input type="search" id="q" placeholder="Search events or clubs" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
         '<div class="filters">' +
+        '<label><span class="sr-only">Category</span><select id="f-cat">' + opt('', 'All categories', f.cat) +
+        CATS.map(function (c) { return opt(c, c, f.cat); }).join('') + '</select></label>' +
+        '<label><span class="sr-only">Club</span><select id="f-club">' + opt('', 'All clubs', f.club) +
+        Object.keys(clubs).sort(function (a, b) { return clubs[a] < clubs[b] ? -1 : 1; }).map(function (k) { return opt(k, clubs[k], f.club); }).join('') + '</select></label>' +
         '<label><span class="sr-only">Month</span><select id="f-month">' + opt('', 'Any month', f.month) +
         Object.keys(months).sort().map(function (k) { return opt(k, months[k], f.month); }).join('') + '</select></label>' +
-        '<label><span class="sr-only">Category</span><select id="f-cat">' + opt('', 'Any category', f.cat) +
-        ["Men's", "Women's", 'Mixed', 'Open'].map(function (c) { return opt(c, c, f.cat); }).join('') + '</select></label>' +
-        '<label><span class="sr-only">Club</span><select id="f-club">' + opt('', 'Any club', f.club) +
-        Object.keys(clubs).sort().map(function (c) { return opt(c, c.replace(/ Lawn Bowl(ing|s) (Club|Green)$/, ' LBC'), f.club); }).join('') + '</select></label>' +
         '</div><div id="ev-results"></div>';
 
       function apply() {
-        var q = document.getElementById('q').value.trim().toLowerCase();
+        var qRaw = document.getElementById('q').value.trim(), q = qRaw.toLowerCase();
         var month = document.getElementById('f-month').value;
         var cat = document.getElementById('f-cat').value;
         var club = document.getElementById('f-club').value;
@@ -512,8 +604,8 @@
           if (show === 'saved' && sv.indexOf(x.id) < 0) return false;
           if (month && !(x.dates && x.dates.start.slice(0, 7) === month)) return false;
           if (cat && x.cat !== cat) return false;
-          if (club && x.club !== club) return false;
-          if (q && (x.e.title + ' ' + (x.e.subtitle || '') + ' ' + x.club + ' ' + (x.e.format || '') + ' ' + (x.e.club && x.e.club.address || '')).toLowerCase().indexOf(q) < 0) return false;
+          if (club && x.clubId !== club) return false;
+          if (q && (x.e.title + ' ' + (x.e.subtitle || '') + ' ' + x.club + ' ' + x.clubLabel + ' ' + (x.e.format || '') + ' ' + (x.e.club && x.e.club.address || '')).toLowerCase().indexOf(q) < 0) return false;
           return true;
         });
         if (show === 'past') list = list.slice().reverse();
@@ -526,12 +618,12 @@
                 filtered ? '<button class="btn btn--ghost" type="button" data-clear>Clear filters</button>' : '');
         } else {
           out.innerHTML = '<p class="count" aria-live="polite">' + list.length + ' event' + (list.length === 1 ? '' : 's') +
-            (filtered ? ' · <button class="clear" type="button" data-clear>Clear filters</button>' : '') + '</p>' +
+            (filtered ? ' <button class="clear" type="button" data-clear>Clear filters</button>' : '') + '</p>' +
             '<ul class="list">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>';
         }
         var u = new URLSearchParams();
         if (show !== 'upcoming') u.set('show', show);
-        if (q) u.set('q', document.getElementById('q').value.trim());
+        if (q) u.set('q', qRaw);
         if (month) u.set('month', month); if (cat) u.set('cat', cat); if (club) u.set('club', club);
         var qs = u.toString();
         history.replaceState(history.state, '', '/app/events' + (qs ? '?' + qs : ''));
@@ -539,7 +631,7 @@
       var t;
       document.getElementById('q').addEventListener('input', function () { clearTimeout(t); t = setTimeout(apply, 150); });
       ['f-month', 'f-cat', 'f-club'].forEach(function (id) { document.getElementById(id).addEventListener('change', apply); });
-      view.addEventListener('click', function onClick(ev) {
+      view.addEventListener('click', function (ev) {
         var b = ev.target.closest('[data-show]');
         if (b) {
           show = b.getAttribute('data-show');
@@ -552,6 +644,8 @@
           apply();
         }
       });
+      // Unsaving on the Saved list takes the row away
+      view.addEventListener('saved-change', function () { if (show === 'saved') apply(); });
       apply();
     });
   }
@@ -560,19 +654,18 @@
      EVENTS — detail
      --------------------------------------------------------------- */
   function eventDetail(params, id) {
-    var back = { href: '/app/events', label: 'Events' };
-    setTop({ title: 'Event', back: back });
+    setTitle('Event');
     var today = todayISO();
     return Promise.all([loadEvents(), loadResults().catch(function () { return []; })]).then(function (all) {
       var x = all[0].filter(function (y) { return y.id === id; })[0];
       if (!x) {
-        view.innerHTML = state('empty', 'We couldn’t find that event', 'It may have been renamed or removed.',
+        view.innerHTML = backLink('/app/events', 'Events') + state('empty', 'We couldn’t find that event', 'It may have been renamed or removed.',
           '<a class="btn" href="/app/events">See all events</a>');
         return;
       }
       var e = x.e, phase = eventPhase(x, today), st = entryStatus(x, today);
       var result = all[1].filter(function (r) { return r.eventId === id; })[0];
-      setTop({ title: shortTitle(e.title), back: back });
+      setTitle(x.short);
 
       var flyer = safeUrl(e.flyer && (e.flyer.localPath || e.flyer.externalUrl));
       var cops = safeUrl(e.cops && (e.cops.localPath || e.cops.externalUrl));
@@ -580,138 +673,162 @@
       var ls = e.liveScoring || {};
       var hasDraw = safeUrl(ls.pubUrl) || (ls.sheets && ls.sheets.length) || ls.gated;
       var tabs = [['overview', 'Overview']];
+      if (phase !== 'past') tabs.push(['entry', 'Entry details']);
       if (hasEntries) tabs.push(['entries', 'Entries']);
       if (hasDraw) tabs.push(['draw', 'Draw & scores']);
       if (result) tabs.push(['results', 'Results']);
       var tab = params.get('tab');
       if (!tabs.some(function (t) { return t[0] === tab; })) tab = 'overview';
 
-      var html = '<div class="ev-head">' + (e.subtitle ? '<p class="ev-head__sub">' + esc(e.subtitle) + '</p>' : '') +
-        '<h1 class="ev-head__title">' + esc(e.title) + '</h1></div>';
-      if (e.alert) html += '<div class="notice" role="note">' + ICON.alert + '<span><b>' + esc(e.alertLabel || 'Update') + '</b>' + esc(e.alert) + '</span></div><div style="height:12px"></div>';
+      var season = x.dates ? x.dates.start.slice(0, 4) + ' Southwest season' : '';
+      var html = backLink('/app/events', 'Events') +
+        '<p class="eyebrow">' + esc(e.subtitle || season) + '</p>' +
+        '<h1 class="detail-title">' + esc(e.title) + '</h1>' +
+        (x.club ? '<p>' + esc(x.club) + '</p>' : '') +
+        '<div class="detail-date">' + dateBlock(x, true) + '<div><b>' + esc(e.date || 'Date to be announced') + '</b>' + statusLine(st) + '</div></div>';
+      if (e.alert) html += '<div class="note" role="note"><b>' + esc(e.alertLabel || 'Update') + '</b>' + esc(e.alert) + '</div>';
 
-      html += '<div class="card"><ul class="facts">' +
-        '<li>' + ICON.cal + '<span>' + esc(e.date || 'Date to be announced') + '</span></li>' +
-        (e.time ? '<li>' + ICON.clock + '<span>' + esc(e.time) + '</span></li>' : '') +
-        (x.club ? '<li>' + ICON.pin + '<span>' + esc(x.club) + (e.club.address ? '<small>' + esc(e.club.address) + '</small>' : '') + '</span></li>' : '') +
-        (e.format ? '<li>' + ICON.people + '<span>' + esc(cap(e.format)) + (e.formatDetails ? '<small>' + esc(e.formatDetails) + '</small>' : '') + '</span></li>' : '') +
-        (e.fee ? '<li>' + ICON.fee + '<span>Entry fee: ' + esc(e.fee) + '</span></li>' : '') +
-        (e.deadline ? '<li>' + ICON.hourglass + '<span>' + esc(e.deadline) + '</span></li>' : '') +
-        '</ul>' + (st ? '<div class="badges" style="margin-top:12px">' + badge(st) + '</div>' : '') + '</div>';
-
-      // Primary actions
-      var acts = [];
-      if (phase !== 'past') acts.push('<a class="btn" href="#how-to-enter" data-tab-jump="overview">' + ICON.doc + 'Entry details</a>');
-      if (e.club && safeUrl(e.club.mapUrl)) acts.push('<a class="btn btn--ghost" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener">' + ICON.map + 'Directions</a>');
-      if (x.dates && phase !== 'past') acts.push('<a class="btn btn--ghost" href="' + icsHref(x) + '" download="' + esc(id) + '.ics">' + ICON.cal + 'Add to calendar</a>');
-      acts.push('<button class="btn btn--ghost" type="button" data-save="' + esc(id) + '" aria-pressed="' + isSaved(id) + '">' + ICON.bookmark +
-        '<span>' + (isSaved(id) ? 'Saved' : 'Save') + '</span></button>');
-      html += '<div class="actions">' + acts.join('') + '</div>';
-
-      html += '<div class="tabs" role="tablist" aria-label="Event sections">' + tabs.map(function (t) {
-        return '<button type="button" role="tab" id="tab-' + t[0] + '" aria-controls="panel" aria-selected="' + (t[0] === tab) + '" data-tab="' + t[0] + '">' + t[1] + '</button>';
-      }).join('') + '</div><div id="panel" role="tabpanel"></div>';
+      html += '<div class="segmented" role="tablist" aria-label="Event sections">' + tabs.map(function (t) {
+        return '<button type="button" role="tab" id="tab-' + t[0] + '" aria-controls="panel" aria-selected="' + (t[0] === tab) + '" tabindex="' + (t[0] === tab ? 0 : -1) + '" data-tab="' + t[0] + '">' + t[1] + '</button>';
+      }).join('') + '</div><div id="panel" role="tabpanel" tabindex="-1"></div>';
       view.innerHTML = html;
 
-      function show(name) {
+      function show(name, focusPanel) {
         tab = name;
-        view.querySelectorAll('[role="tab"]').forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-tab') === name); });
+        view.querySelectorAll('[role="tab"]').forEach(function (b) {
+          var on = b.getAttribute('data-tab') === name;
+          b.setAttribute('aria-selected', on); b.setAttribute('tabindex', on ? 0 : -1);
+        });
         var panel = document.getElementById('panel');
         panel.setAttribute('aria-labelledby', 'tab-' + name);
-        panel.innerHTML = name === 'entries' ? entriesPanel(e) : name === 'draw' ? drawPanel(e) : name === 'results' ? resultsPanel(result) : overviewPanel(x, phase, flyer, cops);
+        panel.innerHTML = name === 'entry' ? entryPanel(x, flyer, cops)
+          : name === 'entries' ? entriesPanel(e) : name === 'draw' ? drawPanel(e)
+          : name === 'results' ? resultsPanel(result) : overviewPanel(x, phase, st, flyer, cops, !!result);
         if (name === 'draw' && ls.gated) loadGated(id);
         var u = new URL(location.href);
         if (name === 'overview') u.searchParams.delete('tab'); else u.searchParams.set('tab', name);
         history.replaceState(history.state, '', u.pathname + u.search);
+        if (focusPanel) {
+          var tl = view.querySelector('[role="tablist"]');
+          tl.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+          document.getElementById('tab-' + name).focus({ preventScroll: true });
+        }
       }
-      view.querySelector('[role="tablist"]').addEventListener('click', function (ev) {
+      var tl = view.querySelector('[role="tablist"]');
+      tl.addEventListener('click', function (ev) {
         var b = ev.target.closest('[data-tab]'); if (b) show(b.getAttribute('data-tab'));
       });
-      view.querySelector('[role="tablist"]').addEventListener('keydown', function (ev) {
+      tl.addEventListener('keydown', function (ev) {
         if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
         var bs = Array.prototype.slice.call(view.querySelectorAll('[role="tab"]'));
         var i = bs.indexOf(document.activeElement); if (i < 0) return;
         var n = bs[(i + (ev.key === 'ArrowRight' ? 1 : bs.length - 1)) % bs.length];
         n.focus(); show(n.getAttribute('data-tab'));
       });
-      var jump = view.querySelector('[data-tab-jump]');
-      if (jump) jump.addEventListener('click', function (ev) {
-        ev.preventDefault(); show('overview');
-        var t = document.getElementById('how-to-enter');
-        if (t) { t.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); t.focus({ preventScroll: true }); }
+      view.addEventListener('click', function (ev) {
+        var j = ev.target.closest('[data-goto-tab]');
+        if (j) { ev.preventDefault(); show(j.getAttribute('data-goto-tab'), true); }
       });
       show(tab);
     });
   }
 
-  function overviewPanel(x, phase, flyer, cops) {
+  function overviewPanel(x, phase, st, flyer, cops, hasResult) {
     var e = x.e, h = '';
-    // How to enter — the real process, as published
-    var how = [];
-    if (phase === 'past') how.push('<p>This event has finished.</p>');
-    else {
-      if (safeUrl(e.registrationUrl)) {
-        how.push('<p>Enter online using the official form.</p><a class="btn btn--block" href="' + esc(e.registrationUrl) + '" target="_blank" rel="noopener">' + ICON.ext + esc(e.registrationLabel || 'Register') + '</a>');
-      }
-      if (e.registrationInstructions) how.push('<p>' + esc(e.registrationInstructions) + '</p>');
-      if (e.paypal && e.paypal.system && e.paypal.system !== 'none') {
-        how.push('<p>The entry fee can be paid online on the event’s page on the website.</p>' +
-          '<a class="btn btn--ghost btn--block" href="/event?id=' + encodeURIComponent(x.id) + '#pay" target="_blank" rel="noopener">' + ICON.ext + 'Pay entry fee on the website</a>');
-      }
-      var c = e.contact || {};
-      if (c.mailTo && !e.registrationInstructions) how.push('<p><b>Mail entries to:</b> ' + esc(c.mailTo) + '</p>');
-      if (e.deadline) how.push('<p class="note">' + esc(e.deadline) + '</p>');
-      if (!how.length && (c.name || c.email || c.phone)) how.push('<p>Contact the tournament organizer below to enter.</p>');
-      if (!how.length) how.push('<p>Entry details haven’t been published yet. Check back, or see the flyer if there is one.</p>');
+    // Date, venue, format, deadline, fee and schedule first
+    var facts = [];
+    if (e.format) facts.push(['Format', cap(e.format), false]);
+    if (x.deadline && phase !== 'past') facts.push(['Entry deadline', fmt(x.deadline, { month: 'long', day: 'numeric', year: 'numeric' }), false]);
+    else if (e.deadline && phase !== 'past') facts.push(['Entry', e.deadline, true]);
+    if (e.fee) facts.push(['Entry fee', e.fee, String(e.fee).length > 28]);
+    if (e.time) facts.push(['Schedule', e.time, true]);
+    if (e.club && e.club.address) facts.push(['Venue', e.club.address, true]);
+    if (e.formatDetails) facts.push(['Format details', e.formatDetails, true]);
+    if (facts.length) {
+      h += '<dl class="facts">' + facts.map(function (f) {
+        return '<div' + (f[2] ? ' class="wide"' : '') + '><dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd></div>';
+      }).join('') + '</dl>';
     }
-    h += '<section class="block" id="how-to-enter" tabindex="-1"><h3>How to enter</h3><div class="card">' + how.join('<div style="height:12px"></div>') + '</div></section>';
 
-    if (e.schedule && e.schedule.length) h += '<section class="block"><h3>Schedule</h3><ul class="card" style="padding-left:2.2em">' + e.schedule.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></section>';
+    // Actions: one primary, the rest quiet
+    var acts = [];
+    if (phase !== 'past') acts.push('<a class="btn btn--split btn--primary-wide" href="?tab=entry" data-goto-tab="entry">Entry details' + icon('chev') + '</a>');
+    else if (hasResult) acts.push('<a class="btn btn--split btn--primary-wide" href="?tab=results" data-goto-tab="results">See the results' + icon('chev') + '</a>');
+    if (e.club && safeUrl(e.club.mapUrl)) acts.push('<a class="btn btn--ghost" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>');
+    if (x.dates && phase !== 'past') acts.push('<a class="btn btn--ghost" href="' + icsHref(x) + '" download="' + esc(x.id) + '.ics">' + icon('cal') + 'Add to calendar</a>');
+    var on = isSaved(x.id);
+    acts.push('<button class="btn btn--ghost" type="button" data-save="' + esc(x.id) + '" data-title="' + esc(x.short) + '" aria-pressed="' + on + '">' + icon('bookmark') +
+      '<span>' + (on ? 'Saved' : 'Save') + '</span></button>');
+    h += '<div class="actions">' + acts.join('') + '</div>';
+    h += '<p class="note">Saving an event keeps it in your list. It does not register your team.</p>';
 
+    if (e.schedule && e.schedule.length) h += '<section class="block"><h2>Schedule</h2><ul>' + e.schedule.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></section>';
+    if (phase === 'past') h += docsBlock(e, flyer, cops);
+    if (e.rules && e.rules.length) {
+      var rl = '<ul>' + e.rules.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>';
+      h += '<section class="block"><h2>Rules</h2>' + (e.rules.length > 5
+        ? '<details class="fold"><summary><span>Read all ' + e.rules.length + ' rules</span>' + CHEV + '</summary><div style="padding-bottom:16px">' + rl + '</div></details>'
+        : rl) + '</section>';
+    }
+    if (e.noviceDefinition) h += '<section class="block"><h2>Who counts as a novice</h2><p>' + esc(e.noviceDefinition) + '</p></section>';
+    if (e.livestreamNotice) h += '<section class="block"><h2>Livestreaming</h2><p>' + esc(e.livestreamNotice) + '</p></section>';
+    h += '<ul class="rows" style="margin-top:24px">' + linkRow('/event?id=' + encodeURIComponent(x.id), 'globe', 'This event on the website', '', { ext: true }) + '</ul>';
+    return h;
+  }
+  function docsBlock(e, flyer, cops) {
     var docs = [];
     if (flyer) docs.push(docRow(flyer, 'Tournament flyer', e.flyer.type));
     if (cops) docs.push(docRow(cops, 'Conditions of play', 'pdf'));
-    if (docs.length) h += '<section class="block"><h3>Flyer & conditions of play</h3><ul class="list">' + docs.join('') + '</ul></section>';
-
-    var c2 = e.contact || {};
-    if (c2.name || c2.email || c2.phone) {
-      h += '<section class="block"><h3>Contact</h3><ul class="list">' +
-        (c2.name ? '<li><div class="row">' + rowIcon('people') + '<span class="row__main"><span class="row__title">' + esc(c2.name) + '</span><span class="row__meta" style="display:block">Tournament contact</span></span></div></li>' : '') +
-        (c2.phone ? '<li><a class="row" href="tel:' + esc(String(c2.phone).replace(/[^0-9+]/g, '')) + '">' + rowIcon('phone') + '<span class="row__main">' + esc(c2.phone) + '</span>' + ICON.chev + '</a></li>' : '') +
-        (c2.email ? '<li><a class="row" href="mailto:' + esc(c2.email) + '">' + rowIcon('mail') + '<span class="row__main" style="overflow-wrap:anywhere">' + esc(c2.email) + '</span>' + ICON.chev + '</a></li>' : '') +
+    return docs.length ? '<section class="block"><h2>Flyer & conditions of play</h2><ul class="rows">' + docs.join('') + '</ul></section>' : '';
+  }
+  // The real entry process, as published. Email or postal entry stays
+  // email or postal entry — it is never turned into an online sign-up.
+  function entryPanel(x, flyer, cops) {
+    var e = x.e, how = [];
+    if (safeUrl(e.registrationUrl)) {
+      how.push('<p>Enter online using the official form.</p><a class="btn btn--split btn--block" href="' + esc(e.registrationUrl) + '" target="_blank" rel="noopener">' + esc(e.registrationLabel || 'Register') + icon('ext') + '</a>');
+    }
+    if (e.registrationInstructions) how.push('<p>' + esc(e.registrationInstructions) + '</p>');
+    if (e.paypal && e.paypal.system && e.paypal.system !== 'none') {
+      how.push('<p>The entry fee can be paid online on the event’s page on the website.</p>' +
+        '<a class="btn btn--ghost btn--block" href="/event?id=' + encodeURIComponent(x.id) + '#pay" target="_blank" rel="noopener">' + icon('ext') + 'Pay entry fee on the website</a>');
+    }
+    var c = e.contact || {};
+    if (c.mailTo && !e.registrationInstructions) how.push('<p><b>Mail entries to:</b> ' + esc(c.mailTo) + '</p>');
+    if (e.deadline) how.push('<p><b>Deadline:</b> ' + esc(String(e.deadline).replace(/^(entry\s+)?deadline:?\s*/i, '')) + '</p>');
+    if (e.fee) how.push('<p><b>Entry fee:</b> ' + esc(e.fee) + '</p>');
+    if (how.length <= 2 && !safeUrl(e.registrationUrl) && !e.registrationInstructions && (c.name || c.email || c.phone)) how.push('<p>Contact the tournament organizer below to enter.</p>');
+    if (!how.length) how.push('<p>Entry details haven’t been published yet. Check back, or see the flyer if there is one.</p>');
+    var h = '<section class="block" style="margin-top:8px"><h2>How to enter</h2>' + how.join('') + '</section>';
+    h += docsBlock(e, flyer, cops);
+    if (c.name || c.email || c.phone) {
+      h += '<section class="block"><h2>Contact</h2><ul class="rows">' +
+        (c.name ? '<li><div class="row">' + icon('people') + '<span class="row__main"><span class="row__title"><b>' + esc(c.name) + '</b></span><span class="row__meta">Tournament contact</span></span></div></li>' : '') +
+        (c.phone ? linkRow(tel(c.phone), 'phone', c.phone) : '') +
+        (c.email ? linkRow('mailto:' + c.email, 'mail', c.email) : '') +
         '</ul></section>';
     }
-    if (e.rules && e.rules.length) {
-      var rl = '<ul>' + e.rules.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>';
-      h += '<section class="block"><h3>Rules</h3>' + (e.rules.length > 5
-        ? '<details class="standings card" style="padding:0"><summary><span>Read all ' + e.rules.length + ' rules</span>' + ICON.chev + '</summary><div style="padding:0 16px 16px">' + rl + '</div></details>'
-        : '<div class="card">' + rl + '</div>') + '</section>';
-    }
-    if (e.noviceDefinition) h += '<section class="block"><h3>Who counts as a novice</h3><div class="callout">' + esc(e.noviceDefinition) + '</div></section>';
-    if (e.livestreamNotice) h += '<section class="block"><h3>Livestreaming</h3><div class="callout callout--plain">' + esc(e.livestreamNotice) + '</div></section>';
-    h += '<p class="note" style="margin-top:24px"><a href="/event?id=' + encodeURIComponent(x.id) + '" target="_blank" rel="noopener">Open this event on the website</a> ' + extLabel('') + '</p>';
     return h;
   }
   function docRow(url, label, type) {
     var kind = type === 'image' ? 'Image' : type === 'gdoc' ? 'Google Doc' : /\.pdf$/i.test(url) ? 'PDF' : 'Document';
-    return '<li><a class="row" href="' + esc(url) + '" target="_blank" rel="noopener">' + rowIcon('doc') +
-      '<span class="row__main"><span class="row__title">' + esc(label) + '</span><span class="row__meta" style="display:block">' + kind + ' · opens in a new window</span></span>' + ICON.ext.replace('<svg ', '<svg class="chev" ') + '</a></li>';
+    return linkRow(url, 'doc', label, 'Opens in a new window', { ext: true, extText: kind });
   }
   function embedCard(title, why, url, height, kind) {
     var key = 'emb-' + Math.random().toString(36).slice(2, 8);
     return '<div class="card embed-card"><b>' + esc(title) + '</b><p>' + esc(why) + '</p>' +
-      '<div class="actions" style="margin-top:0"><button class="btn" type="button" data-embed="' + key + '" data-url="' + esc(url) + '" data-h="' + (parseInt(height, 10) || 650) + '" data-title="' + esc(title) + '">Show ' + esc(kind) + '</button>' +
-      '<a class="btn btn--ghost" href="' + esc(url.replace(/([?&])widget=true&?/, '$1').replace(/[?&]$/, '')) + '" target="_blank" rel="noopener">' + ICON.ext + 'Open full screen</a></div>' +
+      '<div class="actions"><button class="btn" type="button" data-embed="' + key + '" data-url="' + esc(url) + '" data-h="' + (parseInt(height, 10) || 650) + '" data-title="' + esc(title) + '">Show ' + esc(kind) + '</button>' +
+      '<a class="btn btn--ghost" href="' + esc(url.replace(/([?&])widget=true&?/, '$1').replace(/[?&]$/, '')) + '" target="_blank" rel="noopener">' + icon('ext') + 'Open full screen</a></div>' +
       '<div id="' + key + '"></div></div>';
   }
   function entriesPanel(e) {
-    return '<section class="block"><h3>Entries</h3>' +
+    return '<section class="block" style="margin-top:8px"><h2>Entries</h2>' +
       embedCard('Entry list', 'Teams entered so far, from the tournament’s Google Sheet. It’s updated by the organizer and needs a connection.', e.entries.pubUrl, e.entries.height, 'entries') +
       '</section>';
   }
   function drawPanel(e) {
     var ls = e.liveScoring || {};
-    var h = '<section class="block"><h3>Draw & scores</h3>';
+    var h = '<section class="block" style="margin-top:8px"><h2>Draw & scores</h2>';
     if (ls.gated) return h + '<div id="gated">' + loading() + '</div></section>';
     if (ls.sheets && ls.sheets.length) {
       h += ls.sheets.map(function (s) { return embedCard(s.label || 'Draw & scores', 'Draw and scores from the tournament’s Google Sheet. Needs a connection.', s.url, s.height, 'draw'); }).join('');
@@ -726,15 +843,15 @@
       if (d && d.sheets && d.sheets.length) {
         box.innerHTML = d.sheets.map(function (s) { return embedCard(s.label || 'Draw & scores', 'Draw and scores from the tournament’s Google Sheet.', s.url, s.height, 'draw'); }).join('');
       } else {
-        box.innerHTML = '<div class="card"><p>The draw and scores will appear here once the tournament starts.</p></div>';
+        box.innerHTML = '<p>The draw and scores will appear here once the tournament starts.</p>';
       }
     }).catch(function () {
       var box = document.getElementById('gated');
-      if (box) box.innerHTML = '<div class="card"><p>The draw and scores need a connection. Try again when you have a signal.</p></div>';
+      if (box) box.innerHTML = '<p>The draw and scores need a connection. Try again when you have a signal.</p>';
     });
   }
   function resultsPanel(r) {
-    return '<section class="block">' + divisionsHtml(r.t) + '</section>';
+    return divisionsHtml(r.t);
   }
 
   // .ics for "Add to calendar" — an all-day event in the user's calendar app
@@ -757,22 +874,23 @@
      RESULTS
      --------------------------------------------------------------- */
   function resultsList(params) {
-    setTop({ title: 'Results' });
+    setTitle('Results');
     return loadResults().then(function (list) {
       var f = { q: params.get('q') || '', cat: params.get('cat') || '', year: params.get('year') || '' };
       var years = {}; list.forEach(function (r) { if (r.year) years[r.year] = 1; });
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
-      view.innerHTML = '<h1 class="sr-only">Results</h1>' +
-        '<label class="search">' + ICON.search + '<span class="sr-only">Search results</span>' +
-        '<input type="search" id="q" placeholder="Search tournaments or player names" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
+      view.innerHTML = '<div class="intro"><h1>Results</h1><p>Celebrating Southwest bowlers.</p></div>' +
+        (list.length ? championPanel(list[0]) : '') +
+        '<section class="section" aria-labelledby="h-latest">' + sectionHead('h-latest', 'Latest results') +
+        '<label class="search">' + icon('search') + '<span class="sr-only">Search results</span>' +
+        '<input type="search" id="q" placeholder="Search tournaments or players" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
         '<div class="filters">' +
+        '<label><span class="sr-only">Category</span><select id="f-cat">' + opt('', 'All categories', f.cat) + CATS.map(function (c) { return opt(c, c, f.cat); }).join('') + '</select></label>' +
         '<label><span class="sr-only">Year</span><select id="f-year">' + opt('', 'All years', f.year) + Object.keys(years).sort().reverse().map(function (y) { return opt(y, y, f.year); }).join('') + '</select></label>' +
-        '<label><span class="sr-only">Category</span><select id="f-cat">' + opt('', 'Any category', f.cat) + ["Men's", "Women's", 'Mixed', 'Open'].map(function (c) { return opt(c, c, f.cat); }).join('') + '</select></label>' +
-        '</div><div id="res-list"></div>' +
-        '<section class="section"><ul class="list"><li><a class="row" href="/archive" target="_blank" rel="noopener">' + rowIcon('doc') +
-        '<span class="row__main"><span class="row__title">2022–2025 results</span><span class="row__meta" style="display:block">The results archive</span></span>' + extLabel('Website') + '</a></li></ul></section>';
+        '</div><div id="res-list"></div></section>' +
+        '<ul class="rows" style="margin-top:24px">' + linkRow('/archive', 'doc', '2022–2025 results', 'The results archive', { ext: true }) + '</ul>';
       function apply() {
-        var q = document.getElementById('q').value.trim().toLowerCase();
+        var qRaw = document.getElementById('q').value.trim(), q = qRaw.toLowerCase();
         var cat = document.getElementById('f-cat').value, year = document.getElementById('f-year').value;
         ['f-cat', 'f-year'].forEach(function (id) { var el = document.getElementById(id); el.classList.toggle('is-set', !!el.value); });
         var out = list.filter(function (r) {
@@ -783,10 +901,10 @@
         });
         var filtered = q || cat || year;
         document.getElementById('res-list').innerHTML = out.length
-          ? '<p class="count" aria-live="polite">' + out.length + ' tournament' + (out.length === 1 ? '' : 's') + (filtered ? ' · <button class="clear" type="button" data-clear>Clear filters</button>' : '') + '</p><ul class="list">' + out.map(resultRow).join('') + '</ul>'
+          ? '<p class="count" aria-live="polite">' + out.length + ' tournament' + (out.length === 1 ? '' : 's') + (filtered ? ' <button class="clear" type="button" data-clear>Clear filters</button>' : '') + '</p><ul class="list">' + out.map(resultRow).join('') + '</ul>'
           : state('empty', 'No results match', 'Try a different name or clear the filters.', '<button class="btn btn--ghost" type="button" data-clear>Clear filters</button>');
         var u = new URLSearchParams();
-        if (q) u.set('q', document.getElementById('q').value.trim()); if (cat) u.set('cat', cat); if (year) u.set('year', year);
+        if (q) u.set('q', qRaw); if (cat) u.set('cat', cat); if (year) u.set('year', year);
         history.replaceState(history.state, '', '/app/results' + (u.toString() ? '?' + u : ''));
       }
       var t;
@@ -802,54 +920,58 @@
     });
   }
   function resultDetail(params, id) {
-    var back = { href: '/app/results', label: 'Results' };
-    setTop({ title: 'Results', back: back });
+    setTitle('Results');
     return loadResults().then(function (list) {
       var r = list.filter(function (x) { return x.id === id; })[0];
-      if (!r) { view.innerHTML = state('empty', 'We couldn’t find those results', '', '<a class="btn" href="/app/results">All results</a>'); return; }
-      setTop({ title: shortTitle(r.t.title), back: back });
-      view.innerHTML = '<div class="ev-head"><h1 class="ev-head__title">' + esc(r.t.title) + '</h1>' +
-        (r.t.meta ? '<p class="ev-head__sub" style="margin-top:4px">' + esc(r.t.meta) + '</p>' : '') + '</div>' +
+      if (!r) { view.innerHTML = backLink('/app/results', 'Results') + state('empty', 'We couldn’t find those results', '', '<a class="btn" href="/app/results">All results</a>'); return; }
+      setTitle(shortTitle(r.t.title));
+      view.innerHTML = backLink('/app/results', 'Results') +
+        (r.t.meta ? '<p class="eyebrow">' + esc(r.t.meta) + '</p>' : '') +
+        '<h1 class="detail-title">' + esc(r.t.title) + '</h1>' +
         divisionsHtml(r.t) +
-        (r.eventId ? '<section class="section"><ul class="list"><li><a class="row" href="/app/events/' + encodeURIComponent(r.eventId) + '">' + rowIcon('cal') +
-          '<span class="row__main"><span class="row__title">Event details</span></span>' + ICON.chev + '</a></li></ul></section>' : '');
+        (r.eventId ? '<ul class="rows" style="margin-top:32px">' + linkRow('/app/events/' + encodeURIComponent(r.eventId), 'cal', 'Event details') + '</ul>' : '');
     });
   }
   var ORD = ['', '1st', '2nd', '3rd'];
   function ordinal(n) { n = +n; if (ORD[n]) return ORD[n]; var s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
-  function placeItem(p) {
+  function placeItem(p, winnerLabel) {
     var rank = +p.rank || 0;
     var label = p.rankLabel || (rank ? ordinal(rank) + ' place' : '');
     return '<li class="place' + (rank && rank <= 3 ? ' place--' + rank : '') + '">' +
-      '<span class="place__rank" aria-hidden="true">' + (rank === 1 ? ICON.star.replace('<svg ', '<svg style="fill:currentColor" ') : '') + esc(rank ? ordinal(rank) : '–') + '</span>' +
+      '<span class="place__rank" aria-hidden="true">' + esc(rank ? ordinal(rank) : '–') + '</span>' +
       '<span class="place__names"><span class="sr-only">' + esc(label) + ': </span>' + esc(p.names || '') +
-      (rank === 1 ? '<span class="place__label">Champions</span>' : p.rankLabel && !/place$/i.test(p.rankLabel) ? '<span class="place__label">' + esc(p.rankLabel) + '</span>' : '') + '</span>' +
+      (rank === 1 ? '<span class="place__label">' + esc(winnerLabel) + '</span>' : p.rankLabel && !/place$/i.test(p.rankLabel) ? '<span class="place__label">' + esc(p.rankLabel) + '</span>' : '') + '</span>' +
       (safeUrl(p.photo) ? '<img class="place__photo" src="' + esc(p.photo) + '" alt="' + esc(p.names || '') + '" loading="lazy">' : '') +
       '</li>';
   }
   function byRank(list) { return list.slice().sort(function (a, b) { return (+a.rank || 99) - (+b.rank || 99); }); }
-  // Podium first; the complete standings fold away underneath.
+  // Verified winners first; the complete published standings underneath.
   function divisionsHtml(t) {
-    return (t.divisions || []).map(function (dv) {
+    var divs = t.divisions || [];
+    // One division: its winners are the event's champions. Several (venues,
+    // greens, genders): each has its own winners, labelled as such.
+    var winnerLabel = divs.length > 1 ? 'Division winners' : 'Champions';
+    return divs.map(function (dv) {
       var groups = divisionPlaces(dv);
       if (!groups.length) return '';
       var first = byRank(groups[0].places);
       var podium = first.filter(function (p) { return +p.rank >= 1 && +p.rank <= 3; });
       if (!podium.length) podium = first.slice(0, 3);
       var total = groups.reduce(function (n, g) { return n + g.places.length; }, 0);
+      var item = function (p) { return placeItem(p, winnerLabel); };
       var html = '<section class="division"><h2 class="division__title">' + esc(dv.label || 'Results') + '</h2>' +
         (dv.venue ? '<p class="division__venue">' + esc(dv.venue) + '</p>' : '') +
         (groups.length > 1 && groups[0].label ? '<h3 class="flight">' + esc(groups[0].label) + '</h3>' : '') +
-        '<ol class="places" aria-label="' + esc(dv.label || '') + ' podium">' + podium.map(placeItem).join('') + '</ol>';
+        '<ol class="places" aria-label="' + esc(dv.label || '') + ' top places">' + podium.map(item).join('') + '</ol>';
       if (total > podium.length) {
-        html += '<details class="standings"><summary><span>Complete standings</span><span class="row__meta">' + total + ' places' +
-          (groups.length > 1 ? ' · ' + groups.length + ' flights' : '') + '</span>' + ICON.chev + '</summary>' +
+        html += '<details class="fold"><summary><span>Complete standings</span><span class="row__meta">' + total + ' places' +
+          (groups.length > 1 ? ' · ' + groups.length + ' flights' : '') + '</span>' + CHEV + '</summary>' +
           groups.map(function (g) {
             return (g.label ? '<h3 class="flight">' + esc(g.label) + '</h3>' : '') +
-              '<ol class="places" aria-label="' + esc((dv.label || '') + ' ' + (g.label || '')) + ' standings">' + byRank(g.places).map(placeItem).join('') + '</ol>';
+              '<ol class="places" aria-label="' + esc((dv.label || '') + ' ' + (g.label || '')) + ' standings">' + byRank(g.places).map(item).join('') + '</ol>';
           }).join('') + '</details>';
       }
-      if (dv.eventUrl) html += '<p class="note"><a href="' + esc(dv.eventUrl) + '" target="_blank" rel="noopener">Full breakdown on the website</a> ' + extLabel('') + '</p>';
+      if (dv.eventUrl) html += '<ul class="rows">' + linkRow(dv.eventUrl, '', 'Full breakdown on the website', '', { ext: true }) + '</ul>';
       return html + '</section>';
     }).join('') || state('empty', 'Results coming soon', 'They’ll appear here as soon as they’re published.');
   }
@@ -889,8 +1011,8 @@
       var live = vids.filter(function (v) { return v.state === 'live'; })[0];
       var slot = document.getElementById('home-live');
       if (live && slot) {
-        slot.innerHTML = '<a class="row" href="/app/watch">' + rowIcon('tv') + '<span class="row__main"><span class="badge badge--live">LIVE</span>' +
-          '<span class="row__title" style="display:block;margin-top:4px">' + esc(live.title) + '</span><span class="row__meta" style="display:block">Streaming now on SW TV</span></span>' + ICON.chev + '</a>';
+        slot.innerHTML = '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="live-tag">LIVE</span>' +
+          '<span class="row__title" style="margin-top:4px"><b>' + esc(live.title) + '</b></span><span class="row__meta">Streaming now on SW TV</span></span>' + CHEV + '</a>';
       }
     }).catch(function () {});
   }
@@ -899,29 +1021,38 @@
     if (withTime) { o.hour = 'numeric'; o.minute = '2-digit'; }
     return new Intl.DateTimeFormat('en-US', o).format(new Date(isoStr));
   }
-  function poster(v, badgeHtml) {
-    return '<div class="video"><div data-player="' + esc(v.id) + '"><button class="poster" type="button" data-play="' + esc(v.id) + '" data-title="' + esc(v.title) + '" style="background-image:url(\'' + esc(v.thumb) + '\')" aria-label="Play: ' + esc(v.title) + '">' +
-      (badgeHtml || '') + '<span class="poster__play" aria-hidden="true">' + ICON.play + '</span></button></div>' +
-      '<p class="video-title">' + esc(v.title) + '</p>' + '</div>';
+  // Video players load only when someone taps play
+  function poster(v, tagHtml, meta) {
+    return '<div class="video"><div><button class="poster" type="button" data-play="' + esc(v.id) + '" data-title="' + esc(v.title) + '" style="background-image:url(\'' + esc(v.thumb) + '\')" aria-label="Play: ' + esc(v.title) + '">' +
+      (tagHtml || '') + '<span class="poster__play" aria-hidden="true">' + playSvg() + '</span></button></div>' +
+      '<p class="video-title">' + esc(v.title) + '</p>' + (meta ? '<p class="video-meta">' + esc(meta) + '</p>' : '') + '</div>';
   }
   function watch() {
-    setTop({ title: 'Watch' });
+    setTitle('Watch');
     var today = todayISO();
-    view.innerHTML = '<h1 class="screen-title">SW TV</h1><p class="screen-sub">Livestreams, replays and HOW! lessons from Southwest Bowls.</p><section class="section" id="w-live">' + loading() + '</section><div id="w-plan"></div><div id="w-recent"></div>' +
-      '<section class="section"><ul class="list">' +
-      '<li><a class="row" href="' + YT_CHANNEL_URL + '" target="_blank" rel="noopener">' + rowIcon('tv') + '<span class="row__main"><span class="row__title">SW TV on YouTube</span><span class="row__meta" style="display:block">Subscribe to get notified when we go live</span></span>' + extLabel('YouTube') + '</a></li>' +
-      '<li><a class="row" href="https://www.youtube.com/playlist?list=PLHSDPOGEH8batQ10BOOCBnrK-msAl-FUO" target="_blank" rel="noopener">' + rowIcon('info') + '<span class="row__main"><span class="row__title">HOW! Lessons playlist</span><span class="row__meta" style="display:block">Learn to read the head and more</span></span>' + extLabel('YouTube') + '</a></li>' +
+    view.innerHTML = '<div class="intro"><h1>SW TV</h1><p>Livestreams, replays and HOW! lessons from Southwest Bowls.</p></div>' +
+      '<div id="w-next"></div><div id="w-live">' + loading() + '</div><div id="w-plan"></div><div id="w-recent"></div>' +
+      '<section class="section"><ul class="rows">' +
+      linkRow(YT_CHANNEL_URL, 'tv', 'SW TV on YouTube', 'Subscribe to get notified when we go live', { ext: true, extText: 'YouTube' }) +
+      linkRow('https://www.youtube.com/playlist?list=PLHSDPOGEH8batQ10BOOCBnrK-msAl-FUO', 'info', 'HOW! Lessons playlist', 'Learn to read the head and more', { ext: true, extText: 'YouTube' }) +
       '</ul></section>';
 
     getJSON('/streams-data.json').then(function (d) {
-      var plan = (d.streams || []).filter(function (s) { return s.date >= today; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).slice(0, 4);
+      var plan = (d.streams || []).filter(function (s) { return s.date >= today; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).slice(0, 5);
       if (!plan.length) return;
-      document.getElementById('w-plan').innerHTML = '<section class="section"><div class="section__head"><h2 class="section__title">Planned livestreams</h2></div><ul class="list">' +
-        plan.map(function (s) {
-          return '<li><a class="row" href="' + esc(safeUrl(s.link) || YT_CHANNEL_URL) + '" target="_blank" rel="noopener"><span class="datetile" aria-hidden="true"><small>' + fmt(s.date, { month: 'short' }) + '</small><b>' + fmt(s.date, { day: 'numeric' }) + '</b></span>' +
-            '<span class="row__main"><span class="row__title">' + esc(s.title) + '</span><span class="row__meta" style="display:block">' + esc(fmt(s.date, { weekday: 'long' })) + (s.venue ? ' · ' + esc(s.venue) : '') + '</span>' +
-            '<span class="badges"><span class="badge badge--blue">' + ICON.cal + 'Planned</span></span></span>' + extLabel('YouTube') + '</a></li>';
-        }).join('') + '</ul><p class="note">Planned dates from the SW TV schedule. Streams appear on YouTube when they go live.</p></section>';
+      var n = plan[0];
+      document.getElementById('w-next').innerHTML = '<article class="watch-card"><span class="watch-card__icon">' + icon('tv') + '</span>' +
+        '<p class="eyebrow">Next scheduled broadcast</p><h2>' + esc(n.title) + '</h2>' +
+        '<p>' + esc(n.date === today ? 'Today' : fmt(n.date, { weekday: 'long', month: 'long', day: 'numeric' })) + (n.venue ? '<br>' + esc(n.venue) : '') + '</p>' +
+        '<a class="btn btn--split btn--block" href="' + esc(safeUrl(n.link) || YT_CHANNEL_URL) + '" target="_blank" rel="noopener">Open SW TV' + icon('ext') + '</a></article>';
+      if (plan.length > 1) {
+        document.getElementById('w-plan').innerHTML = '<section class="section" aria-labelledby="h-plan">' + sectionHead('h-plan', 'Coming to SW TV') + '<ul class="list">' +
+          plan.slice(1).map(function (s) {
+            return '<li class="evrow"><span class="dateblock" aria-hidden="true"><small>' + fmt(s.date, { month: 'short' }) + '</small><b>' + fmt(s.date, { day: 'numeric' }) + '</b></span>' +
+              '<span class="evrow__main"><span class="evrow__title">' + esc(s.title) + '</span><span class="evrow__meta">' + esc(fmt(s.date, { weekday: 'long', month: 'long', day: 'numeric' })) + (s.venue ? ' · ' + esc(s.venue) : '') + '</span></span></li>';
+          }).join('') + '</ul></section>';
+      }
+      document.getElementById('w-plan').insertAdjacentHTML('beforeend', '<p class="muted" style="margin-top:12px">Planned dates from the SW TV schedule; schedules may change. A stream shows as live only when YouTube says it is.</p>');
     }).catch(function () {});
 
     return ytData().then(function (vids) {
@@ -929,30 +1060,31 @@
       var upcoming = vids.filter(function (v) { return v.state === 'upcoming'; });
       var recent = vids.filter(function (v) { return v.state === 'none'; }).slice(0, 6);
       var top = '';
-      if (live.length) top += '<section class="section"><div class="section__head"><h2 class="section__title">Live now</h2></div>' + live.map(function (v) { return poster(v, '<span class="badge badge--live">LIVE</span>'); }).join('') + '</section>';
-      if (upcoming.length) top += '<section class="section"><div class="section__head"><h2 class="section__title">Scheduled on YouTube</h2></div><div class="videos">' +
-        upcoming.map(function (v) { return poster(v, '<span class="badge badge--blue">' + ICON.clock + esc(v.scheduled ? fmtTime(v.scheduled, true) : 'Scheduled') + '</span>'); }).join('') + '</div></section>';
-      if (!live.length && !upcoming.length) top += '<div class="card"><p><b>Nothing is live right now.</b></p><p class="note" style="margin-top:4px">When SW TV goes live, it shows here.</p></div>';
+      if (live.length) top += '<section class="section" aria-labelledby="h-live">' + sectionHead('h-live', 'Live now') + '<div class="videos">' + live.map(function (v) { return poster(v, '<span class="live-tag">LIVE</span>'); }).join('') + '</div></section>';
+      if (upcoming.length) top += '<section class="section" aria-labelledby="h-sched">' + sectionHead('h-sched', 'Scheduled on YouTube') + '<div class="videos">' +
+        upcoming.map(function (v) { return poster(v, '<span class="tag">' + icon('clock', 'i--sm') + esc(v.scheduled ? fmtTime(v.scheduled, true) : 'Scheduled') + '</span>'); }).join('') + '</div></section>';
+      if (!live.length && !upcoming.length) top += '<p class="muted" style="margin-top:16px">Nothing is live right now. When SW TV goes live, it shows here.</p>';
       document.getElementById('w-live').innerHTML = top;
-      if (recent.length) document.getElementById('w-recent').innerHTML = '<section class="section"><div class="section__head"><h2 class="section__title">Recent videos & replays</h2></div><div class="videos">' +
-        recent.map(function (v) {
-          return poster(v, v.wasLive ? '<span class="badge">' + ICON.play + 'Replay</span>' : '').replace('</p></div>', '</p><p class="video-meta">' + esc(fmtTime(v.when)) + '</p></div>');
-        }).join('') + '</div></section>';
+      if (recent.length) document.getElementById('w-recent').innerHTML = '<section class="section" aria-labelledby="h-rec">' + sectionHead('h-rec', 'Replays & videos') + '<div class="videos">' +
+        recent.map(function (v) { return poster(v, v.wasLive ? '<span class="tag">Replay</span>' : '', fmtTime(v.when)); }).join('') + '</div></section>';
     }).catch(function () {
-      document.getElementById('w-live').innerHTML = '<div class="card"><p><b>Videos didn’t load.</b></p><p class="note" style="margin-top:4px">' +
-        (navigator.onLine ? 'Open SW TV on YouTube instead.' : 'Videos need a connection.') + '</p></div>';
+      document.getElementById('w-live').innerHTML = '<p class="muted" style="margin-top:16px">' +
+        (navigator.onLine ? 'Videos didn’t load. Open SW TV on YouTube instead.' : 'Videos need a connection.') + '</p>';
     });
   }
 
   /* ---------------------------------------------------------------
-     MORE — division information, clubs, settings
+     MORE — appearance, division information, clubs
      --------------------------------------------------------------- */
   var SKIP_IN_MORE = ['/', '/2026-tournaments-events', '/2026-tournament-results'];
   // Website pages the app has its own screen for
   var IN_APP = { '/club-info': '/app/more/clubs' };
   function more() {
-    setTop({ title: 'More' });
-    return getJSON('/nav-data.json').then(function (nav) {
+    setTitle('More');
+    var today = todayISO();
+    return Promise.all([getJSON('/nav-data.json'), loadEvents().catch(function () { return []; })]).then(function (all) {
+      var nav = all[0];
+      currentNotices = all[1].filter(function (x) { var p = eventPhase(x, today); return x.e.alert && (p === 'upcoming' || p === 'now'); });
       var groups = [], loose = [];
       (nav.items || []).forEach(function (it) {
         if (it.children) groups.push(it);
@@ -967,52 +1099,73 @@
         return fetch('/content/' + s + '.json', { method: 'HEAD' }).then(function (r) { return r.ok ? s : null; }).catch(function () { return null; });
       })).then(function (found) {
         var native = {}; found.forEach(function (s) { if (s) native[s] = 1; });
-        function linkRow(l) {
+        function navRow(l) {
           var slug = (l.href || '').slice(1);
           if (SKIP_IN_MORE.indexOf(l.href) >= 0 || /youtube/i.test(l.href || '')) return '';
-          if (IN_APP[l.href]) return '<li><a class="row" href="' + IN_APP[l.href] + '"><span class="row__main">' + esc(l.label) + '</span>' + ICON.chev + '</a></li>';
-          if (native[slug]) return '<li><a class="row" href="/app/page/' + esc(slug) + '"><span class="row__main">' + esc(l.label) + '</span>' + ICON.chev + '</a></li>';
+          if (IN_APP[l.href]) return linkRow(IN_APP[l.href], '', l.label);
+          if (native[slug]) return linkRow('/app/page/' + slug, '', l.label);
           var href = safeUrl(l.href); if (!href) return '';
-          return '<li><a class="row" href="' + esc(href) + '" target="_blank" rel="noopener"><span class="row__main">' + esc(l.label) + '</span>' + extLabel(isExternal(href) ? 'External' : 'Website') + '</a></li>';
+          return linkRow(href, '', l.label, '', { ext: true, extText: isExternal(href) ? 'External' : 'Website' });
         }
-        var html = '<h1 class="sr-only">More</h1>';
-        html += '<section class="section"><ul class="list">' +
-          '<li><a class="row" href="/app/more/clubs">' + rowIcon('pin') + '<span class="row__main"><span class="row__title">Clubs</span><span class="row__meta" style="display:block">All 26 clubs, Cambria to Coronado</span></span>' + ICON.chev + '</a></li>' +
-          '<li><a class="row" href="/app/events?show=saved">' + rowIcon('bookmark') + '<span class="row__main"><span class="row__title">Saved events</span></span>' + ICON.chev + '</a></li>' +
-          (native['contact-us'] ? '<li><a class="row" href="/app/page/contact-us">' + rowIcon('mail') + '<span class="row__main"><span class="row__title">Contact Southwest Bowls</span></span>' + ICON.chev + '</a></li>' : '') +
-          '</ul></section>';
+        var n = saved().length;
+        var html = '<div class="intro" style="margin-bottom:0"><h1>Your Southwest</h1><p>Learn. Play. Compete. Belong.</p></div>' +
+          '<section class="settings" aria-labelledby="h-app"><h2 id="h-app">Appearance</h2><p>Choose a look that feels right.</p>' + themeChoices() +
+          '<h2 style="margin-top:24px" id="h-text">Text size</h2><p>Makes all the text in the app bigger.</p>' + textChoices() + '</section>';
+        html += '<ul class="rows">' +
+          (currentNotices.length ? '<li><button class="row" type="button" data-notices aria-haspopup="dialog">' + icon('bell') + '<span class="row__main"><span class="row__title">Tournament updates</span><span class="row__meta">' + currentNotices.length + ' current</span></span>' + CHEV + '</button></li>' : '') +
+          linkRow('/app/events?show=saved', 'bookmark', 'Saved events', n ? n + ' on this phone' : '') +
+          linkRow('/app/more/clubs', 'pin', 'Clubs', 'Find a club near you') +
+          linkRow('/app/more/news', 'news', 'News') +
+          (native['contact-us'] ? linkRow('/app/page/contact-us', 'mail', 'Contact Southwest Bowls') : '') +
+          '</ul>';
         groups.forEach(function (g) {
-          var rows = g.children.map(linkRow).join('');
-          if (rows) html += '<section class="section"><div class="section__head"><h2 class="section__title">' + esc(g.label) + '</h2></div><ul class="list">' + rows + '</ul></section>';
+          var rows = g.children.map(navRow).join('');
+          if (rows) html += '<h2 class="group-title">' + esc(g.label) + '</h2><ul class="rows">' + rows + '</ul>';
         });
-        var looseRows = loose.map(linkRow).join('');
-        if (looseRows) html += '<section class="section"><div class="section__head"><h2 class="section__title">Also on the website</h2></div><ul class="list">' + looseRows + '</ul></section>';
-        html += '<section class="section"><div class="section__head"><h2 class="section__title">Follow us</h2></div><ul class="list">' +
-          '<li><a class="row" href="' + YT_CHANNEL_URL + '" target="_blank" rel="noopener">' + rowIcon('tv') + '<span class="row__main">YouTube · SW TV</span>' + extLabel('External') + '</a></li>' +
-          '<li><a class="row" href="' + FACEBOOK_URL + '" target="_blank" rel="noopener">' + rowIcon('people') + '<span class="row__main">Facebook</span>' + extLabel('External') + '</a></li>' +
-          '</ul></section>';
-        html += '<section class="section"><ul class="list">' +
-          '<li><a class="row" href="/app/more/settings">' + rowIcon('gear') + '<span class="row__main"><span class="row__title">App settings</span><span class="row__meta" style="display:block">Text size, saved events, offline copies</span></span>' + ICON.chev + '</a></li>' +
-          '<li><a class="row" href="/" target="_blank" rel="noopener">' + rowIcon('globe') + '<span class="row__main">Full website</span>' + extLabel('Website') + '</a></li>' +
-          '</ul></section>';
+        var looseRows = loose.map(navRow).join('');
+        if (looseRows) html += '<h2 class="group-title">Also on the website</h2><ul class="rows">' + looseRows + '</ul>';
+        html += '<h2 class="group-title">Follow us</h2><ul class="rows">' +
+          linkRow(YT_CHANNEL_URL, 'tv', 'YouTube · SW TV', '', { ext: true, extText: 'External' }) +
+          linkRow(FACEBOOK_URL, 'people', 'Facebook', '', { ext: true, extText: 'External' }) +
+          '</ul>';
+        html += '<ul class="rows" style="margin-top:32px">' +
+          linkRow('/app/more/settings', 'sliders', 'App settings', 'Saved events, offline copies') +
+          linkRow('/', 'globe', 'Southwest Bowls website', '', { ext: true }) +
+          '</ul>';
         view.innerHTML = html;
       });
     });
   }
 
+  function newsList() {
+    setTitle('News');
+    return getJSON('/news-data.json').then(function (d) {
+      var items = (d.items || []).slice().sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : 1; });
+      view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>News</h1></div>' +
+        (items.length ? items.map(function (n) {
+          var link = appLink(n.link || '');
+          return '<article class="resrow"><p class="eyebrow">' + (n.date ? esc(fmt(n.date, { month: 'long', day: 'numeric', year: 'numeric' })) : '') + '</p>' +
+            '<h2 class="resrow__title" style="margin-top:4px">' + esc(n.title) + '</h2>' +
+            (n.body ? '<p style="margin-top:8px">' + esc(n.body) + '</p>' : '') +
+            (link ? '<a class="btn btn--ghost" style="margin-top:12px" href="' + esc(link.href) + '"' + (link.ext ? ' target="_blank" rel="noopener"' : '') + '>' +
+              (link.ext ? icon('ext') : '') + esc(link.label) + '</a>' : '') + '</article>';
+        }).join('') : state('empty', 'No news right now', ''));
+    });
+  }
+
   function clubsList(params) {
-    setTop({ title: 'Clubs', back: { href: '/app/more', label: 'More' } });
+    setTitle('Clubs');
     return getJSON('/clubs-data.json').then(function (d) {
       var clubs = d.clubs || [];
       var q0 = params.get('q') || '';
-      view.innerHTML = '<h1 class="sr-only">Clubs</h1><label class="search">' + ICON.search + '<span class="sr-only">Search clubs</span>' +
+      view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>Clubs</h1><p>Cambria to Coronado.</p></div>' +
+        '<label class="search">' + icon('search') + '<span class="sr-only">Search clubs</span>' +
         '<input type="search" id="q" placeholder="Search by club or city" value="' + esc(q0) + '" autocomplete="off"></label><div id="c-list"></div>';
       function apply() {
         var q = document.getElementById('q').value.trim().toLowerCase();
         var list = clubs.filter(function (c) { return !q || (c.name + ' ' + c.city + ' ' + (c.summary || '')).toLowerCase().indexOf(q) >= 0; });
-        document.getElementById('c-list').innerHTML = list.length ? '<p class="count">' + list.length + ' club' + (list.length === 1 ? '' : 's') + '</p><ul class="list">' + list.map(function (c) {
-          return '<li><a class="row" href="/app/more/clubs/' + slugify(c.name) + '">' + rowIcon('pin') + '<span class="row__main"><span class="row__title">' + esc(c.name) + '</span>' +
-            '<span class="row__meta" style="display:block">' + esc(c.city) + '</span>' + (c.status === 'private' ? '<span class="badges"><span class="badge">' + ICON.lock + 'Private club</span></span>' : '') + '</span>' + ICON.chev + '</a></li>';
+        document.getElementById('c-list').innerHTML = list.length ? '<p class="count">' + list.length + ' club' + (list.length === 1 ? '' : 's') + '</p><ul class="rows">' + list.map(function (c) {
+          return linkRow('/app/more/clubs/' + slugify(c.name), 'pin', c.name, c.city + (c.status === 'private' ? ' · Private club' : ''));
         }).join('') + '</ul>' : state('empty', 'No clubs match', 'Try another name or city.');
         history.replaceState(history.state, '', '/app/more/clubs' + (q ? '?q=' + encodeURIComponent(document.getElementById('q').value.trim()) : ''));
       }
@@ -1021,52 +1174,40 @@
     });
   }
   function clubDetail(params, slug) {
-    var back = { href: '/app/more/clubs', label: 'Clubs' };
-    setTop({ title: 'Club', back: back });
+    setTitle('Club');
     return getJSON('/clubs-data.json').then(function (d) {
       var c = (d.clubs || []).filter(function (x) { return slugify(x.name) === slug; })[0];
-      if (!c) { view.innerHTML = state('empty', 'Club not found', '', '<a class="btn" href="/app/more/clubs">All clubs</a>'); return; }
-      setTop({ title: c.name, back: back });
+      if (!c) { view.innerHTML = backLink('/app/more/clubs', 'Clubs') + state('empty', 'Club not found', '', '<a class="btn" href="/app/more/clubs">All clubs</a>'); return; }
+      setTitle(c.name);
       var maps = c.lat && c.lng ? 'https://www.google.com/maps/search/?api=1&query=' + c.lat + ',' + c.lng : '';
       var acts = [];
-      if (maps) acts.push('<a class="btn" href="' + maps + '" target="_blank" rel="noopener">' + ICON.map + 'Directions</a>');
-      if (c.phone) acts.push('<a class="btn btn--ghost" href="tel:' + esc(String(c.phone).replace(/[^0-9+]/g, '')) + '">' + ICON.phone + 'Call</a>');
-      if (c.email) acts.push('<a class="btn btn--ghost" href="mailto:' + esc(c.email) + '">' + ICON.mail + 'Email</a>');
-      if (safeUrl(c.website)) acts.push('<a class="btn btn--ghost" href="' + esc(c.website) + '" target="_blank" rel="noopener">' + ICON.globe + 'Website</a>');
-      view.innerHTML = '<div class="ev-head"><p class="ev-head__sub">' + esc(c.city) + '</p><h1 class="ev-head__title">' + esc(c.name) + '</h1>' +
-        (c.status === 'private' ? '<div class="badges"><span class="badge">' + ICON.lock + 'Private club</span></div>' : '') + '</div>' +
-        '<div class="actions" style="margin-top:0">' + acts.join('') + '</div>' +
-        (c.summary ? '<section class="block" style="margin-top:24px"><p><b>' + esc(c.summary) + '</b></p></section>' : '') +
-        (c.details ? '<section class="block"><p>' + esc(c.details) + '</p></section>' : '') +
-        ((c.phone || c.email) ? '<section class="block"><h3>Contact</h3><ul class="list">' +
-          (c.phone ? '<li><a class="row" href="tel:' + esc(String(c.phone).replace(/[^0-9+]/g, '')) + '">' + rowIcon('phone') + '<span class="row__main">' + esc(c.phone) + '</span>' + ICON.chev + '</a></li>' : '') +
-          (c.email ? '<li><a class="row" href="mailto:' + esc(c.email) + '">' + rowIcon('mail') + '<span class="row__main" style="overflow-wrap:anywhere">' + esc(c.email) + '</span>' + ICON.chev + '</a></li>' : '') +
+      if (maps) acts.push('<a class="btn btn--split btn--primary-wide" href="' + maps + '" target="_blank" rel="noopener">Directions' + icon('ext') + '</a>');
+      if (c.phone) acts.push('<a class="btn btn--ghost" href="' + esc(tel(c.phone)) + '">' + icon('phone') + 'Call</a>');
+      if (c.email) acts.push('<a class="btn btn--ghost" href="mailto:' + esc(c.email) + '">' + icon('mail') + 'Email</a>');
+      if (safeUrl(c.website)) acts.push('<a class="btn btn--ghost" href="' + esc(c.website) + '" target="_blank" rel="noopener">' + icon('globe') + 'Website</a>');
+      view.innerHTML = backLink('/app/more/clubs', 'Clubs') + '<p class="eyebrow">' + esc(c.city) + (c.status === 'private' ? ' · Private club' : '') + '</p>' +
+        '<h1 class="detail-title">' + esc(c.name) + '</h1>' +
+        '<div class="actions">' + acts.join('') + '</div>' +
+        (c.summary ? '<section class="block"><p><b>' + esc(c.summary) + '</b></p>' + (c.details ? '<p>' + esc(c.details) + '</p>' : '') + '</section>' : c.details ? '<section class="block"><p>' + esc(c.details) + '</p></section>' : '') +
+        ((c.phone || c.email) ? '<section class="block"><h2>Contact</h2><ul class="rows">' +
+          (c.phone ? linkRow(tel(c.phone), 'phone', c.phone) : '') +
+          (c.email ? linkRow('mailto:' + c.email, 'mail', c.email) : '') +
           '</ul></section>' : '');
     });
   }
 
   function settings() {
-    setTop({ title: 'Settings', back: { href: '/app/more', label: 'More' } });
-    var size = store('text') || 'standard';
+    setTitle('App settings');
     var standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     var n = saved().length;
-    view.innerHTML = '<h1 class="sr-only">Settings</h1>' +
-      '<div class="card setting"><p class="setting__label" id="ts-l">Text size</p><p class="setting__help">Makes all the text in the app bigger.</p>' +
-      '<div class="segmented" role="group" aria-labelledby="ts-l">' + [['standard', 'Standard'], ['large', 'Large'], ['xlarge', 'Extra large']].map(function (o) {
-        return '<button type="button" data-size="' + o[0] + '" aria-pressed="' + (o[0] === size) + '">' + o[1] + '</button>';
-      }).join('') + '</div></div>' +
-      '<div class="card setting"><p class="setting__label">Saved events</p><p class="setting__help">' + (n ? n + ' event' + (n === 1 ? '' : 's') + ' saved on this phone. Saving an event doesn’t enter you in it.' : 'No events saved yet.') + '</p>' +
-      (n ? '<button class="btn btn--ghost" type="button" data-clear-saved>Clear saved events</button>' : '') + '</div>' +
-      '<div class="card setting"><p class="setting__label">Offline copies</p><p class="setting__help">Pages you open are kept so they work without a signal. Clearing them frees space; they come back as you browse.</p>' +
-      '<button class="btn btn--ghost" type="button" data-clear-cache>Clear offline copies</button></div>' +
-      (!standalone ? '<div class="card setting"><p class="setting__label">Add to your home screen</p><p class="setting__help">Get the Southwest Bowls icon on your phone.</p><a class="btn" href="/get-the-app" target="_blank" rel="noopener">How to add it</a></div>' : '') +
-      '<p class="updated">Southwest Bowls app · data from swlawnbowls.org</p>';
+    view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>App settings</h1></div>' +
+      '<section class="settings"><h2>Saved events</h2><p>' + (n ? n + ' event' + (n === 1 ? '' : 's') + ' saved on this phone. Saving an event doesn’t enter you in it.' : 'No events saved yet.') + '</p>' +
+      (n ? '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-saved>Clear saved events</button></div>' : '') + '</section>' +
+      '<section class="settings"><h2>Offline copies</h2><p>Pages you open are kept so they work without a signal. Clearing them frees space; they come back as you browse.</p>' +
+      '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-cache>Clear offline copies</button></div></section>' +
+      (!standalone ? '<section class="settings"><h2>Add to your home screen</h2><p>Get the Southwest Bowls icon on your phone.</p><div class="actions"><a class="btn" href="/get-the-app" target="_blank" rel="noopener">How to add it</a></div></section>' : '') +
+      '<p class="footnote">Southwest Bowls app · information from swlawnbowls.org</p>';
     view.addEventListener('click', function (ev) {
-      var b = ev.target.closest('[data-size]');
-      if (b) {
-        var v = b.getAttribute('data-size'); store('text', v); applyTextSize();
-        view.querySelectorAll('[data-size]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
-      }
       if (ev.target.closest('[data-clear-saved]')) { store('saved', []); toast('Saved events cleared'); render(); }
       if (ev.target.closest('[data-clear-cache]')) {
         (window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve())
@@ -1075,38 +1216,32 @@
     });
     return Promise.resolve();
   }
-  function applyTextSize() {
-    var v = store('text');
-    if (v === 'large' || v === 'xlarge') document.documentElement.setAttribute('data-text', v);
-    else document.documentElement.removeAttribute('data-text');
-  }
 
   /* ---------------------------------------------------------------
      Information pages (content/<id>.json) — same renderer rules as
      page.html, laid out for a phone
      --------------------------------------------------------------- */
   function infoPage(params, id) {
-    var back = { href: '/app/more', label: 'More' };
-    setTop({ title: '', back: back });
+    setTitle('');
     return getJSON('/content/' + encodeURIComponent(id) + '.json').then(function (d) {
-      setTop({ title: d.title || '', back: back });
+      setTitle(d.title || '');
       var fig = function (im) {
         var src = safeUrl(im.src); if (!src) return '';
         return '<figure><img src="' + esc(src) + '" alt="' + esc(im.alt || '') + '" loading="lazy">' + (im.caption ? '<figcaption>' + esc(im.caption) + '</figcaption>' : '') + '</figure>';
       };
       var R = {
         prose: function (s) { return (s.body || []).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join(''); },
-        list: function (s) { var t = s.ordered ? 'ol' : 'ul'; return '<div class="card"><' + t + '>' + (s.items || []).map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</' + t + '></div>'; },
+        list: function (s) { var t = s.ordered ? 'ol' : 'ul'; return '<' + t + '>' + (s.items || []).map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</' + t + '>'; },
         image: function (s) { return fig(s); },
         gallery: function (s) { return '<div class="gallery">' + (s.images || []).map(fig).join('') + '</div>'; },
         cards: function (s) {
-          return '<ul class="list">' + (s.items || []).map(function (c) {
+          return '<ul class="rows">' + (s.items || []).map(function (c) {
             var link = safeUrl(c.link);
-            var inner = (safeUrl(c.photo) ? '<img class="place__photo" src="' + esc(c.photo) + '" alt="" loading="lazy">' : '') +
-              '<span class="row__main"><span class="row__title">' + esc(c.title || '') + '</span>' +
-              (c.meta ? '<span class="row__meta" style="display:block">' + esc(c.meta) + '</span>' : '') +
+            var inner = (safeUrl(c.photo) ? '<img class="thumb" src="' + esc(c.photo) + '" alt="" loading="lazy">' : '') +
+              '<span class="row__main"><span class="row__title"><b>' + esc(c.title || '') + '</b></span>' +
+              (c.meta ? '<span class="row__meta">' + esc(c.meta) + '</span>' : '') +
               (c.body ? '<span style="display:block;margin-top:4px">' + esc(c.body) + '</span>' : '') + '</span>';
-            return '<li>' + (link ? '<a class="row" href="' + esc(link) + '"' + (isExternal(link) || /^\//.test(link) ? ' target="_blank" rel="noopener"' : '') + '>' + inner + ICON.chev + '</a>' : '<div class="row">' + inner + '</div>') + '</li>';
+            return '<li>' + (link ? '<a class="row" href="' + esc(link) + '"' + (isExternal(link) || /^\//.test(link) ? ' target="_blank" rel="noopener"' : '') + '>' + inner + CHEV + '</a>' : '<div class="row">' + inner + '</div>') + '</li>';
           }).join('') + '</ul>';
         },
         table: function (s) {
@@ -1123,20 +1258,20 @@
             var u = safeUrl(b.url); if (!u) return '';
             var a = appLink(u) || { href: u };
             var ext = !/^\/app\b/.test(a.href);
-            return '<a class="btn btn--ghost" href="' + esc(a.href) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + '>' + (ext ? ICON.ext : '') + esc(b.label || 'Open') + '</a>';
+            return '<a class="btn btn--ghost" href="' + esc(a.href) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + '>' + (ext ? icon('ext') : '') + esc(b.label || 'Open') + '</a>';
           }).join('') + '</div>';
         },
         contact: function (s) {
-          return '<ul class="list">' + (s.items || []).map(function (c) {
+          return '<ul class="rows">' + (s.items || []).map(function (c) {
             return '<li><div class="row" style="flex-direction:column;align-items:stretch;gap:2px">' +
-              (c.label ? '<span class="row__meta">' + esc(c.label) + '</span>' : '') + (c.name ? '<span class="row__title">' + esc(c.name) + '</span>' : '') +
+              (c.label ? '<span class="row__meta">' + esc(c.label) + '</span>' : '') + (c.name ? '<span class="row__title"><b>' + esc(c.name) + '</b></span>' : '') +
               (c.email ? '<a href="mailto:' + esc(c.email) + '" style="min-height:44px;display:flex;align-items:center;overflow-wrap:anywhere">' + esc(c.email) + '</a>' : '') +
-              (c.phone ? '<a href="tel:' + esc(String(c.phone).replace(/[^0-9+]/g, '')) + '" style="min-height:44px;display:flex;align-items:center">' + esc(c.phone) + '</a>' : '') +
+              (c.phone ? '<a href="' + esc(tel(c.phone)) + '" style="min-height:44px;display:flex;align-items:center">' + esc(c.phone) + '</a>' : '') +
               '</div></li>';
           }).join('') + '</ul>';
         }
       };
-      view.innerHTML = '<h1 class="screen-title">' + esc(d.title || '') + '</h1>' + (d.subtitle ? '<p class="screen-sub">' + esc(d.subtitle) + '</p>' : '') +
+      view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>' + esc(d.title || '') + '</h1>' + (d.subtitle ? '<p>' + esc(d.subtitle) + '</p>' : '') + '</div>' +
         (d.sections || []).map(function (s) {
           var r = R[s.type]; if (!r) return '';
           var inner = r(s); if (!inner) return '';
@@ -1158,11 +1293,14 @@
     [/^\/app\/more\/?$/, more, 'more'],
     [/^\/app\/more\/clubs\/?$/, clubsList, 'more'],
     [/^\/app\/more\/clubs\/([^/]+)\/?$/, clubDetail, 'more'],
+    [/^\/app\/more\/news\/?$/, newsList, 'more'],
     [/^\/app\/more\/settings\/?$/, settings, 'more'],
     [/^\/app\/page\/([a-z0-9-]+)\/?$/, infoPage, 'more']
   ];
   var scrollMemory = {};
   var renderToken = 0;
+  var restoring = false;
+  var tabMemory = {};
 
   function render() {
     var path = location.pathname, params = new URLSearchParams(location.search);
@@ -1190,8 +1328,6 @@
       restoring = false;
     });
   }
-  var restoring = false;
-  var tabMemory = {};
 
   function go(href, replace) {
     // Remember scroll position on the screen we are leaving
@@ -1204,25 +1340,39 @@
     render().then(function () { view.focus({ preventScroll: true }); });
   }
 
-  window.addEventListener('popstate', function () { restoring = true; render(); });
+  window.addEventListener('popstate', function () { closeDialog(); restoring = true; render(); });
 
   document.addEventListener('click', function (ev) {
     // Save / unsave
     var sv = ev.target.closest('[data-save]');
     if (sv) {
       ev.preventDefault();
-      var on = toggleSaved(sv.getAttribute('data-save'));
-      document.querySelectorAll('[data-save="' + sv.getAttribute('data-save') + '"]').forEach(function (b) {
+      var sid = sv.getAttribute('data-save');
+      var on = toggleSaved(sid);
+      document.querySelectorAll('[data-save="' + sid + '"]').forEach(function (b) {
         b.setAttribute('aria-pressed', on);
-        var span = b.querySelector('span'); if (span) span.textContent = on ? 'Saved' : 'Save';
+        var span = b.querySelector('span');
+        if (span) span.textContent = on ? 'Saved' : 'Save';
+        else b.setAttribute('aria-label', (on ? 'Saved: ' : 'Save ') + (b.getAttribute('data-title') || ''));
       });
+      view.dispatchEvent(new CustomEvent('saved-change'));
       return;
     }
+    // Appearance and text size
+    var th = ev.target.closest('[data-theme-choice]');
+    if (th) { store('theme', th.getAttribute('data-theme-choice')); applyTheme(); return; }
+    var sz = ev.target.closest('[data-size]');
+    if (sz) {
+      store('text', sz.getAttribute('data-size')); applyTextSize();
+      document.querySelectorAll('[data-size]').forEach(function (x) { x.setAttribute('aria-pressed', x === sz); });
+      return;
+    }
+    if (ev.target.closest('[data-notices]')) { noticesDialog(currentNotices); return; }
     // Load an embedded sheet or form on demand
     var em = ev.target.closest('[data-embed]');
     if (em) {
       var box = document.getElementById(em.getAttribute('data-embed'));
-      if (!navigator.onLine) { box.innerHTML = '<p class="note">This needs a connection.</p>'; return; }
+      if (!navigator.onLine) { box.innerHTML = '<p class="muted">This needs a connection.</p>'; return; }
       box.innerHTML = '<div class="embed"><iframe src="' + esc(em.getAttribute('data-url')) + '" height="' + em.getAttribute('data-h') + '" title="' + esc(em.getAttribute('data-title')) + '" loading="lazy"></iframe></div>';
       em.remove();
       return;
@@ -1240,22 +1390,25 @@
     var a = ev.target.closest('a');
     if (!a || a.target === '_blank' || a.hasAttribute('download') || ev.metaKey || ev.ctrlKey || ev.shiftKey) return;
     var href = a.getAttribute('href') || '';
-    if (href.charAt(0) === '#') return;
+    if (href.charAt(0) === '#' || href.charAt(0) === '?') return;
     if (!/^\/app(\/|$|\?)/.test(href)) return;
     ev.preventDefault();
-    // Back button: go back in history when we came from inside the app
+    if (dlg.contains(a)) closeDialog();
+    // Back link: go back in history when we came from inside the app,
+    // so the list keeps its filters and scroll position
     if (a.hasAttribute('data-back') && history.state && history.state.depth > 0) { history.back(); return; }
     // Tapping the current tab again returns to the top of that tab
     var tab = a.getAttribute('data-tab');
     if (tab && a.getAttribute('aria-current') === 'page') {
       var root = a.getAttribute('href');
-      if (location.pathname === root) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+      if (location.pathname === root) { window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); return; }
       return go(root);
     }
     if (tab && tabMemory[tab]) return go(tabMemory[tab]);
     go(href);
   });
 
+  applyTheme();
   applyTextSize();
   if (!history.state) history.replaceState({ depth: 0 }, '');
   render();
