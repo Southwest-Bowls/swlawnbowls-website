@@ -508,10 +508,11 @@
   /* ---------------------------------------------------------------
      HOME
      --------------------------------------------------------------- */
-  // Home is the overview — community, your saved games, the latest result
-  // and one timely item. Events stays the complete directory.
-  //   1 greeting · 2 alerts on saved events · 3 community story
-  //   4 Your next games · 5 Around the greens · 6 This week · 7 small links
+  // Home is the overview: personal and timely first, community after.
+  // Events stays the complete directory.
+  //   1 greeting + Find events / My saved events shortcuts
+  //   2 Your next games (alerts on saved events lead it)
+  //   3 This week · 4 News & community · 5 Around the greens · 6 SW TV
   var CRITICAL = /cancel|postpon|venue|reschedul|new date|moved/i;
   function isCritical(x) { return !!x.e.alert && CRITICAL.test((x.e.alertLabel || '') + ' ' + x.e.alert); }
 
@@ -522,9 +523,11 @@
       loadEvents(),
       loadResults().catch(function () { return []; }),
       getJSON('/streams-data.json').catch(function () { return { streams: [] }; }),
-      getJSON('/app-home-data.json').catch(function () { return {}; })
+      getJSON('/app-home-data.json').catch(function () { return {}; }),
+      getJSON('/news-data.json').catch(function () { return { items: [] }; })
     ]).then(function (all) {
-      var data = { events: all[0], results: all[1], streams: all[2].streams || [], story: all[3].feature || null, today: today };
+      var data = { events: all[0], results: all[1], streams: all[2].streams || [], story: all[3].feature || null,
+        news: all[4].items || [], today: today };
       drawHome(data);
       // Saving or unsaving anywhere on Home redraws it straight away
       view.addEventListener('saved-change', function (ev) {
@@ -544,52 +547,69 @@
     var mine = d.events.filter(function (x) { return ids.indexOf(x.id) >= 0; });
     var mineNext = mine.filter(function (x) { return live.indexOf(x) >= 0; });   // already in date order
 
-    // 1. Greeting
-    var html = '<div class="intro"><h1>Your Southwest.</h1><p>On the green. In the game. Together.</p></div>';
+    // 1. Greeting and two compact shortcuts — no hero
+    var html = '<div class="intro intro--compact"><h1>Your Southwest.</h1><p>On the green. In the game. Together.</p></div>' +
+      '<nav class="shortcuts" aria-label="Shortcuts">' +
+      '<a class="shortcut" href="/app/events">' + icon('cal') + '<span>Find events</span></a>' +
+      '<a class="shortcut" href="/app/events?show=saved">' + icon('bookmark') + '<span>My saved events</span></a>' +
+      '</nav>';
 
-    // 2. A cancellation or venue change on something you saved comes first
+    // 2. Your next games — a cancellation or venue change on a saved event leads
     var myAlerts = mineNext.filter(isCritical);
+    currentNotices = live.filter(function (x) { return x.e.alert; });
+    var others = currentNotices.filter(function (x) { return myAlerts.indexOf(x) < 0; });
+    html += '<section class="section section--first" aria-labelledby="h-next"><div class="section__head"><h2 class="section__title" id="h-next" tabindex="-1">Your next games</h2>' +
+      (mine.length ? '<a class="section__more" href="/app/events?show=saved">View saved' + icon('chev', 'i--sm') + '</a>' : '') + '</div>';
     html += myAlerts.map(function (x) {
       return '<a class="alert" href="/app/events/' + encodeURIComponent(x.id) + '">' + icon('alert') +
         '<span><b>' + esc(x.e.alertLabel || 'Update') + ' · ' + esc(x.short) + '</b><span class="alert__text">' + esc(x.e.alert) + '</span></span></a>';
     }).join('');
-    currentNotices = live.filter(function (x) { return x.e.alert; });
-    var others = currentNotices.filter(function (x) { return myAlerts.indexOf(x) < 0; });
-    d.otherNotices = others.length ? '<button class="noticebtn noticebtn--quiet" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
-      '<span>' + others.length + (myAlerts.length ? ' more' : '') + ' tournament update' + (others.length === 1 ? '' : 's') + '</span>' + CHEV + '</button>' : '';
-
-    // 3. Community story — one photograph, one headline, one action
-    var st = d.story;
-    if (st && st.headline) {
-      var ph = st.photo || {};
-      html += '<article class="story" aria-labelledby="h-story">' +
-        (safeUrl(ph.src) ? '<figure class="story__fig"><img class="story__img" src="' + esc(ph.src) + '" alt="' + esc(ph.alt || '') + '"' +
-          (ph.width && ph.height ? ' width="' + (+ph.width) + '" height="' + (+ph.height) + '"' : '') + ' fetchpriority="high" decoding="async"' +
-          ' style="' + (ph.aspect ? 'aspect-ratio:' + esc(ph.aspect) + ';' : '') + (ph.focus ? 'object-position:' + esc(ph.focus) : '') + '" data-hide-on-error>' +
-          '</figure>' : '') +
-        (st.eyebrow ? '<p class="eyebrow">' + esc(st.eyebrow) + '</p>' : '') +
-        '<h2 class="story__title" id="h-story">' + esc(st.headline) + '</h2>' +
-        (st.summary ? '<p class="story__text">' + esc(st.summary) + '</p>' : '') +
-        (st.champions && st.champions.length
-          ? '<button class="textlink" type="button" data-story aria-haspopup="dialog">' + esc(st.actionLabel || 'Read more') + icon('chev', 'i--sm') + '</button>'
-          : st.source && safeUrl(st.source.url) ? '<a class="textlink" href="' + esc(st.source.url) + '" target="_blank" rel="noopener">' + esc(st.actionLabel || 'Read more') + icon('ext', 'i--sm') + '</a>' : '') +
-        '</article>';
-    }
-
-    // 4. Your next games — up to two upcoming saved events
-    html += '<section class="section" aria-labelledby="h-next"><div class="section__head"><h2 class="section__title" id="h-next" tabindex="-1">Your next games</h2>' +
-      (mine.length ? '<a class="section__more" href="/app/events?show=saved">View saved' + icon('chev', 'i--sm') + '</a>' : '') + '</div>';
     if (mineNext.length) {
       html += '<ul class="list">' + mineNext.slice(0, 2).map(function (x) { return gameRow(x, today); }).join('') + '</ul>';
     } else if (mine.length) {
       html += '<div class="invite"><p class="invite__lead">No upcoming saved events.</p>' +
-        '<a class="btn btn--split" href="/app/events?show=saved">View saved events' + icon('chev') + '</a></div>';
+        '<a class="textlink" href="/app/events?show=saved">View saved events' + icon('chev', 'i--sm') + '</a></div>';
     } else {
       html += '<div class="invite"><p class="invite__lead">Save events to see your next games here.</p>' +
-        '<a class="btn btn--split" href="/app/events">Find an event' + icon('chev') + '</a>' +
-        '<p class="invite__small">Saving doesn’t register you.</p></div>';
+        '<p class="invite__small">Saving doesn’t register you.</p>' +
+        '<a class="textlink" href="/app/events">Find an event' + icon('chev', 'i--sm') + '</a></div>';
     }
     html += '</section>';
+
+    // 3. This week — a deadline or today's event, plus tournament updates
+    d.otherNotices = others.length ? '<button class="noticebtn noticebtn--quiet" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
+      '<span>' + others.length + (myAlerts.length ? ' more' : '') + ' tournament update' + (others.length === 1 ? '' : 's') + '</span>' + CHEV + '</button>' : '';
+    html += thisWeek(d);
+
+    // 4. News & community — the community story, then the latest news
+    var st = d.story;
+    var news = d.news.slice().sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : 1; }).slice(0, 2);
+    if ((st && st.headline) || news.length) {
+      html += '<section class="section" aria-labelledby="h-news">' + sectionHead('h-news', 'News & community', '/app/more/news', 'All news');
+      if (st && st.headline) {
+        var ph = st.photo || {};
+        html += '<article class="story" aria-labelledby="h-story">' +
+          (safeUrl(ph.src) ? '<figure class="story__fig"><img class="story__img" src="' + esc(ph.src) + '" alt="' + esc(ph.alt || '') + '"' +
+            (ph.width && ph.height ? ' width="' + (+ph.width) + '" height="' + (+ph.height) + '"' : '') + ' loading="lazy" decoding="async"' +
+            ' style="' + (ph.aspect ? 'aspect-ratio:' + esc(ph.aspect) + ';' : '') + (ph.focus ? 'object-position:' + esc(ph.focus) : '') + '" data-hide-on-error>' +
+            '</figure>' : '') +
+          (st.eyebrow ? '<p class="eyebrow">' + esc(st.eyebrow) + '</p>' : '') +
+          '<h3 class="story__title" id="h-story">' + esc(st.headline) + '</h3>' +
+          (st.summary ? '<p class="story__text">' + esc(st.summary) + '</p>' : '') +
+          (st.champions && st.champions.length
+            ? '<button class="textlink" type="button" data-story aria-haspopup="dialog">' + esc(st.actionLabel || 'Read more') + icon('chev', 'i--sm') + '</button>'
+            : st.source && safeUrl(st.source.url) ? '<a class="textlink" href="' + esc(st.source.url) + '" target="_blank" rel="noopener">' + esc(st.actionLabel || 'Read more') + icon('ext', 'i--sm') + '</a>' : '') +
+          '</article>';
+      }
+      if (news.length) {
+        html += '<ul class="rows newsrows">' + news.map(function (n) {
+          return '<li><a class="row" href="/app/more/news"><span class="row__main">' +
+            (n.date ? '<span class="row__meta">' + esc(fmt(n.date, { month: 'long', day: 'numeric' })) + '</span>' : '') +
+            '<span class="row__title">' + esc(n.title) + '</span></span>' + CHEV + '</a></li>';
+        }).join('') + '</ul>';
+      }
+      html += '</section>';
+    }
 
     // 5. Around the greens — the actual latest published result
     var r = d.results[0];
@@ -607,10 +627,10 @@
         '</span>' + CHEV + '</a></section>';
     }
 
-    // 6. This week — one timely item, only when there is one
-    html += '<div id="this-week">' + thisWeek(d, d.liveVideo) + '</div>';
+    // 6. SW TV — live only when YouTube says so; otherwise the next scheduled broadcast
+    html += '<div id="home-tv">' + tvSection(d) + '</div>';
 
-    // 7. Small secondary links (existing in-app routes)
+    // Small secondary links (existing in-app routes)
     html += '<nav class="minor" aria-label="Get started"><a href="/app/more/clubs">Find a club' + icon('chev', 'i--sm') + '</a>' +
       '<a href="/app/page/learnmore">Learn to bowl' + icon('chev', 'i--sm') + '</a></nav>';
 
@@ -621,6 +641,24 @@
     });
     var sb = view.querySelector('[data-story]');
     if (sb) sb.addEventListener('click', function () { storyDialog(d.story); });
+  }
+
+  function tvSection(d) {
+    var today = d.today, row;
+    if (d.liveVideo) {
+      row = '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="live-tag">LIVE</span>' +
+        '<span class="row__title" style="margin-top:4px"><b>' + esc(d.liveVideo.title) + '</b></span><span class="row__meta">Streaming now on SW TV</span></span>' + CHEV + '</a>';
+    } else {
+      var s = d.streams.filter(function (x) { return x.date >= today; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
+      row = s
+        ? '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="row__title"><b>' + esc(s.title) + '</b></span>' +
+          '<span class="row__meta">Scheduled broadcast · ' + esc(s.date === today ? 'Today' : fmt(s.date, { weekday: 'short', month: 'short', day: 'numeric' })) +
+          (s.venue ? ' · ' + esc(s.venue) : '') + '</span></span>' + CHEV + '</a>'
+        : '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="row__title"><b>Replays and lessons</b></span>' +
+          '<span class="row__meta">Past livestreams and HOW! lessons</span></span>' + CHEV + '</a>';
+    }
+    return '<section class="section" aria-labelledby="h-tv">' + sectionHead('h-tv', 'SW TV', '/app/watch', 'Watch') +
+      '<ul class="rows rows--menu"><li>' + row + '</li></ul></section>';
   }
 
   // A saved event on Home: date, club, the real entry status, any alert
@@ -635,25 +673,15 @@
       '</a>' + saveBtn(x.id, x.short) + '</li>';
   }
 
-  // Priority: a stream YouTube says is live › an entry deadline in the next
-  // 7 days › a scheduled broadcast in the next 7 days › an event today.
-  function thisWeek(d, liveVideo) {
+  // One timely item: an entry deadline in the next 7 days, otherwise an
+  // event happening today. Broadcasts are in the SW TV section.
+  function thisWeek(d) {
     var today = d.today, horizon = addDays(today, 7), item = null;
-    if (liveVideo) {
-      item = { href: '/app/watch', tag: '<span class="live-tag">LIVE</span>', title: liveVideo.title, meta: 'Streaming now on SW TV' };
-    }
-    if (!item) {
-      var dl = d.events.map(function (x) { return { x: x, st: entryStatus(x, today) }; })
-        .filter(function (o) { return o.st && o.st.kind === 'open' && o.st.close <= horizon; })
-        .sort(function (a, b) { return a.st.close < b.st.close ? -1 : a.st.close > b.st.close ? 1 : 0; })[0];
-      if (dl) item = { href: '/app/events/' + encodeURIComponent(dl.x.id), date: dl.st.close, kicker: 'Entry deadline',
-        title: dl.x.short, meta: 'Entries close ' + fmt(dl.st.close, { weekday: 'long', month: 'long', day: 'numeric' }) + (dl.x.clubLabel ? ' · ' + dl.x.clubLabel : '') };
-    }
-    if (!item) {
-      var s = d.streams.filter(function (s) { return s.date >= today && s.date <= horizon; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
-      if (s) item = { href: '/app/watch', date: s.date, kicker: 'Scheduled broadcast', title: s.title,
-        meta: (s.date === today ? 'Today' : fmt(s.date, { weekday: 'long', month: 'long', day: 'numeric' })) + (s.venue ? ' · ' + s.venue : '') + ' · not live yet' };
-    }
+    var dl = d.events.map(function (x) { return { x: x, st: entryStatus(x, today) }; })
+      .filter(function (o) { return o.st && o.st.kind === 'open' && o.st.close <= horizon; })
+      .sort(function (a, b) { return a.st.close < b.st.close ? -1 : a.st.close > b.st.close ? 1 : 0; })[0];
+    if (dl) item = { href: '/app/events/' + encodeURIComponent(dl.x.id), date: dl.st.close, kicker: 'Entry deadline',
+      title: dl.x.short, meta: 'Entries close ' + fmt(dl.st.close, { weekday: 'long', month: 'long', day: 'numeric' }) + (dl.x.clubLabel ? ' · ' + dl.x.clubLabel : '') };
     if (!item) {
       var t = d.events.filter(function (x) { return eventPhase(x, today) === 'now'; })[0];
       if (t) item = { href: '/app/events/' + encodeURIComponent(t.id), date: today, kicker: 'Today', title: t.short,
@@ -1154,10 +1182,9 @@
   }
   function checkLiveForHome(d) {
     ytData().then(function (vids) {
-      var live = vids.filter(function (v) { return v.state === 'live'; })[0];
-      var slot = document.getElementById('this-week');
-      d.liveVideo = live || null;
-      if (live && slot) slot.innerHTML = thisWeek(d, live);
+      d.liveVideo = vids.filter(function (v) { return v.state === 'live'; })[0] || null;
+      var slot = document.getElementById('home-tv');
+      if (d.liveVideo && slot) slot.innerHTML = tvSection(d);
     }).catch(function () {});
   }
   function fmtTime(isoStr, withTime) {

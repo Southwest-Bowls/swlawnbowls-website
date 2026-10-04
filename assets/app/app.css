@@ -283,6 +283,19 @@ svg { flex: none; }
 /* ---------- Home ----------------------------------------------------
    Varied on purpose: a broad photo story, compact personal rows, a photo
    + caption result, quiet text links. Not every section is a card. */
+.intro--compact { margin-bottom: var(--s4); }
+.shortcuts { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.shortcut {
+  flex: 1 1 auto; display: flex; align-items: center; gap: 6px; min-height: 48px; padding: var(--s2) var(--s3);
+  border-radius: var(--r-control); background: var(--subtle); color: var(--text); text-decoration: none; font-weight: 700; font-size: .9375rem;
+}
+.shortcut > .i { color: var(--heading); }
+.shortcut > span { white-space: nowrap; }
+.section--first { margin-top: var(--s6); }
+.section__head + .alert { margin-top: var(--s2); }
+.newsrows { margin-top: var(--s4); }
+.newsrows > li:first-child { border-top: 1px solid var(--line); }
+.newsrows .row__title { font-weight: 700; }
 .alert {
   display: flex; gap: var(--s3); align-items: flex-start; margin-bottom: var(--s3);
   padding: var(--s3) var(--s4); border-radius: var(--r-control);
@@ -299,7 +312,7 @@ svg { flex: none; }
 .story__fig { margin: 0 0 var(--s4); }
 /* Shape and focal point come per photo from app-home-data.json; the default is a taller 4:3 so people aren't cut at the shoulders */
 .story__img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 18px; background: var(--subtle); }
-.story__title { font-size: 1.625rem; line-height: 1.2; letter-spacing: -.02em; margin-top: 6px; }
+.story__title { font-size: 1.375rem; line-height: 1.2; letter-spacing: -.02em; margin-top: 6px; }
 .story__text { color: var(--text-2); margin-top: var(--s2); }
 
 .textlink {
@@ -311,8 +324,8 @@ svg { flex: none; }
 
 .invite { background: var(--subtle); border-radius: var(--r-panel); padding: 18px; margin-top: var(--s2); }
 .invite__lead { font-weight: 700; }
-.invite__small { color: var(--text-2); font-size: var(--fs-sm); margin-top: var(--s3); }
-.invite .btn { margin-top: var(--s4); }
+.invite__small { color: var(--text-2); font-size: var(--fs-sm); margin-top: var(--s1); }
+.invite .textlink { margin-top: var(--s1); }
 
 .achieve { display: flex; gap: var(--s4); align-items: center; margin-top: var(--s2); color: var(--text); text-decoration: none; }
 .achieve__frame { width: 136px; height: 176px; flex: none; overflow: hidden; border-radius: var(--r-control); background: var(--subtle); }
@@ -338,7 +351,6 @@ svg { flex: none; }
 .champs b { display: block; font-size: var(--fs-lg); }
 
 @media (max-width: 370px) {
-  .story__title { font-size: 1.5rem; }
   .achieve__frame { width: 112px; height: 148px; }
 }
 
