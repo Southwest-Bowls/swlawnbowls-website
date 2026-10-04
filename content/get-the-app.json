@@ -1,5 +1,5 @@
 {
-  "id": "app",
+  "id": "get-the-app",
   "title": "Southwest Bowls on your phone",
   "subtitle": "Add the website to your home screen and it opens like an app — no app store, no download, nothing to update.",
   "sections": [
@@ -52,8 +52,14 @@
     {
       "type": "buttons",
       "items": [
-        { "label": "Go to the home page", "url": "/" },
-        { "label": "2026 tournaments", "url": "/2026-tournaments-events" }
+        {
+          "label": "Go to the home page",
+          "url": "/"
+        },
+        {
+          "label": "2026 tournaments",
+          "url": "/2026-tournaments-events"
+        }
       ]
     }
   ]

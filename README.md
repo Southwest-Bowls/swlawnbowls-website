@@ -8,7 +8,7 @@
   The website of the <strong>Southwest Bowls Division</strong> of lawn bowls:
   tournaments, results, news and club information from Cambria to San Diego.<br>
   <a href="https://www.swlawnbowls.org"><strong>www.swlawnbowls.org</strong></a>
-  · <a href="https://www.swlawnbowls.org/app">Add it to your phone</a>
+  · <a href="https://www.swlawnbowls.org/get-the-app">Add it to your phone</a>
 </p>
 
 ---
@@ -50,7 +50,7 @@ follow [docs/page-content-schema.md](docs/page-content-schema.md).
 The site installs on phones as an app (a PWA). There's no app store and
 nothing to publish separately: the app *is* the website, so every update to
 the site is in the app the next time it is opened. Install instructions for
-members are at [/app](https://www.swlawnbowls.org/app).
+members are at [/get-the-app](https://www.swlawnbowls.org/get-the-app).
 
 | File | What it does |
 |---|---|

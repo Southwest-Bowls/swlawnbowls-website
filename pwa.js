@@ -5,7 +5,7 @@
    offline helper (sw.js), and on the home page offers a small
    "Add to your phone" button:
      - Android / desktop Chrome: the button opens the install prompt.
-     - iPhone / iPad: the button goes to /app, which explains
+     - iPhone / iPad: the button goes to /get-the-app, which explains
        Share → Add to Home Screen (Apple has no install prompt).
    The button is hidden once the app is installed or dismissed.
 
@@ -47,6 +47,13 @@
   var KEY = 'swd-install-dismissed';
   var standalone = window.matchMedia('(display-mode: standalone)').matches ||
                    window.navigator.standalone === true;
+
+  // The installed app starts at /app. Phones that installed it before
+  // the app existed open on the home page; send them to the app.
+  if (standalone && (location.pathname === '/' || location.pathname === '/home-v2')) {
+    location.replace('/app');
+    return;
+  }
   var path = location.pathname.replace(/\/$/, '') || '/';
   var onHome = path === '/' || path === '/home-v2' || path === '/site-home';
   var dismissed = false;
@@ -104,7 +111,7 @@
   });
 
   if (isIOS) {
-    var show = function () { showChip(function () { location.href = '/app'; }); };
+    var show = function () { showChip(function () { location.href = '/get-the-app'; }); };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', show);
     else show();
   }

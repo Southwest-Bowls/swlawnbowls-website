@@ -10,15 +10,22 @@
    Photos, icons and PDFs are the exception: they never change once
    published, so they come from the saved copy when there is one.
 
+   Never cached: other sites (Google Forms and Sheets, so entry forms,
+   entry lists, draws and scores are always live), PayPal, and /api/.
+
    To force every phone to drop its saved copies, bump VERSION.
    ============================================================ */
-const VERSION = 'swd-v1';
+const VERSION = 'swd-v2';
 const PAGES = VERSION + '-pages';
 const MEDIA = VERSION + '-media';
 const MAX_MEDIA = 150;            // photos are big; keep the newest 150
 
 const PRECACHE = [
   '/offline.html',
+  '/app',
+  '/assets/app/app.css',
+  '/assets/app/app.js',
+  '/assets/app/swd-logo.png',
   '/assets/icons/icon-192.png',
   '/assets/icons/apple-touch-icon.png',
 ];
@@ -38,7 +45,8 @@ self.addEventListener('activate', (event) => {
 });
 
 function isMedia(url) {
-  return /^\/(photos|assets|pdfs)\//.test(url.pathname);
+  // Never the app's own code (assets/app/): that must always be fresh.
+  return /^\/(photos|pdfs|assets\/icons)\//.test(url.pathname);
 }
 
 async function trim(cacheName, max) {
@@ -54,11 +62,25 @@ async function networkFirst(request) {
     if (response.ok) cache.put(request, response.clone());
     return response;
   } catch (err) {
-    const saved = await cache.match(request, { ignoreVary: true });
-    if (saved) return saved;
+    const url = new URL(request.url);
+    let saved = await cache.match(request, { ignoreVary: true });
+    // Every /app/... screen is the same app page; any saved copy will do.
+    if (!saved && request.mode === 'navigate' && url.pathname.startsWith('/app')) {
+      saved = await cache.match('/app', { ignoreSearch: true });
+    }
+    if (saved) return markOffline(saved);
     if (request.mode === 'navigate') return cache.match('/offline.html');
     throw err;
   }
+}
+
+// Tell the page this is a saved copy, so it can say so ("You're offline,
+// showing information saved at ..."). The Date header is when it was saved.
+async function markOffline(response) {
+  const headers = new Headers(response.headers);
+  headers.set('x-swd-offline', '1');
+  const body = await response.blob();
+  return new Response(body, { status: response.status, statusText: response.statusText, headers });
 }
 
 async function cacheFirst(request) {
