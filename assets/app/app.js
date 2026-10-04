@@ -306,8 +306,20 @@
   }
   function cap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
 
+  function championPhoto(r) {
+    var photo = '';
+    (r.t.divisions || []).some(function (dv) {
+      var g = divisionPlaces(dv)[0];
+      var p = g && g.places.filter(function (x) { return +x.rank === 1 && safeUrl(x.photo); })[0];
+      if (p) photo = p.photo;
+      return !!photo;
+    });
+    return photo;
+  }
   function resultRow(r) {
-    return '<li><a class="row" href="/app/results/' + encodeURIComponent(r.id) + '">' + rowIcon('trophy') +
+    var ph = championPhoto(r);
+    return '<li><a class="row" href="/app/results/' + encodeURIComponent(r.id) + '">' +
+      (ph ? '<img class="thumb" src="' + esc(ph) + '" alt="" loading="lazy" width="64" height="64">' : rowIcon('trophy')) +
       '<span class="row__main"><span class="row__title">' + esc(r.t.title) + '</span>' +
       '<span class="row__meta" style="display:block">' + esc(r.t.meta || '') + '</span>' +
       (winnersLine(r) ? '<span class="winner" style="display:block">Winners: ' + winnersLine(r) + '</span>' : '') +
@@ -330,8 +342,12 @@
   function setTop(opts) {
     var inner;
     if (opts.brand) {
+      var hour = +new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', hour12: false }).format(new Date()) % 24;
+      var hello = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
       inner = '<div class="topbar__brand"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="65" height="76">' +
-        '<div class="topbar__tag">Lawn Bowls<span>A Sport for Life!</span></div></div>';
+        '<div class="hello"><p class="hello__hi">' + hello + '</p>' +
+        '<p class="hello__date">' + esc(fmt(todayISO(), { weekday: 'long', month: 'long', day: 'numeric' })) + '</p>' +
+        '<p class="hello__tag">Lawn Bowls – A Sport for Life!</p></div></div>';
     } else {
       inner = (opts.back ? '<a class="back" href="' + esc(opts.back.href) + '" data-back>' + ICON.back + '<span>' + esc(opts.back.label) + '</span></a>' : '') +
         '<h1 class="topbar__title">' + esc(opts.title || '') + '</h1>';
@@ -358,31 +374,35 @@
       var live = events.filter(function (x) { var p = eventPhase(x, today); return p === 'upcoming' || p === 'now'; });
       var html = '<h1 class="sr-only">Southwest Bowls home</h1>';
 
-      // 1. Notices (only when one exists)
-      var notices = live.filter(function (x) { return x.e.alert; }).slice(0, 2);
-      if (notices.length) {
-        html += '<section class="section" aria-label="Important notices">' + notices.map(function (x) {
-          return '<a class="notice" href="/app/events/' + encodeURIComponent(x.id) + '">' + ICON.alert +
-            '<span><b>' + esc(x.e.alertLabel || 'Update') + ' · ' + esc(shortTitle(x.e.title)) + '</b><span class="clamp">' + esc(x.e.alert) + '</span></span>' + ICON.chev + '</a>';
-        }).join('') + '</section>';
-      }
+      // 1. Notices — one compact card, one line each (only when one exists)
+      var notices = live.filter(function (x) { return x.e.alert; }).slice(0, 3);
+      var noticesHtml = notices.length ? '<section class="section" aria-labelledby="h-upd"><div class="updates">' +
+        '<p class="updates__head" id="h-upd">' + ICON.alert + 'Updates</p><ul>' + notices.map(function (x) {
+          return '<li><a href="/app/events/' + encodeURIComponent(x.id) + '"><span class="updates__text"><b>' + esc(x.e.alertLabel || 'Update') + '</b> · ' +
+            esc(shortTitle(x.e.title)) + '</span>' + ICON.chev + '</a></li>';
+        }).join('') + '</ul></div></section>' : '';
 
       // 2. Next tournament
-      var next = live[0];
+      var next = live[0], heroHtml = '';
       if (next) {
         var e = next.e, st = entryStatus(next, today), phase = eventPhase(next, today);
-        html += '<section class="section" aria-labelledby="h-next"><article class="card hero-event">' +
-          '<p class="hero-event__kicker" id="h-next">' + (phase === 'now' ? 'Happening now' : 'Next tournament') + '</p>' +
-          '<h2 class="hero-event__title">' + esc(e.title) + '</h2>' +
-          '<ul class="facts">' +
-          '<li>' + ICON.cal + '<span>' + esc(dateRangeLabel(next.dates, true) || e.date) + (e.time ? '<small>' + esc(e.time) + '</small>' : '') + '</span></li>' +
+        var days = next.dates ? daysBetween(today, next.dates.start) : null;
+        var when = phase === 'now' ? 'Happening now' : days === 1 ? 'Next tournament · Tomorrow' : days != null ? 'Next tournament · In ' + days + ' days' : 'Next tournament';
+        heroHtml = '<section class="section" aria-labelledby="h-next"><article class="hero">' +
+          '<a class="hero__top" href="/app/events/' + encodeURIComponent(next.id) + '">' +
+          '<p class="hero__kicker" id="h-next">' + (phase === 'now' ? '<span class="dot" aria-hidden="true"></span>' : '') + esc(when) + '</p>' +
+          '<h2 class="hero__title">' + esc(e.title) + '</h2>' +
+          '<p class="hero__date">' + ICON.cal + esc(dateRangeLabel(next.dates, true) || e.date) + '</p></a>' +
+          '<div class="hero__body"><ul class="facts">' +
+          (e.time ? '<li>' + ICON.clock + '<span>' + esc(e.time) + '</span></li>' : '') +
           (next.club ? '<li>' + ICON.pin + '<span>' + esc(next.club) + (e.club.address ? '<small>' + esc(e.club.address) + '</small>' : '') + '</span></li>' : '') +
           (e.format ? '<li>' + ICON.people + '<span>' + esc(cap(e.format)) + (e.fee ? '<small>Entry ' + esc(e.fee) + '</small>' : '') + '</span></li>' : '') +
           '</ul>' + (st && phase !== 'now' ? '<div class="badges" style="margin-top:12px">' + badge(st) + '</div>' : '') +
-          '<div class="actions"><a class="btn" href="/app/events/' + encodeURIComponent(next.id) + '">Details & how to enter</a>' +
+          '<div class="actions"><a class="btn" href="/app/events/' + encodeURIComponent(next.id) + '">' + (phase === 'now' ? 'Event details' : 'Details & how to enter') + '</a>' +
           (e.club && safeUrl(e.club.mapUrl) ? '<a class="btn btn--ghost" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener">' + ICON.map + 'Directions</a>' : '') +
-          '</div></article></section>';
+          '</div></div></article></section>';
       }
+      html += heroHtml + noticesHtml;
 
       // 3. Coming up
       var soon = live.slice(1, 5);
