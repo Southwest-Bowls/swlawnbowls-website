@@ -173,13 +173,47 @@
     return { title: title, events: head.filter(function (x, j) { return j > 0 && j !== rk && j !== tp && x; }), players: players };
   }
 
+  // ---- Information pages ------------------------------------------------
+  // A "contact" section that only repeats people already shown as cards
+  // (same names) is merged into those cards — one entry per person with
+  // role, description and email — instead of listing everyone twice.
+  function mergeRepeatedContacts(sections) {
+    var out = (sections || []).map(function (s) { return s; });
+    var norm = function (n) { return String(n || '').trim().toLowerCase(); };
+    for (var i = 0; i < out.length; i++) {
+      var c = out[i];
+      if (!c || c.type !== 'contact' || !(c.items || []).length) continue;
+      for (var j = i - 1; j >= 0; j--) {
+        var cards = out[j];
+        if (!cards || cards.type !== 'cards') continue;
+        var byName = {};
+        (cards.items || []).forEach(function (it, k) { byName[norm(it.title)] = k; });
+        var all = c.items.every(function (it) { return it.name && byName[norm(it.name)] !== undefined; });
+        if (!all) continue;
+        var items = cards.items.map(function (it) { return Object.assign({}, it); });
+        c.items.forEach(function (it) {
+          var t = items[byName[norm(it.name)]];
+          if (it.email) t.email = it.email;
+          if (it.phone) t.phone = it.phone;
+          if (!t.meta && it.label) t.meta = it.label;
+          if (/^mailto:/i.test(t.link || '') && t.email && t.link.slice(7).toLowerCase() === t.email.toLowerCase()) delete t.link;
+        });
+        out[j] = Object.assign({}, cards, { items: items, people: true, heading: cards.heading || c.heading });
+        out.splice(i, 1); i--;
+        break;
+      }
+    }
+    return out;
+  }
+
   var api = {
     TZ: TZ, CANONICAL_ORIGIN: CANONICAL_ORIGIN,
     endOfDayLA: endOfDayLA, expiryTime: expiryTime, isExpiredNotice: isExpiredNotice,
     updateVersion: updateVersion, clubIdsForVenue: clubIdsForVenue, aliasMapFrom: aliasMapFrom,
     preferFollowed: preferFollowed, canonicalUrl: canonicalUrl, slugify: slugify,
     icsText: icsText, icsFold: icsFold, icsDocument: icsDocument,
-    standingsCsvUrl: standingsCsvUrl, parseCsv: parseCsv, standingsFromCsv: standingsFromCsv
+    standingsCsvUrl: standingsCsvUrl, parseCsv: parseCsv, standingsFromCsv: standingsFromCsv,
+    mergeRepeatedContacts: mergeRepeatedContacts
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SWDLogic = api;

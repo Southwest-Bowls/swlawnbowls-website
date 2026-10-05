@@ -107,3 +107,18 @@ test('standings: ranks, ties, totals and per-event points read exactly as publis
   assert.deepStrictEqual(s.players[0].events, [{ event: 'Pairs, Open', points: 25 }], 'zero-point events left out');
   assert.strictEqual(L.standingsFromCsv('no header here'), null);
 });
+
+test('about page: board cards and a contact list of the same people become one list', () => {
+  const page = require('../content/about-us.json');
+  const before = page.sections.length;
+  const out = L.mergeRepeatedContacts(page.sections);
+  assert.strictEqual(out.length, before - 1, 'the repeated contact section is dropped');
+  assert.ok(!out.some((s) => s.type === 'contact'));
+  const board = out.find((s) => s.type === 'cards' && s.people);
+  assert.ok(board, 'board cards marked as people');
+  board.items.forEach((p) => { assert.match(p.email, /@swlawnbowls\.org$/); assert.ok(p.meta && p.body); assert.ok(!p.link, 'email shown once, not also as the row link'); });
+  assert.strictEqual(page.sections.find((s) => s.type === 'contact').items.length, 6, 'source data untouched');
+  // A contact list with someone not in the cards is kept as it is
+  const mixed = [{ type: 'cards', items: [{ title: 'A' }] }, { type: 'contact', items: [{ name: 'A', email: 'a@x' }, { name: 'B', email: 'b@x' }] }];
+  assert.strictEqual(L.mergeRepeatedContacts(mixed).length, 2);
+});

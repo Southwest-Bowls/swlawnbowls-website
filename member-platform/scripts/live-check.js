@@ -46,8 +46,14 @@ const rpc = (fn, args, who) => call('POST', '/rest/v1/rpc/' + fn, args || {}, wh
 
   // 2. Public sign-up is off
   r = await call('POST', '/auth/v1/signup', { email: 'test.stranger@example.com', password: 'Not-a-real-pass-123' });
-  assert.ok(r.status >= 400, 'signup should be refused, got ' + r.status);
-  ok('new sign-ups are refused');
+  assert.ok(r.status >= 400 && /signup_disabled/.test(JSON.stringify(r.json)), 'password signup should be refused, got ' + r.status + ' ' + JSON.stringify(r.json));
+  r = await call('POST', '/auth/v1/otp', { email: 'test.stranger@example.com', create_user: true });
+  assert.ok(r.status >= 400 && /signup_disabled/.test(JSON.stringify(r.json)), 'email-link signup should be refused, got ' + r.status + ' ' + JSON.stringify(r.json));
+  r = await call('POST', '/auth/v1/otp', { email: 'test.stranger@example.com', create_user: false });
+  assert.ok(r.status >= 400, 'unknown email must not get a sign-in email, got ' + r.status);
+  const list = await fetch(URL_ + '/auth/v1/admin/users?per_page=1000', { headers: admin }).then((x) => x.json());
+  assert.ok(!(list.users || []).some((u) => u.email === 'test.stranger@example.com'), 'stranger account must not exist');
+  ok('new sign-ups are refused (password and email-link), unknown emails get no email, no account created');
 
   for (const e of ['test.solo@example.com', 'test.household@example.com', 'test.nobody@example.com', 'test.notallowed@example.com']) await ensureUser(e);
 

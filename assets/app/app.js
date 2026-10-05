@@ -89,6 +89,7 @@
     bookmark: '<path d="M6 3h12v18l-6-4-6 4Z"/>',
     map: '<path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z"/><path d="M9 4v13M15 7v13"/>',
     doc: '<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 17h7"/>',
+    person: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
     mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6 8.5 7 8.5-7"/>',
     phone: '<path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
@@ -499,7 +500,18 @@
     return '<div class="section__head"><h2 class="section__title" id="' + id + '">' + esc(title) + '</h2>' +
       (href ? '<a class="section__more" href="' + href + '">' + esc(label || 'View all') + '<span class="sr-only"> ' + esc(title) + '</span>' + icon('chev', 'i--sm') + '</a>' : '') + '</div>';
   }
+  // Back names the screen you actually came from when it is a known one
+  // (e.g. an event opened from My SWD goes back to My SWD); otherwise the
+  // screen's usual parent.
+  var BACK_NAMES = [[/^\/app\/?$/, 'Home'], [/^\/app\/(my|more\/membership)\/?$/, 'My SWD'], [/^\/app\/search\/?$/, 'Search'],
+    [/^\/app\/more\/?$/, 'More'], [/^\/app\/more\/news\/?$/, 'News'], [/^\/app\/more\/clubs\/[^/]+\/?$/, 'Club'],
+    [/^\/app\/watch\/?$/, 'Southwest TV'], [/^\/app\/standings\/?$/, 'Standings']];
   function backLink(href, label) {
+    var from = history.state && history.state.from;
+    if (from && from.split('?')[0] !== href.split('?')[0]) {
+      var hit = BACK_NAMES.filter(function (b) { return b[0].test(from.split('?')[0]); })[0];
+      if (hit) { href = from; label = hit[1]; }
+    }
     return '<a class="back" href="' + esc(href) + '" data-back>' + icon('back', 'i--sm') + esc(label) + '</a>';
   }
   function linkRow(href, iconName, title, meta, opts) {
@@ -695,15 +707,16 @@
         '<span data-upd-label>' + updatesLabel(currentNotices) + '</span>' + CHEV + '</button>';
     }
 
-    // 4. Your next game — the nearest upcoming saved event
-    html += '<section class="hsec" aria-labelledby="h-next"><div class="section__head"><h2 class="section__title" id="h-next" tabindex="-1">Your next game</h2>' +
+    // 4. Next saved event — the nearest upcoming bookmark. Saving never enters
+    //    anyone; when entries exist, a real entry takes this place first.
+    html += '<section class="hsec" aria-labelledby="h-next"><div class="section__head"><h2 class="section__title" id="h-next" tabindex="-1">Next saved event</h2>' +
       '<a class="section__more" href="/app/events?show=saved">' + (mine.length ? 'All saved (' + mine.length + ')' : 'Saved') + icon('chev', 'i--sm') + '</a></div>';
     if (mineNext.length) {
       var x = mineNext[0], st = entryStatus(x, today);
       html += '<div class="nextcard tint tint--blue">' + dateBlock(x, false, true) +
         '<a class="nextcard__main" href="/app/events/' + encodeURIComponent(x.id) + '"><span class="nextcard__title">' + esc(x.short) + '</span>' +
         '<span class="nextcard__meta">' + esc([dateRangeLabel(x.dates), x.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
-        (st ? statusLine(st) : '') + '</a>' + saveBtn(x.id, x.short) + '</div>';
+        (st ? statusLine(st) : '') + '<span class="nextcard__note">Saved, not entered</span></a>' + saveBtn(x.id, x.short) + '</div>';
     } else {
       var fol = followed();
       var fromClub = fol.length ? live.filter(function (y) { return y.clubIds.some(function (c) { return fol.indexOf(c) >= 0; }); })[0] : null;
@@ -1458,7 +1471,9 @@
   }
   // Video players load only when someone taps play
   function poster(v, tagHtml, meta) {
-    return '<div class="video"><div><button class="poster" type="button" data-play="' + esc(v.id) + '" data-title="' + esc(v.title) + '" style="background-image:url(\'' + esc(v.thumb) + '\')" aria-label="Play: ' + esc(v.title) + '">' +
+    var still = 'https://i.ytimg.com/vi/' + encodeURIComponent(v.id) + '/hqdefault.jpg';
+    return '<div class="video"><div><button class="poster" type="button" data-play="' + esc(v.id) + '" data-title="' + esc(v.title) + '" aria-label="Play: ' + esc(v.title) + '">' +
+      '<img class="poster__img" src="' + esc(safeUrl(v.thumb) || still) + '" data-still="' + esc(still) + '" alt="" loading="lazy" decoding="async">' +
       (tagHtml || '') + '<span class="poster__play" aria-hidden="true">' + playSvg() + '</span></button></div>' +
       '<p class="video-title">' + esc(v.title) + '</p>' + (meta ? '<p class="video-meta">' + esc(meta) + '</p>' : '') + '</div>';
   }
@@ -1493,10 +1508,10 @@
           '<p class="media__kicker">Live now on SW TV</p><h2 class="media__title">' + esc(v.title) + '</h2></article>';
       } else if (plan.length) {
         var n = plan[0];
-        feat = '<article class="media"><div class="media__art"><span class="art-plate art-plate--round"><img src="/photos/home/livestream-tv-logo.png" alt="Livestream Southwest Bowls TV" width="400" height="380" decoding="async"></span></div>' +
-          '<p class="media__kicker"><span class="tag tag--upcoming">Upcoming</span> Next scheduled coverage</p><h2 class="media__title">' + esc(n.title) + '</h2>' +
+        feat = '<article class="media media--compact"><span class="art-plate art-plate--round media__logo"><img src="/photos/home/livestream-tv-logo.png" alt="Livestream Southwest Bowls TV" width="400" height="380" decoding="async"></span>' +
+          '<div class="media__body"><p class="media__kicker"><span class="tag tag--upcoming">Upcoming</span> Next coverage</p><h2 class="media__title">' + esc(n.title) + '</h2>' +
           '<p class="media__meta">' + esc(when(n)) + ' · not live yet</p>' +
-          '<a class="textlink textlink--onink" href="' + esc(safeUrl(n.link) || YT_CHANNEL_URL) + '" target="_blank" rel="noopener">Open SW TV on YouTube' + icon('ext', 'i--sm') + '</a></article>';
+          '<a class="textlink textlink--onink" href="' + esc(safeUrl(n.link) || YT_CHANNEL_URL) + '" target="_blank" rel="noopener">Open SW TV on YouTube' + icon('ext', 'i--sm') + '</a></div></article>';
       } else {
         feat = '<article class="media"><p class="media__kicker">Southwest TV</p><h2 class="media__title">No coverage scheduled right now.</h2>' +
           '<p class="media__meta">New dates appear here when they’re planned.</p></article>';
@@ -1623,12 +1638,12 @@
           ['/app/more/resources', 'doc', 'Resources', 'blue'],
           ['/app/page/about-us', 'info', 'About Southwest', 'plain']
         ].map(function (t) { return '<a class="tile tile--' + t[3] + '" href="' + t[0] + '">' + icon(t[1]) + '<span class="tile__label">' + t[2] + '</span></a>'; }).join('') + '</nav>' +
+        '<ul class="rows rows--menu rows--cards" style="margin-top:12px">' + menuRow('/app/watch', 'tv', 'Southwest TV', 'Livestreams and replays') + '</ul>' +
         '<h2 class="section__title list-title">Make it yours</h2>' +
         '<ul class="rows rows--menu rows--cards">' +
           menuRow('/app/events?show=saved', 'bookmark', 'Saved events') +
           '<li><button class="row" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
             '<span class="row__main"><span class="row__title">Tournament updates</span>' + (n ? '<span class="row__meta" data-upd-label="short">' + updatesShort(currentNotices) + '</span>' : '') + '</span>' + CHEV + '</button></li>' +
-          (store('memberPreview') ? menuRow('/app/more/membership', 'people', 'My membership', 'Preview — testing only') : '') +
           menuRow('/app/more/settings', 'sliders', 'App settings', 'Appearance & text size') +
           menuRow('/app/page/contact-us', 'mail', 'Help & contact', 'Contact Southwest Bowls') +
         '</ul>' +
@@ -1804,7 +1819,7 @@
       setMemberSession({ access: h.get('access_token'), refresh: h.get('refresh_token'), expires: Date.now() + (+h.get('expires_in') || 3600) * 1000 });
       store('memberPreview', true);
     } else store('signinError', h.get('error_description') || 'That sign-in link didn’t work.');
-    var back = store('afterSignIn') || '/app/more/membership';
+    var back = store('afterSignIn') || '/app/my';
     history.replaceState({ depth: 0 }, '', back);
   }
   function memberFetch(path, body, token) {
@@ -1872,36 +1887,83 @@
           '</form></details>' +
       '</section>';
   }
-  function membership(params) {
-    setTitle('My membership');
-    if (params.get('preview') === '1') { store('memberPreview', true); history.replaceState(history.state, '', '/app/more/membership'); }
-    var head = backLink('/app/more', 'More') + '<div class="intro"><h1>My membership</h1></div>';
+  // "Need help accessing your membership?" — for missing, outdated or shared roster emails
+  function memberHelpHtml(open) {
+    return '<details class="fold mhelp"' + (open ? ' open' : '') + '><summary><span>Need help accessing your membership?</span>' + CHEV + '</summary>' +
+      '<ul class="mhelp__list">' +
+        '<li><b>Your email isn’t recognised.</b> The roster may have an older address, or none. Tell the Division your name, club and the email you want to use.</li>' +
+        '<li><b>You share an email with a partner or family.</b> After signing in you choose who you are. The Division confirms it before your membership shows — signing in never links everyone on a shared email.</li>' +
+        '<li><b>Your details are wrong.</b> Once you’re in, use “Suggest a correction”. Nothing changes until the Division checks it.</li>' +
+      '</ul><div class="actions"><a class="btn btn--ghost" href="/app/page/contact-us">' + icon('mail') + 'Contact Southwest Bowls</a></div></details>';
+  }
+  // My SWD: membership (sign-in, preview while testing), then the things
+  // kept on this phone — saved events and followed clubs — which never need
+  // an account. Entries and personal results appear here once they exist.
+  function mySwd(params) {
+    setTitle('My SWD');
+    if (params.get('preview') === '1') { store('memberPreview', true); history.replaceState(history.state, '', location.pathname); }
     var err = store('signinError'); if (err) { try { localStorage.removeItem('swd:signinError'); } catch (e) {} }
+    var preview = !!store('memberPreview') || !!memberSession();
+    var today = todayISO();
+
+    view.innerHTML = pageHead('My SWD', 'Your membership and your Southwest', '') +
+      '<section class="section mysec" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
+        '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + (preview ? loading() : '') + '</div></section>' +
+      '<section class="section mysec" aria-labelledby="h-saved"><div class="section__head"><h2 class="section__title" id="h-saved">Saved events</h2>' +
+        '<a class="section__more" href="/app/events?show=saved">All saved' + icon('chev', 'i--sm') + '</a></div><div id="my-saved">' + loading() + '</div>' +
+        '<p class="muted">Saved on this phone. Saving an event doesn’t enter you in it.</p></section>' +
+      '<section class="section mysec" aria-labelledby="h-clubs"><div class="section__head"><h2 class="section__title" id="h-clubs">Followed clubs</h2>' +
+        '<a class="section__more" href="/app/more/clubs">All clubs' + icon('chev', 'i--sm') + '</a></div><div id="my-clubs"></div></section>';
+    var box = view.querySelector('#m-box');
+
+    // Saved events and followed clubs: this phone only, no sign-in
+    loadEvents().then(function (events) {
+      var ids = saved();
+      var mine = events.filter(function (x) { return ids.indexOf(x.id) >= 0; });
+      var next = mine.filter(function (x) { var p = eventPhase(x, today); return p === 'upcoming' || p === 'now'; });
+      var el = view.querySelector('#my-saved'); if (!el) return;
+      el.innerHTML = next.length
+        ? '<ul class="list list--cards">' + next.slice(0, 3).map(function (x) { return eventRow(x, today); }).join('') + '</ul>' +
+          (next.length > 3 ? '<p class="count">+ ' + (next.length - 3) + ' more saved</p>' : '')
+        : state('empty', mine.length ? 'No upcoming saved events' : 'Nothing saved yet', mine.length ? 'Your saved events have all been played.' : 'Tap Save on any event to keep it here.',
+            '<a class="btn btn--ghost" href="/app/events">Browse events</a>');
+    }, function () { var el = view.querySelector('#my-saved'); if (el) el.innerHTML = errorState(); });
+    getJSON('/clubs-data.json').then(function (d) {
+      var fol = followed(), el = view.querySelector('#my-clubs'); if (!el) return;
+      var mine = (d.clubs || []).filter(function (c) { return fol.indexOf(c.id) >= 0; });
+      el.innerHTML = mine.length
+        ? '<ul class="rows rows--cards">' + mine.map(function (c) { return linkRow('/app/more/clubs/' + encodeURIComponent(c.id), 'star', c.name, c.city || ''); }).join('') + '</ul>'
+        : state('empty', 'No clubs followed', 'Follow a club to see its events first.', '<a class="btn btn--ghost" href="/app/more/clubs">Find a club</a>');
+    }).catch(function () {});
+
+    if (!preview) {
+      box.innerHTML = '<div class="mcard mcard--soon tint tint--blue"><p class="mcard__kicker">' + icon('person') + 'Member sign-in</p>' +
+        '<p class="mcard__lead">Coming soon: sign in to see your club, dues and novice status.</p></div>' + memberHelpHtml(false);
+      return Promise.resolve();
+    }
 
     function signInForm(msg) {
-      view.innerHTML = head +
+      box.innerHTML =
         '<p>Sign in with the email the Division has for you. We’ll email you a sign-in link — no password needed.</p>' +
         (msg ? '<div class="note" role="alert"><b>Sign-in didn’t work</b>' + esc(msg) + '</div>' : '') +
         '<form class="mform" id="m-signin" novalidate>' +
           '<label class="mfield"><span>Email</span><input id="m-email" type="email" autocomplete="email" inputmode="email" required></label>' +
           '<p class="mform__err" id="m-err" role="alert"></p>' +
           '<div class="actions"><button class="btn" type="submit">Email me a sign-in link</button></div>' +
-        '</form>' +
+        '</form>' + memberHelpHtml(false) +
         '<p class="footnote">Your details are only shown to you. Only Division administrators can see the full roster.</p>';
-      view.querySelector('#m-signin').addEventListener('submit', function (ev) {
+      box.querySelector('#m-signin').addEventListener('submit', function (ev) {
         ev.preventDefault();
-        var email = view.querySelector('#m-email').value.trim(), out = view.querySelector('#m-err');
-        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { out.textContent = 'Enter your email address.'; view.querySelector('#m-email').focus(); return; }
-        var btn = ev.target.querySelector('button[type=submit]'); btn.disabled = true; out.textContent = '';
-        store('afterSignIn', '/app/more/membership');
-        memberFetch('/auth/v1/otp?redirect_to=' + encodeURIComponent(location.origin + '/app/more/membership'), { email: email, create_user: false }).then(function () {
-          view.innerHTML = head + state('empty', 'Check your email', 'If ' + email + ' is set up for the app, a sign-in link is on its way. Open it on this phone. It works for 10 minutes.',
-            '<button class="btn btn--ghost" type="button" data-again>Use a different email</button>');
-        }, function () {
+        var email = box.querySelector('#m-email').value.trim(), out = box.querySelector('#m-err');
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { out.textContent = 'Enter your email address.'; box.querySelector('#m-email').focus(); return; }
+        ev.target.querySelector('button[type=submit]').disabled = true; out.textContent = '';
+        store('afterSignIn', '/app/my');
+        var done = function () {
           // Same answer whether or not the address exists — never reveal who is on the roster
-          view.innerHTML = head + state('empty', 'Check your email', 'If ' + email + ' is set up for the app, a sign-in link is on its way. Open it on this phone. It works for 10 minutes.',
-            '<button class="btn btn--ghost" type="button" data-again>Use a different email</button>');
-        });
+          box.innerHTML = state('empty', 'Check your email', 'If ' + email + ' is set up for the app, a sign-in link is on its way. Open it on this phone. It works for 10 minutes.',
+            '<button class="btn btn--ghost" type="button" data-again>Use a different email</button>') + memberHelpHtml(false);
+        };
+        memberFetch('/auth/v1/otp?redirect_to=' + encodeURIComponent(location.origin + '/app/my'), { email: email, create_user: false }).then(done, done);
       });
     }
     function signOut() {
@@ -1909,24 +1971,23 @@
       if (s) memberFetch('/auth/v1/logout', {}, s.access).catch(function () {});
       setMemberSession(null); toast('Signed out'); signInForm();
     }
+    var foot = '<div class="actions"><button class="btn btn--ghost" type="button" data-signout>Sign out</button></div>';
     function draw(res) {
-      var foot = '<div class="actions" style="margin-top:32px"><button class="btn btn--ghost" type="button" data-signout>Sign out</button></div>';
-      if (res.state === 'linked') { view.innerHTML = head + memberCardHtml(res.member) + foot; wireChange(); return; }
-      if (res.state === 'not_open') { view.innerHTML = head + state('empty', 'Not open yet', 'Member sign-in is being tested and will open soon.') + foot; return; }
-      if (res.state === 'not_found') { view.innerHTML = head + state('empty', 'We couldn’t find your membership', 'This email isn’t on the 2026 roster. Please contact the Division and we’ll sort it out.', '<a class="btn" href="/app/page/contact-us">Contact Southwest Bowls</a>') + foot; return; }
-      if (res.state === 'pending') { view.innerHTML = head + state('empty', 'Waiting for the Division', 'You asked to link this sign-in to ' + (res.name || 'a member') + '. Because this email is shared, the Division confirms it first. We’ll show your membership here once it’s done.') + foot; return; }
+      if (res.state === 'linked') { box.innerHTML = memberCardHtml(res.member) + foot; wireChange(); return; }
+      if (res.state === 'not_open') { box.innerHTML = state('empty', 'Not open yet', 'Member sign-in is being tested and will open soon.') + foot; return; }
+      if (res.state === 'not_found') { box.innerHTML = state('empty', 'We couldn’t find your membership', 'This email isn’t on the 2026 roster.') + memberHelpHtml(true) + foot; return; }
+      if (res.state === 'pending') { box.innerHTML = state('empty', 'Waiting for the Division', 'You asked to link this sign-in to ' + (res.name || 'a member') + '. Because this email is shared, the Division confirms it first. Your membership shows here once it’s done.') + memberHelpHtml(false) + foot; return; }
       if (res.state === 'choose') {
-        view.innerHTML = head +
-          '<p>' + (res.shared ? 'This email is shared by more than one member. Which one are you?' : 'Is this you?') + '</p>' +
+        box.innerHTML = '<p>' + (res.shared ? 'This email is shared by more than one member. Which one are you?' : 'Is this you?') + '</p>' +
           '<ul class="rows rows--cards">' + res.candidates.map(function (c) {
-            return '<li><button class="row" type="button" data-claim="' + esc(c.id) + '">' + icon('people') + '<span class="row__main"><span class="row__title">' + esc(c.name) + '</span>' +
+            return '<li><button class="row" type="button" data-claim="' + esc(c.id) + '">' + icon('person') + '<span class="row__main"><span class="row__title">' + esc(c.name) + '</span>' +
               (c.club ? '<span class="row__meta">' + esc(c.club) + '</span>' : '') + '</span><span class="textlink">This is me</span></button></li>';
           }).join('') + '</ul>' +
-          (res.shared ? '<p class="footnote">With a shared email, the Division confirms who you are before showing your membership.</p>' : '') + foot;
+          (res.shared ? '<p class="footnote">With a shared email, the Division confirms who you are before showing your membership.</p>' : '') + memberHelpHtml(false) + foot;
       }
     }
     function wireChange() {
-      var f = view.querySelector('#m-change'); if (!f) return;
+      var f = box.querySelector('#m-change'); if (!f) return;
       var kind = 'email', input = f.querySelector('#m-value');
       f.addEventListener('click', function (ev) {
         var b = ev.target.closest('[data-kind]'); if (!b) return;
@@ -1945,7 +2006,7 @@
           function (e) { out.textContent = cap(e.message || 'That didn’t work. Try again.'); });
       });
     }
-    view.addEventListener('click', function (ev) {
+    box.addEventListener('click', function (ev) {
       if (ev.target.closest('[data-signout]')) { signOut(); return; }
       if (ev.target.closest('[data-again]')) { signInForm(); return; }
       var c = ev.target.closest('[data-claim]');
@@ -1955,7 +2016,7 @@
     if (!memberSession()) { signInForm(err); return Promise.resolve(); }
     return memberRpc('my_membership').then(draw, function (e) {
       if (e.status === 401) { setMemberSession(null); signInForm(err); return; }
-      throw e;
+      box.innerHTML = errorState();
     });
   }
 
@@ -1995,6 +2056,14 @@
         image: function (s) { return fig(s); },
         gallery: function (s) { return '<div class="gallery">' + (s.images || []).map(fig).join('') + '</div>'; },
         cards: function (s) {
+          // People (merged board + contacts): name, role, what they do, one email
+          if (s.people) return '<ul class="rows people">' + (s.items || []).map(function (c) {
+            return '<li><div class="row person"><span class="row__main"><span class="row__title"><b>' + esc(c.title || '') + '</b></span>' +
+              (c.meta ? '<span class="row__meta">' + esc(c.meta) + '</span>' : '') +
+              (c.body ? '<span class="person__body">' + esc(c.body) + '</span>' : '') +
+              (c.email ? '<a class="person__link" href="mailto:' + esc(c.email) + '">' + icon('mail', 'i--sm') + esc(c.email) + '</a>' : '') +
+              (c.phone ? '<a class="person__link" href="' + esc(tel(c.phone)) + '">' + esc(c.phone) + '</a>' : '') + '</span></div></li>';
+          }).join('') + '</ul>';
           return '<ul class="rows">' + (s.items || []).map(function (c) {
             var link = safeUrl(c.link);
             var inner = (safeUrl(c.photo) ? '<img class="thumb" src="' + esc(c.photo) + '" alt="" loading="lazy">' : '') +
@@ -2033,7 +2102,7 @@
       };
       var up = parentOf(id);
       view.innerHTML = backLink(up.href, up.label) + '<div class="intro"><h1>' + esc(d.title || '') + '</h1>' + (d.subtitle ? '<p>' + esc(d.subtitle) + '</p>' : '') + '</div>' +
-        (d.sections || []).map(function (s) {
+        Logic.mergeRepeatedContacts(d.sections).map(function (s) {
           var r = R[s.type]; if (!r) return '';
           var inner = r(s); if (!inner) return '';
           return '<section class="page-sec">' + (s.heading && s.type !== 'embed' ? '<h2>' + esc(s.heading) + '</h2>' : '') + inner + '</section>';
@@ -2052,14 +2121,15 @@
     [/^\/app\/standings\/?$/, standings, 'results'],
     [/^\/app\/page\/standings\/?$/, standings, 'results'],
     [/^\/app\/results\/([^/]+)\/?$/, resultDetail, 'results'],
-    [/^\/app\/watch\/?$/, watch, 'watch'],
+    [/^\/app\/watch\/?$/, watch, 'more'],   // Home tile and More → Southwest TV
     [/^\/app\/more\/?$/, more, 'more'],
     [/^\/app\/more\/clubs\/?$/, clubsList, 'more'],
     [/^\/app\/more\/clubs\/([^/]+)\/?$/, clubDetail, 'more'],
     [/^\/app\/more\/news\/?$/, newsList, 'more'],
     [/^\/app\/news\/([a-z0-9-]+)\/?$/, newsArticle, 'more'],
     [/^\/app\/more\/settings\/?$/, settings, 'more'],
-    [/^\/app\/more\/membership\/?$/, membership, 'more'],
+    [/^\/app\/my\/?$/, mySwd, 'my'],
+    [/^\/app\/more\/membership\/?$/, mySwd, 'my'],   // earlier preview address
     [/^\/app\/more\/(play|division|ladies-day|archives|follow|resources)\/?$/, subsection, 'more'],
     [/^\/app\/search\/?$/, searchScreen, 'home'],
     [/^\/app\/page\/([a-z0-9-]+)\/?$/, infoPage, 'more']
@@ -2191,6 +2261,15 @@
 
   applyTheme();
   applyTextSize();
+  // Poster thumbnails: YouTube's own still, then the official SW TV logo
+  document.addEventListener('error', function (ev) {
+    var img = ev.target;
+    if (!img || !img.classList || !img.classList.contains('poster__img')) return;
+    var still = img.getAttribute('data-still');
+    if (still && img.src !== still) { img.src = still; return; }
+    img.removeAttribute('data-still');
+    img.src = '/photos/home/livestream-tv-logo.png'; img.classList.add('poster__img--logo');
+  }, true);
   captureSignIn();
   if (!history.state) history.replaceState({ depth: 0 }, '');
   render();

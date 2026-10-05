@@ -174,6 +174,9 @@ enable_refresh_token_rotation = true
 # Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
+# The project-wide sign-up switch. false = nobody can create an account
+# (sign-up or sign-in-with-new-email). Only accounts created with the admin
+# key can sign in. Turning this on is a launch decision.
 enable_signup = false
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
@@ -219,7 +222,10 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-enable_signup = false
+# NOT the sign-up switch: in Supabase this enables the email provider itself.
+# false = "Email logins are disabled" for everyone (seen 2026-10-05). New
+# accounts stay blocked by [auth] enable_signup = false above.
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
