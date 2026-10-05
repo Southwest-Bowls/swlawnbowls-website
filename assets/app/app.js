@@ -1628,6 +1628,7 @@
           menuRow('/app/events?show=saved', 'bookmark', 'Saved events') +
           '<li><button class="row" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
             '<span class="row__main"><span class="row__title">Tournament updates</span>' + (n ? '<span class="row__meta" data-upd-label="short">' + updatesShort(currentNotices) + '</span>' : '') + '</span>' + CHEV + '</button></li>' +
+          (store('memberPreview') ? menuRow('/app/more/membership', 'people', 'My membership', 'Preview — testing only') : '') +
           menuRow('/app/more/settings', 'sliders', 'App settings', 'Appearance & text size') +
           menuRow('/app/page/contact-us', 'mail', 'Help & contact', 'Contact Southwest Bowls') +
         '</ul>' +
@@ -1784,6 +1785,181 @@
   }
 
   /* ---------------------------------------------------------------
+     My membership (Supabase). Hidden while testing: the More row only
+     appears after opening /app/more/membership?preview=1, and the
+     server answers only test-listed addresses until the Division opens it.
+     The publishable key is public by design — members can only call the
+     three functions in member-platform/supabase/0004_my_membership.sql.
+     --------------------------------------------------------------- */
+  var MEMBERS_API = { url: 'https://azbluidsfrjtoeeesqwa.supabase.co', key: 'sb_publishable_CL2AYkEOhlthkOIMISTEDg_0ig-qI_e' };
+  function memberSession() { return store('session'); }
+  function setMemberSession(s) {
+    try { if (s) store('session', s); else localStorage.removeItem('swd:session'); } catch (e) {}
+  }
+  // A sign-in link returns here with the session in the address (#access_token=…)
+  function captureSignIn() {
+    if (!/[#&](access_token|error_description)=/.test(location.hash)) return;
+    var h = new URLSearchParams(location.hash.slice(1));
+    if (h.get('access_token')) {
+      setMemberSession({ access: h.get('access_token'), refresh: h.get('refresh_token'), expires: Date.now() + (+h.get('expires_in') || 3600) * 1000 });
+      store('memberPreview', true);
+    } else store('signinError', h.get('error_description') || 'That sign-in link didn’t work.');
+    var back = store('afterSignIn') || '/app/more/membership';
+    history.replaceState({ depth: 0 }, '', back);
+  }
+  function memberFetch(path, body, token) {
+    var h = { apikey: MEMBERS_API.key, 'content-type': 'application/json' };
+    if (token) h.authorization = 'Bearer ' + token;
+    return fetch(MEMBERS_API.url + path, { method: 'POST', headers: h, body: JSON.stringify(body || {}) }).then(function (r) {
+      return r.text().then(function (t) {
+        var j = null; try { j = JSON.parse(t); } catch (e) {}
+        if (!r.ok) { var err = new Error((j && (j.message || j.msg || j.error_description)) || ('HTTP ' + r.status)); err.status = r.status; throw err; }
+        return j;
+      });
+    });
+  }
+  function freshToken() {
+    var s = memberSession();
+    if (!s) return Promise.resolve(null);
+    if (s.expires - Date.now() > 60000) return Promise.resolve(s.access);
+    return memberFetch('/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh }).then(function (j) {
+      setMemberSession({ access: j.access_token, refresh: j.refresh_token, expires: Date.now() + (j.expires_in || 3600) * 1000 });
+      return j.access_token;
+    }, function () { setMemberSession(null); return null; });
+  }
+  function memberRpc(fn, args) {
+    return freshToken().then(function (t) {
+      if (!t) { var e = new Error('signed out'); e.status = 401; throw e; }
+      return memberFetch('/rest/v1/rpc/' + fn, args, t);
+    });
+  }
+  function longDate(isoStr) { return isoStr ? fmt(isoStr, { month: 'long', day: 'numeric', year: 'numeric' }) : ''; }
+  function monthYear(isoStr) { return isoStr ? fmt(isoStr, { month: 'long', year: 'numeric' }) : ''; }
+  function factRow(label, value, good) {
+    return '<li class="mfact"><span class="mfact__label">' + esc(label) + '</span><span class="mfact__value' + (good ? ' mfact__value--ok' : '') + '">' +
+      (good ? icon('check', 'i--sm') : '') + esc(value) + '</span></li>';
+  }
+  function memberCardHtml(m) {
+    var today = todayISO();
+    var novice = !m.noviceUntil ? 'Start date not on record — ask the Division'
+      : m.noviceUntil >= today ? 'Novice until ' + longDate(m.noviceUntil)
+      : 'Not a novice (novice period ended ' + longDate(m.noviceUntil) + ')';
+    return '<section class="mcard tint tint--blue" aria-labelledby="h-mname">' +
+        '<p class="mcard__kicker">' + icon('people') + 'Southwest Bowls member · ' + esc(m.season) + '</p>' +
+        '<h2 class="mcard__name" id="h-mname">' + esc(m.name) + '</h2>' +
+        (m.club ? '<a class="mcard__club" href="/app/more/clubs/' + encodeURIComponent(m.club.id) + '">' + icon('pin', 'i--sm') + esc(m.club.name) + '</a>'
+                : '<p class="mcard__club">' + icon('pin', 'i--sm') + 'Home club not on record</p>') +
+      '</section>' +
+      '<ul class="mfacts">' +
+        factRow(m.season + ' Southwest dues', m.swDuesPaid ? 'Paid' : 'Not on record', m.swDuesPaid) +
+        factRow(m.season + ' Bowls USA dues', m.usaDuesPaid ? 'Paid' : 'Not on record', m.usaDuesPaid) +
+        factRow('Novice status', novice, false) +
+        (m.begnovMonth ? factRow('Started bowling', monthYear(m.begnovMonth), false) : '') +
+      '</ul>' +
+      '<section class="section" aria-labelledby="h-contact">' + sectionHead('h-contact', 'Your contact details') +
+        '<ul class="mfacts">' + factRow('Email', m.email || 'Not on record', false) + factRow('Phone', m.phone || 'Not on record', false) + '</ul>' +
+        (m.pendingChanges.length ? '<div class="note" role="note"><b>Waiting for the Division to review</b>' +
+          m.pendingChanges.map(function (c) { return esc(cap(c.kind)) + ': ' + esc(c.value); }).join('<br>') + '</div>' : '') +
+        '<details class="fold"><summary><span>Suggest a correction</span>' + CHEV + '</summary>' +
+          '<form class="mform" id="m-change" novalidate>' +
+            '<div class="segmented" role="radiogroup" aria-label="What to correct">' +
+              '<button type="button" role="radio" aria-checked="true" data-kind="email">Email</button>' +
+              '<button type="button" role="radio" aria-checked="false" data-kind="phone">Phone</button></div>' +
+            '<label class="mfield"><span>New email</span><input id="m-value" type="email" autocomplete="email" inputmode="email" required></label>' +
+            '<p class="muted">The Division checks every change before it’s saved. Your current details stay until then.</p>' +
+            '<p class="mform__err" id="m-err" role="alert"></p>' +
+            '<div class="actions"><button class="btn" type="submit">Send for review</button></div>' +
+          '</form></details>' +
+      '</section>';
+  }
+  function membership(params) {
+    setTitle('My membership');
+    if (params.get('preview') === '1') { store('memberPreview', true); history.replaceState(history.state, '', '/app/more/membership'); }
+    var head = backLink('/app/more', 'More') + '<div class="intro"><h1>My membership</h1></div>';
+    var err = store('signinError'); if (err) { try { localStorage.removeItem('swd:signinError'); } catch (e) {} }
+
+    function signInForm(msg) {
+      view.innerHTML = head +
+        '<p>Sign in with the email the Division has for you. We’ll email you a sign-in link — no password needed.</p>' +
+        (msg ? '<div class="note" role="alert"><b>Sign-in didn’t work</b>' + esc(msg) + '</div>' : '') +
+        '<form class="mform" id="m-signin" novalidate>' +
+          '<label class="mfield"><span>Email</span><input id="m-email" type="email" autocomplete="email" inputmode="email" required></label>' +
+          '<p class="mform__err" id="m-err" role="alert"></p>' +
+          '<div class="actions"><button class="btn" type="submit">Email me a sign-in link</button></div>' +
+        '</form>' +
+        '<p class="footnote">Your details are only shown to you. Only Division administrators can see the full roster.</p>';
+      view.querySelector('#m-signin').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var email = view.querySelector('#m-email').value.trim(), out = view.querySelector('#m-err');
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { out.textContent = 'Enter your email address.'; view.querySelector('#m-email').focus(); return; }
+        var btn = ev.target.querySelector('button[type=submit]'); btn.disabled = true; out.textContent = '';
+        store('afterSignIn', '/app/more/membership');
+        memberFetch('/auth/v1/otp?redirect_to=' + encodeURIComponent(location.origin + '/app/more/membership'), { email: email, create_user: false }).then(function () {
+          view.innerHTML = head + state('empty', 'Check your email', 'If ' + email + ' is set up for the app, a sign-in link is on its way. Open it on this phone. It works for 10 minutes.',
+            '<button class="btn btn--ghost" type="button" data-again>Use a different email</button>');
+        }, function () {
+          // Same answer whether or not the address exists — never reveal who is on the roster
+          view.innerHTML = head + state('empty', 'Check your email', 'If ' + email + ' is set up for the app, a sign-in link is on its way. Open it on this phone. It works for 10 minutes.',
+            '<button class="btn btn--ghost" type="button" data-again>Use a different email</button>');
+        });
+      });
+    }
+    function signOut() {
+      var s = memberSession();
+      if (s) memberFetch('/auth/v1/logout', {}, s.access).catch(function () {});
+      setMemberSession(null); toast('Signed out'); signInForm();
+    }
+    function draw(res) {
+      var foot = '<div class="actions" style="margin-top:32px"><button class="btn btn--ghost" type="button" data-signout>Sign out</button></div>';
+      if (res.state === 'linked') { view.innerHTML = head + memberCardHtml(res.member) + foot; wireChange(); return; }
+      if (res.state === 'not_open') { view.innerHTML = head + state('empty', 'Not open yet', 'Member sign-in is being tested and will open soon.') + foot; return; }
+      if (res.state === 'not_found') { view.innerHTML = head + state('empty', 'We couldn’t find your membership', 'This email isn’t on the 2026 roster. Please contact the Division and we’ll sort it out.', '<a class="btn" href="/app/page/contact-us">Contact Southwest Bowls</a>') + foot; return; }
+      if (res.state === 'pending') { view.innerHTML = head + state('empty', 'Waiting for the Division', 'You asked to link this sign-in to ' + (res.name || 'a member') + '. Because this email is shared, the Division confirms it first. We’ll show your membership here once it’s done.') + foot; return; }
+      if (res.state === 'choose') {
+        view.innerHTML = head +
+          '<p>' + (res.shared ? 'This email is shared by more than one member. Which one are you?' : 'Is this you?') + '</p>' +
+          '<ul class="rows rows--cards">' + res.candidates.map(function (c) {
+            return '<li><button class="row" type="button" data-claim="' + esc(c.id) + '">' + icon('people') + '<span class="row__main"><span class="row__title">' + esc(c.name) + '</span>' +
+              (c.club ? '<span class="row__meta">' + esc(c.club) + '</span>' : '') + '</span><span class="textlink">This is me</span></button></li>';
+          }).join('') + '</ul>' +
+          (res.shared ? '<p class="footnote">With a shared email, the Division confirms who you are before showing your membership.</p>' : '') + foot;
+      }
+    }
+    function wireChange() {
+      var f = view.querySelector('#m-change'); if (!f) return;
+      var kind = 'email', input = f.querySelector('#m-value');
+      f.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-kind]'); if (!b) return;
+        kind = b.getAttribute('data-kind');
+        f.querySelectorAll('[data-kind]').forEach(function (x) { x.setAttribute('aria-checked', x === b); });
+        input.type = kind === 'email' ? 'email' : 'tel'; input.autocomplete = kind === 'email' ? 'email' : 'tel';
+        input.inputMode = kind === 'email' ? 'email' : 'tel';
+        f.querySelector('.mfield span').textContent = kind === 'email' ? 'New email' : 'New phone number';
+        input.value = ''; input.focus();
+      });
+      f.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var out = f.querySelector('#m-err'); out.textContent = '';
+        if (!input.value.trim()) { out.textContent = kind === 'email' ? 'Enter the new email.' : 'Enter the new phone number.'; input.focus(); return; }
+        memberRpc('request_contact_change', { p_kind: kind, p_value: input.value }).then(function (res) { draw(res); toast('Sent to the Division for review'); },
+          function (e) { out.textContent = cap(e.message || 'That didn’t work. Try again.'); });
+      });
+    }
+    view.addEventListener('click', function (ev) {
+      if (ev.target.closest('[data-signout]')) { signOut(); return; }
+      if (ev.target.closest('[data-again]')) { signInForm(); return; }
+      var c = ev.target.closest('[data-claim]');
+      if (c) { c.disabled = true; memberRpc('claim_member', { p_member: c.getAttribute('data-claim') }).then(draw, function () { c.disabled = false; toast('That didn’t work. Try again.'); }); }
+    });
+
+    if (!memberSession()) { signInForm(err); return Promise.resolve(); }
+    return memberRpc('my_membership').then(draw, function (e) {
+      if (e.status === 401) { setMemberSession(null); signInForm(err); return; }
+      throw e;
+    });
+  }
+
+  /* ---------------------------------------------------------------
      Information pages (content/<id>.json) — same renderer rules as
      page.html, laid out for a phone
      --------------------------------------------------------------- */
@@ -1883,6 +2059,7 @@
     [/^\/app\/more\/news\/?$/, newsList, 'more'],
     [/^\/app\/news\/([a-z0-9-]+)\/?$/, newsArticle, 'more'],
     [/^\/app\/more\/settings\/?$/, settings, 'more'],
+    [/^\/app\/more\/membership\/?$/, membership, 'more'],
     [/^\/app\/more\/(play|division|ladies-day|archives|follow|resources)\/?$/, subsection, 'more'],
     [/^\/app\/search\/?$/, searchScreen, 'home'],
     [/^\/app\/page\/([a-z0-9-]+)\/?$/, infoPage, 'more']
@@ -2014,6 +2191,7 @@
 
   applyTheme();
   applyTextSize();
+  captureSignIn();
   if (!history.state) history.replaceState({ depth: 0 }, '');
   render();
 

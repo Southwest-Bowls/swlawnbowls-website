@@ -910,3 +910,31 @@ a.logotile .ext { margin-top: auto; }
   .stand > summary { padding: var(--s2) var(--s3); gap: var(--s2); }
   .stand__events, .stand__none { padding-left: var(--s4); }
 }
+
+/* ---------- My membership ------------------------------------------- */
+.mcard { border-radius: 18px; padding: var(--s4) var(--s4) var(--s5); margin-top: var(--s2); }
+.mcard__kicker { display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 700; color: var(--text-2); }
+.mcard__kicker .i { width: 18px; height: 18px; }
+.mcard__name { font-size: 1.625rem; line-height: 1.2; letter-spacing: -.01em; margin-top: var(--s2); overflow-wrap: anywhere; }
+.mcard__club { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--s2); min-height: 44px; font-weight: 700; color: var(--on-tint-link); text-decoration: none; }
+p.mcard__club { color: var(--text-2); font-weight: 400; }
+.mfacts { list-style: none; margin: var(--s4) 0 0; padding: 0; background: var(--surface); border-radius: 18px; overflow: hidden; }
+.mfact { display: flex; justify-content: space-between; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); min-height: 52px; }
+.mfact + .mfact { border-top: 1px solid var(--line); }
+.mfact__label { color: var(--text-2); font-size: var(--fs-sm); }
+.mfact__value { font-weight: 700; text-align: right; overflow-wrap: anywhere; display: inline-flex; align-items: center; gap: 6px; }
+.mfact__value--ok { color: #1a7f37; }
+:root[data-theme="dark"] .mfact__value--ok { color: #6fdc8c; }
+@media (max-width: 360px) { .mfact { flex-direction: column; align-items: flex-start; gap: 2px; } .mfact__value { text-align: left; } }
+html[data-text="xlarge"] .mfact { flex-direction: column; align-items: flex-start; gap: 2px; }
+html[data-text="xlarge"] .mfact__value { text-align: left; }
+.mform { margin-top: var(--s4); }
+.mform .segmented { margin-bottom: var(--s3); }
+.mfield { display: block; margin-top: var(--s3); }
+.mfield span { display: block; font-weight: 700; margin-bottom: 6px; }
+.mfield input {
+  width: 100%; min-height: 52px; padding: 0 var(--s4); border: 1px solid var(--line); border-radius: var(--r-control);
+  background: var(--surface); color: var(--text); font-size: max(16px, 1rem);
+}
+.mform__err { color: var(--brand-red); font-weight: 700; font-size: var(--fs-sm); margin-top: var(--s2); min-height: 1em; }
+:root[data-theme="dark"] .mform__err { color: #ff8a9a; }
