@@ -3,10 +3,10 @@
   "feature": {
     "eyebrow": "Our people · 2026 national champions",
     "headline": "Three national titles for Southwest.",
-    "summary": "Javier Goez and Angel Gomez won Men’s Pairs⁠—one of Southwest’s three national titles.",
+    "summary": "Javier Gomez and Angel Gomez won Men’s Pairs⁠—one of Southwest’s three national titles.",
     "photo": {
       "src": "/photos/home/nationals-2026-mens-pairs-goez-gomez.jpg",
-      "alt": "Javier Goez and Angel Gomez holding their 2026 national championship certificates",
+      "alt": "Javier Gomez and Angel Gomez holding their 2026 national championship certificates",
       "width": 1000,
       "height": 1000,
       "aspect": "4 / 3",
@@ -28,9 +28,9 @@
       },
       {
         "title": "Men’s Pairs",
-        "names": "Javier Goez & Angel Gomez",
+        "names": "Javier Gomez & Angel Gomez",
         "photo": "/photos/home/nationals-2026-mens-pairs-goez-gomez.jpg",
-        "alt": "Javier Goez and Angel Gomez, 2026 Men’s Pairs National Champions"
+        "alt": "Javier Gomez and Angel Gomez, 2026 Men’s Pairs National Champions"
       }
     ],
     "note": "Congratulations also to Women’s Pairs champions Anna Witt and Rebecca Nguyen of the Central Division.",
@@ -39,6 +39,6 @@
       "url": "/home-feature"
     },
     "cardTitle": "National champions",
-    "cardLine": "Javier Goez & Angel Gomez"
+    "cardLine": "Javier Gomez & Angel Gomez"
   }
 }
