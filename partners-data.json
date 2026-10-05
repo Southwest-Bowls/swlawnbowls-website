@@ -3,7 +3,7 @@
   "partners": [
     { "name": "Aero Bowls USA",   "logo": "/photos/home/03-partner-aero.png",      "width": 800, "height": 470, "url": "https://aerobowls-usa.com/" },
     { "name": "Henselite USA",    "logo": "/photos/home/04-partner-henselite.png", "width": 800, "height": 224, "url": "https://henseliteusa.com/" },
-    { "name": "Drakes Pride USA", "logo": "/photos/home/05-partner-drakes.png",    "width": 800, "height": 448, "url": null }
+    { "name": "Drakes Pride USA", "logo": "/photos/home/05-partner-drakes.png",    "width": 800, "height": 448, "url": "https://dpbowls.com/" }
   ],
   "memberOf": [
     { "name": "Bowls USA",   "logo": "/photos/home/06-member-bowlsusa.png",   "width": 800, "height": 234, "url": "https://www.bowlsusa.us/" },
