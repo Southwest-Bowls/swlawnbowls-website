@@ -1,0 +1,15 @@
+{
+  "name": "swd-member-platform",
+  "private": true,
+  "description": "Southwest member database: restricted roster staging and admin review (local-first). Not deployed.",
+  "type": "commonjs",
+  "scripts": {
+    "import:dry-run": "node src/import-roster.js --dry-run",
+    "import": "node src/import-roster.js",
+    "review": "node src/server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.3.0"
+  }
+}
