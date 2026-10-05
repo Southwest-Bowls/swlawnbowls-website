@@ -1,21 +1,27 @@
 {
+  "_readme": "Each item has a permanent 'id' (its address in the app: /app/news/<id>) — never change an id once published. Optional: 'kind': 'notice' plus 'expires' for something people must act on by a deadline (a sale, a sign-up). 'expires' is either a date (YYYY-MM-DD, meaning the end of that day in California) or an exact time with offset (2026-09-12T10:00:00-07:00). Expired notices leave the app's Home but stay readable in News. Stories (results, achievements) have no 'expires' and never leave News.",
   "items": [
     {
+      "id": "2026-09-07-all-comers-ii-corey-vose-and",
       "date": "2026-09-07",
       "type": "results",
-      "title": "All Comers II \u2014 Corey Vose and Avery Burton Take the Title",
+      "title": "All Comers II — Corey Vose and Avery Burton Take the Title",
       "body": "Labor Day weekend at Hermosa Beach LBC. Corey Vose and Avery Burton won the second annual All Comers Open Pairs. Dean Warmington and Angel Rocha finished second, Michael Siddall and Bill Brault third, and Tom Richeson and Phil Dunn fourth. Full top eight on the Results page.",
       "link": "https://swlawnbowls-website.vercel.app/results"
     },
     {
+      "id": "2026-09-10-division-shirt-store-closing-saturday-september",
       "date": "2026-09-10",
       "type": "update",
       "title": "Division Shirt Store Closing Saturday, September 12",
       "image": "/photos/home/swd-shirt-2026.png",
       "body": "Sales for the new Southwest Division shirt close Saturday, September 12 at 10:00 AM PDT. The shirt carries our official Southwest Bowls branding and colors and is made for everyday wear by social and tournament bowlers alike. $27.00 each, made to order. Fit varies between brands, so please don't assume your usual size — lay out a shirt you already like and follow the measuring instructions in the store. Shirts ship free to your home club for pickup; choose your club at checkout and give your home address as well. If your club has fewer than 10 orders, shirts are mailed to your home and you pay the shipping.",
-      "link": "https://aa.alleghenyapparel.com/southwest_lawn_bowls_store/shop/home"
+      "link": "https://aa.alleghenyapparel.com/southwest_lawn_bowls_store/shop/home",
+      "kind": "notice",
+      "expires": "2026-09-12T10:00:00-07:00"
     },
     {
+      "id": "2026-08-29-eileen-morton-powerplay-triples-susan-trenschel",
       "date": "2026-08-29",
       "type": "results",
       "title": "Eileen Morton Powerplay Triples — Susan Trenschel, Tamara Murray and Chris Trenschel Take the Title",
@@ -23,6 +29,7 @@
       "link": "https://swlawnbowls-website.vercel.app/results"
     },
     {
+      "id": "2026-08-28-disciplinary-policy-and-procedures-updated",
       "date": "2026-08-28",
       "type": "update",
       "title": "Disciplinary Policy and Procedures — Updated",
@@ -30,6 +37,7 @@
       "link": "https://swlawnbowls-website.vercel.app/pdfs/SWD-Disciplinary-Policy-2026-08-03.pdf"
     },
     {
+      "id": "2026-08-26-bill-hiscock-mixed-triples-entries-now",
       "date": "2026-08-26",
       "type": "tournament",
       "title": "Bill Hiscock Mixed Triples — Entries Now Open",
@@ -37,6 +45,7 @@
       "link": "https://www.swlawnbowls.org/2026-tournaments-events/2026-bill-hiscock-2-bowl-triples"
     },
     {
+      "id": "2026-08-22-womens-vet-novice-triples-rescheduled-to",
       "date": "2026-08-22",
       "type": "tournament",
       "title": "Women's Vet/Novice Triples — Rescheduled to November 15, Entries Open",
@@ -44,6 +53,7 @@
       "link": "https://www.swlawnbowls.org/2026-tournaments-events/swd-womens-vetnovice-triples26"
     },
     {
+      "id": "2026-08-22-heidi-rittner-australian-pairs-rescheduled-to",
       "date": "2026-08-22",
       "type": "tournament",
       "title": "Heidi Rittner Australian Pairs — Rescheduled to November 21, Entries Open",
@@ -51,6 +61,7 @@
       "link": "https://www.swlawnbowls.org/2026-tournaments-events/2026-swd-womens-heidi-rittner-australian-pairs"
     },
     {
+      "id": "2026-08-22-swd-izzie-forbes-vet-novice-triples",
       "date": "2026-08-22",
       "type": "tournament",
       "title": "SWD Izzie Forbes Vet/Novice Triples — Entries Now Open",
@@ -58,6 +69,7 @@
       "link": "https://www.swlawnbowls.org/2026-tournaments-events/swd-izzie-forbes-vetnovice-triples26"
     },
     {
+      "id": "2026-08-22-ralph-ecton-triples-entries-now-open",
       "date": "2026-08-22",
       "type": "tournament",
       "title": "Ralph Ecton Triples — Entries Now Open",
@@ -65,6 +77,7 @@
       "link": "https://www.swlawnbowls.org/2026-tournaments-events/2026-ralph-ecton-triples"
     },
     {
+      "id": "2026-08-22-oaks-north-mixed-triples-entries-now",
       "date": "2026-08-22",
       "type": "tournament",
       "title": "Oaks North Mixed Triples — Entries Now Open",
@@ -72,6 +85,7 @@
       "link": "https://www.swlawnbowls.org/2026-tournaments-events/2026-oaks-north-mixed-triples"
     },
     {
+      "id": "2026-08-22-swd-mens-so-california-triples-entries",
       "date": "2026-08-22",
       "type": "tournament",
       "title": "SWD Men's So. California Triples — Entries Now Open",
@@ -79,6 +93,7 @@
       "link": "https://www.swlawnbowls.org/2026-tournaments-events/swd-mens-so-cal-triples26"
     },
     {
+      "id": "2026-08-22-the-groves-mixed-triples-classic-entries",
       "date": "2026-08-22",
       "type": "tournament",
       "title": "The Groves Mixed Triples Classic — Entries Now Open",
@@ -86,6 +101,7 @@
       "link": "https://www.swlawnbowls.org/2026-tournaments-events/2026-the-groves-mixed-triples"
     },
     {
+      "id": "2026-08-07-mens-cary-macdonald-pairs-live-scoring",
       "date": "2026-08-07",
       "type": "update",
       "title": "Men's Cary/MacDonald Pairs — Live Scoring Added",
@@ -93,6 +109,7 @@
       "link": ""
     },
     {
+      "id": "2026-08-06-fossati-and-friends-womens-triples-live",
       "date": "2026-08-06",
       "type": "update",
       "title": "Fossati & Friends Women's Triples — Live Scoring Added",
@@ -100,6 +117,7 @@
       "link": ""
     },
     {
+      "id": "2026-08-06-womens-division-rinks-live-scoring-added",
       "date": "2026-08-06",
       "type": "update",
       "title": "Women's Division Rinks — Live Scoring Added",
@@ -107,6 +125,7 @@
       "link": ""
     },
     {
+      "id": "2026-07-24-us-nationals-pairs-playdowns-live-scoring",
       "date": "2026-07-24",
       "type": "update",
       "title": "US Nationals Pairs Playdowns — Live Scoring Added",
@@ -114,6 +133,7 @@
       "link": ""
     },
     {
+      "id": "2026-07-09-laguna-open-pairs-entries-now-open",
       "date": "2026-07-09",
       "type": "tournament",
       "title": "Laguna Open Pairs — Entries Now Open",
@@ -121,6 +141,7 @@
       "link": "https://swlawnbowls-website.vercel.app/event?id=laguna-open-pairs-2026"
     },
     {
+      "id": "2026-07-09-eileen-morton-powerplay-triples-entries-now",
       "date": "2026-07-09",
       "type": "tournament",
       "title": "Eileen Morton Powerplay Triples — Entries Now Open",
@@ -128,6 +149,7 @@
       "link": "https://swlawnbowls-website.vercel.app/event?id=eileen-morton-powerplay-triples-2026"
     },
     {
+      "id": "2026-07-03-san-diego-invitational-mixed-triples-entries",
       "date": "2026-07-03",
       "type": "tournament",
       "title": "San Diego Invitational Mixed Triples — Entries Now Open",
@@ -135,6 +157,7 @@
       "link": "https://swlawnbowls-website.vercel.app/event?id=san-diego-mixed-triples-2026"
     },
     {
+      "id": "2026-06-26-mens-singles-playdowns-live-scoring-added",
       "date": "2026-06-26",
       "type": "update",
       "title": "Men's Singles Playdowns — Live Scoring Added",
@@ -142,6 +165,7 @@
       "link": ""
     },
     {
+      "id": "2026-06-25-womens-singles-playdowns-live-scoring-added",
       "date": "2026-06-25",
       "type": "update",
       "title": "Women's Singles Playdowns — Live Scoring Added",
@@ -149,6 +173,7 @@
       "link": ""
     },
     {
+      "id": "2026-06-21-maccabee-pairs-entries-now-open",
       "date": "2026-06-21",
       "type": "tournament",
       "title": "Maccabee Pairs — Entries Now Open",
@@ -156,6 +181,7 @@
       "link": "https://swlawnbowls-website.vercel.app/event?id=maccabee-pairs-2026"
     },
     {
+      "id": "2026-06-21-womens-singles-playdowns-r1-documents-updated",
       "date": "2026-06-21",
       "type": "update",
       "title": "Women's Singles Playdowns — R1 Documents Updated",

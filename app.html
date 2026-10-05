@@ -11,7 +11,7 @@
        app-home-data.json Home community story (photo, headline, champions)
        news-data.json     More → News
        streams-data.json  Watch tab (planned livestreams)
-       clubs-data.json    More → Clubs
+       clubs-data.json    More → Clubs; club ids for Follow club
        nav-data.json      More (the same menu as the website)
        content/<id>.json  More → information pages
 
@@ -61,7 +61,7 @@
 <div class="netbar" id="netbar" role="status" aria-live="polite" hidden></div>
 
 <main id="view" class="view" tabindex="-1">
-  <div class="loading" role="status"><span class="spinner" aria-hidden="true"></span>Loading…</div>
+  <div class="skel" role="status"><span class="sr-only">Loading…</span><span class="skel__h"></span><span class="skel__l"></span><span class="skel__b"></span><span class="skel__b"></span></div>
 </main>
 
 <nav class="tabbar" aria-label="Main">
@@ -95,6 +95,7 @@
 </dialog>
 
 <noscript><p class="noscript">The Southwest Bowls app needs JavaScript. The full website is at <a href="/">swlawnbowls.org</a>.</p></noscript>
+<script src="/assets/app/app-logic.js" defer></script>
 <script src="/assets/app/app.js" defer></script>
 </body>
 </html>

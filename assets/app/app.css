@@ -392,6 +392,8 @@ svg { flex: none; }
 .search input::placeholder { color: var(--text-2); }
 .filters { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s5); }
 .filters label { flex: 1 1 140px; min-width: 0; }
+/* The club filter carries the longest labels ("Followed clubs", venue names): give it its own row */
+.filters label:has(#f-club) { order: -1; flex-basis: 100%; }
 .filters select {
   width: 100%; min-height: 48px; padding: var(--s2) 36px var(--s2) var(--s3);
   border: 1px solid var(--line); border-radius: var(--r-control); background-color: var(--surface); color: var(--text);
@@ -501,6 +503,52 @@ details.fold[open] > summary .chev { transform: rotate(90deg); }
 .choices button[aria-checked="true"] { background: var(--selected); color: var(--selected-ink); font-weight: 700; }
 .group-title { font-size: var(--fs-lg); margin-top: var(--s8); }
 .footnote { color: var(--text-2); font-size: var(--fs-sm); margin-top: var(--s8); }
+
+/* ---------- Feature upgrade (Oct 2026) ------------------------------ */
+/* Supplied decorative illustrations: contained, never cropped, decorative only */
+.intro__row { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s1); }
+.intro__row p { flex: 1; min-width: 0; color: var(--text-2); margin: 0; }
+.intro__art { flex: none; height: 64px; width: auto; max-width: 42%; object-fit: contain; }
+html[data-text="xlarge"] .intro__art, html[data-text="large"] .intro__art { height: 52px; }
+.invite--art { display: flex; align-items: center; gap: var(--s4); }
+.invite__art { flex: none; width: 64px; height: 64px; object-fit: contain; }
+
+.status--cancelled { font-weight: 700; color: var(--brand-red); }
+:root[data-theme="dark"] .status--cancelled { color: var(--sun-orange); }
+.eyebrow--medal { display: inline-flex; align-items: center; gap: 6px; }
+.eyebrow--medal .i { color: var(--brand-red); }
+:root[data-theme="dark"] .eyebrow--medal .i { color: var(--sun-orange); }
+
+.btn--follow[aria-pressed="true"] { color: var(--heading); font-weight: 700; }
+.btn--follow[aria-pressed="true"] .i { fill: currentColor; }
+.btn--sm { min-height: 44px; padding: 0 var(--s3); font-size: var(--fs-sm); flex: none; }
+
+.upd { padding: var(--s3) 0; border-bottom: 1px solid var(--line); }
+.upd h3 { margin-top: 2px !important; }
+.upd__meta { font-size: var(--fs-sm); font-weight: 700; display: flex; align-items: center; gap: var(--s2); margin: 0 !important; }
+.upd__group { font-size: var(--fs-sm) !important; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin-top: var(--s5) !important; }
+.tag-new { display: inline-block; padding: 1px 8px; border-radius: var(--r-pill); background: var(--accent); color: var(--accent-ink); font-size: var(--fs-xs); }
+.copylink input { width: 100%; min-height: 48px; padding: 0 var(--s3); border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); color: var(--text); font-size: 16px; }
+
+.article__img { width: 100%; height: auto; border-radius: var(--r-panel); margin: var(--s4) 0; background: var(--subtle); }
+.article__p { margin-top: var(--s3); }
+
+/* Loading placeholders: reserve real geometry, no endless animation */
+.skel { padding-top: var(--s2); }
+.skel span:not(.sr-only) { display: block; background: var(--subtle); border-radius: var(--r-control); }
+.skel__h { height: 40px; width: 60%; }
+.skel__l { height: 20px; width: 85%; margin-top: var(--s3); }
+.skel__b { height: 96px; margin-top: var(--s5); }
+
+/* Pressed and bookmark feedback: quick, never delays the action */
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .shortcut, .row, .iconbtn, .achieve, .evrow__main { transition: transform 140ms ease, background-color 140ms ease, color 140ms ease; }
+  .btn:active, .shortcut:active, .iconbtn:active { transform: scale(.96); }
+  .row:active, .achieve:active, .evrow__main:active { transform: scale(.99); }
+  .iconbtn .i, .btn .i { transition: fill 160ms ease, transform 160ms ease; }
+  .iconbtn[data-on="true"] .i { animation: pop 180ms ease-out; }
+}
+@keyframes pop { 0% { transform: scale(.8); } 100% { transform: scale(1); } }
 
 /* ---------- More menu ---------------------------------------------
    Full-width rows under small group headings; the whole row is the

@@ -40,6 +40,7 @@
                 'August', 'September', 'October', 'November', 'December'];
   var CATS = ["Women's", "Men's", 'Mixed', 'Open'];
 
+  var Logic = window.SWDLogic;
   var view = document.getElementById('view');
   var netbar = document.getElementById('netbar');
   var dlg = document.getElementById('dlg');
@@ -98,6 +99,9 @@
     sliders: '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="9" cy="18" r="2"/>',
     news: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>',
     flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    share: '<path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+    star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+    medal: '<circle cx="12" cy="15" r="5"/><path d="M8.5 11 6 3h4l2 5 2-5h4l-2.5 8"/>',
     archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>'
   };
   function icon(name, cls) {
@@ -287,9 +291,12 @@
   }
 
   var EVENTS = null;
+  var CLUB_ALIASES = {};
   function loadEvents() {
-    return getJSON('/events-data.json').then(function (d) {
+    return Promise.all([getJSON('/events-data.json'), getJSON('/clubs-data.json').catch(function () { return { clubs: [] }; })]).then(function (all) {
+      var d = all[0];
       if (EVENTS && EVENTS.src === d) return EVENTS.list;
+      CLUB_ALIASES = Logic.aliasMapFrom(all[1].clubs);
       var list = (d.events || []).filter(function (e) { return e.id && e.title && !/^paypal-test/.test(e.id); })
         .map(decorateEvent);
       list.sort(function (a, b) { return (a.dates ? a.dates.start : '9') < (b.dates ? b.dates.start : '9') ? -1 : 1; });
@@ -302,6 +309,7 @@
     var x = { e: e, id: e.id, dates: parseDates(e.date), cat: categoryOf(e.title + ' ' + (e.subtitle || '')),
       club: club, clubId: club ? clubKey(club) : '', clubLabel: club ? clubLabel(club) : '', short: shortTitle(e.title) };
     x.deadline = deadlineDate(x);
+    x.clubIds = Logic.clubIdsForVenue(club, CLUB_ALIASES);
     return x;
   }
   function eventPhase(x, today) {
@@ -316,24 +324,31 @@
     var s = parts.filter(function (p) { return /start|trial ends/i.test(p); })[0] || parts[parts.length - 1] || '';
     return s;
   }
-  // Entry status: only from a real, parseable deadline.
+  // Status words come only from real data: explicit organizer state first
+  // ('status': 'cancelled', 'entriesStatus': 'open' | 'closed'), then the
+  // published dates. A passed deadline doesn't mean the event was played.
+  var RESULT_EVENTS = {};   // event id -> true when results are published
   function entryStatus(x, today) {
-    var phase = eventPhase(x, today);
-    if (phase === 'past') return { kind: 'done', label: 'Completed', icon: 'check' };
+    var e = x.e, phase = eventPhase(x, today);
+    if (e.status === 'cancelled' || (e.alert && /cancel/i.test(e.alertLabel || ''))) return { kind: 'cancelled', label: 'Cancelled', icon: 'alert' };
+    if (phase === 'past') return RESULT_EVENTS[x.id] ? { kind: 'results', label: 'Results available', icon: 'trophy' } : { kind: 'done', label: 'Completed', icon: 'check' };
     if (phase === 'now') {
-      var st = startTime(x.e.time);
+      var st = startTime(e.time);
       return { kind: 'today', label: x.dates.start === today && st ? 'Today · ' + st : 'Today', icon: 'flag' };
     }
-    if (!x.deadline) return null;
-    if (today > x.deadline) return { kind: 'closed', label: 'Entry deadline passed', icon: 'lock' };
+    if (e.entriesStatus === 'closed') return { kind: 'closed', label: 'Entries closed', icon: 'lock' };
+    if (!x.deadline) return e.entriesStatus === 'open' ? { kind: 'openish', label: 'Entries open', icon: 'hourglass' } : { kind: 'upcoming', label: 'Upcoming', icon: 'cal' };
+    if (today > x.deadline && e.entriesStatus !== 'open') return { kind: 'closed', label: 'Entries closed', icon: 'lock' };
+    if (today > x.deadline) return { kind: 'openish', label: 'Entries open', icon: 'hourglass' };
     var left = daysBetween(today, x.deadline);
-    var label = left === 0 ? 'Entries close today' : left === 1 ? 'Entries close tomorrow'
-      : 'Entries close ' + fmt(x.deadline, { month: 'short', day: 'numeric' });
+    var label = left === 0 ? 'Entries open · close today' : left === 1 ? 'Entries open · close tomorrow'
+      : 'Entries open · close ' + fmt(x.deadline, { month: 'short', day: 'numeric' });
     return { kind: 'open', label: label, icon: 'hourglass', close: x.deadline };
   }
   function statusLine(st) {
     if (!st) return '';
-    return '<span class="status' + (st.kind === 'open' ? ' status--open' : '') + '">' + icon(st.icon) + esc(st.label) + '</span>';
+    var cls = st.kind === 'open' || st.kind === 'openish' ? ' status--open' : st.kind === 'cancelled' ? ' status--cancelled' : '';
+    return '<span class="status' + cls + '">' + icon(st.icon) + esc(st.label) + '</span>';
   }
 
   var RESULTS = null;
@@ -349,6 +364,8 @@
         };
       });
       RESULTS = { src: d, list: list };
+      RESULT_EVENTS = {};
+      list.forEach(function (r) { if (r.eventId) RESULT_EVENTS[r.eventId] = true; RESULT_EVENTS[r.id] = true; });
       return list;
     });
   }
@@ -376,6 +393,33 @@
      --------------------------------------------------------------- */
   function saved() { return store('saved') || []; }
   function isSaved(id) { return saved().indexOf(id) >= 0; }
+  // Followed clubs: kept on this phone only. Following never turns on
+  // notifications; it only puts the club's events first.
+  function followed() { return store('followedClubs') || []; }
+  function isFollowing(id) { return followed().indexOf(id) >= 0; }
+  function setFollowing(id, on, name) {
+    var f = followed().filter(function (x) { return x !== id; });
+    if (on) f.push(id);
+    store('followedClubs', f);
+    document.querySelectorAll('[data-follow="' + id + '"]').forEach(function (b) {
+      b.setAttribute('aria-pressed', on);
+      var t = b.querySelector('span'); if (t) t.textContent = on ? 'Following' : 'Follow club';
+    });
+    view.dispatchEvent(new CustomEvent('follow-change', { detail: { id: id, on: on } }));
+    if (on) {
+      var first = !store('followExplained'); store('followExplained', true);
+      toast('Following ' + name, first ? 'See this club’s events first. Following doesn’t turn on notifications.' : '',
+        function () { setFollowing(id, false, name); });
+    } else {
+      toast('Stopped following ' + name, '', function () { setFollowing(id, true, name); });
+    }
+  }
+  function followBtn(id, name) {
+    var on = isFollowing(id);
+    return '<button class="btn btn--ghost btn--follow" type="button" data-follow="' + esc(id) + '" data-name="' + esc(name) + '" aria-pressed="' + on + '">' +
+      icon('star') + '<span>' + (on ? 'Following' : 'Follow club') + '</span></button>';
+  }
+
   // One place changes saved state, so Home, Events and event details
   // always agree. Saving is a bookmark: it never registers anyone or
   // turns on reminders.
@@ -492,17 +536,71 @@
       navigator.onLine ? 'Check your connection and try again.' : 'This hasn’t been saved on your phone yet. Try again when you have a signal.',
       '<button class="btn" type="button" data-retry>Try again</button>');
   }
-  function loading() { return '<div class="loading" role="status"><span class="spinner" aria-hidden="true"></span>Loading…</div>'; }
+  // While a screen loads: still placeholder blocks the size of real content
+  // (no endless shimmer), announced once to screen readers.
+  function loading() {
+    return '<div class="skel" role="status"><span class="sr-only">Loading…</span><span class="skel__h"></span><span class="skel__l"></span>' +
+      '<span class="skel__b"></span><span class="skel__b"></span></div>';
+  }
   function setTitle(t) { document.title = (t ? t + ' · ' : '') + 'Southwest Bowls'; }
 
   // Tournament updates (events-data "alert"), shown in a dialog
+  // Tournament updates come from events-data.json ('alert'). Each has a
+  // version (event + wording); a reworded update is unread again. Only
+  // opening this list marks updates as read — never just visiting Home.
+  function updVersion(x) { return Logic.updateVersion(x.id, x.e.alertLabel, x.e.alert); }
+  function readUpdates() { return store('updatesRead') || []; }
+  function unreadCount(list) { var r = readUpdates(); return list.filter(function (x) { return r.indexOf(updVersion(x)) < 0; }).length; }
+  function updatesLabel(list) {
+    var n = list.length, u = unreadCount(list);
+    return n + ' tournament update' + (n === 1 ? '' : 's') + (u ? ' · ' + u + ' new' : '');
+  }
+  function updatesShort(list) { var u = unreadCount(list); return list.length + ' current' + (u ? ' · ' + u + ' new' : ''); }
   function noticesDialog(list) {
     if (!list.length) { openDialog('Tournament updates', '<p>There are no tournament updates right now.</p>'); return; }
-    openDialog('Tournament updates', list.map(function (x) {
-      return '<h3>' + esc(x.e.alertLabel || 'Update') + ' · ' + esc(x.short) + '</h3><p>' + esc(x.e.alert) + '</p>' +
-        '<a class="btn btn--ghost" href="/app/events/' + encodeURIComponent(x.id) + '">View tournament</a>';
-    }).join(''));
+    var ids = saved(), read = readUpdates();
+    var mine = list.filter(function (x) { return ids.indexOf(x.id) >= 0; });
+    var rest = list.filter(function (x) { return ids.indexOf(x.id) < 0; });
+    function item(x) {
+      var isNew = read.indexOf(updVersion(x)) < 0;
+      return '<article class="upd">' +
+        '<p class="upd__meta">' + (isNew ? '<span class="tag-new">New</span>' : '') + esc(x.e.alertLabel || 'Update') +
+          (x.e.alertDate ? ' · ' + esc(fmt(x.e.alertDate, { month: 'short', day: 'numeric' })) : '') + '</p>' +
+        '<h3>' + esc(x.short) + '</h3>' +
+        (x.dates ? '<p class="muted">' + esc(dateRangeLabel(x.dates, true)) + (x.clubLabel ? ' · ' + esc(x.clubLabel) : '') + '</p>' : '') +
+        '<p>' + esc(x.e.alert) + '</p>' +
+        '<a class="textlink" href="/app/events/' + encodeURIComponent(x.id) + '">View event<span class="sr-only">: ' + esc(x.short) + '</span>' + icon('chev', 'i--sm') + '</a></article>';
+    }
+    openDialog('Tournament updates',
+      (mine.length ? '<h3 class="upd__group">Your saved events</h3>' + mine.map(item).join('') : '') +
+      (rest.length ? (mine.length ? '<h3 class="upd__group">Other updates</h3>' : '') + rest.map(item).join('') : ''));
+    // They have now been seen
+    var now = read.slice();
+    list.forEach(function (x) { var v = updVersion(x); if (now.indexOf(v) < 0) now.push(v); });
+    store('updatesRead', now.slice(-200));
+    document.querySelectorAll('[data-notices] [data-upd-label]').forEach(function (el) {
+      el.textContent = el.getAttribute('data-upd-label') === 'short' ? updatesShort(list) : updatesLabel(list);
+    });
   }
+
+  // Share: the phone's share sheet when there is one, otherwise copy the
+  // public link. Cancelling is quiet; a real failure says so.
+  function shareBtn(title, path) {
+    return '<button class="btn btn--ghost" type="button" data-share="' + esc(path) + '" data-share-title="' + esc(title) + '">' + icon('share') + 'Share</button>';
+  }
+  function share(title, path) {
+    var url = Logic.canonicalUrl(path);
+    function copied() { toast('Link copied.'); }
+    function failed() { openDialog('Share this link', '<p>Copy this link to share it:</p><p class="copylink"><input type="text" readonly value="' + esc(url) + '" aria-label="Link to share" onfocus="this.select()"></p>'); }
+    function copy() {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(copied, failed);
+      else failed();
+    }
+    if (navigator.share) {
+      navigator.share({ title: title, url: url }).catch(function (err) { if (!err || err.name !== 'AbortError') copy(); });
+    } else copy();
+  }
+
   var currentNotices = [];
 
   /* ---------------------------------------------------------------
@@ -548,7 +646,8 @@
     var mineNext = mine.filter(function (x) { return live.indexOf(x) >= 0; });   // already in date order
 
     // 1. Greeting and two compact shortcuts — no hero
-    var html = '<div class="intro intro--compact"><h1>Your Southwest.</h1><p>On the green. In the game. Together.</p></div>' +
+    var html = '<div class="intro intro--compact"><h1>Your Southwest.</h1><div class="intro__row"><p>On the green. In the game. Together.</p>' +
+      '<img class="intro__art" src="/assets/app/art/welcome-bowls.png" alt="" aria-hidden="true" width="181" height="72" decoding="async"></div></div>' +
       '<nav class="shortcuts" aria-label="Shortcuts">' +
       '<a class="shortcut" href="/app/events">' + icon('cal') + '<span>Find events</span></a>' +
       '<a class="shortcut" href="/app/events?show=saved">' + icon('bookmark') + '<span>My saved events</span></a>' +
@@ -570,20 +669,22 @@
       html += '<div class="invite"><p class="invite__lead">No upcoming saved events.</p>' +
         '<a class="textlink" href="/app/events?show=saved">View saved events' + icon('chev', 'i--sm') + '</a></div>';
     } else {
-      html += '<div class="invite"><p class="invite__lead">Save events to see your next games here.</p>' +
-        '<p class="invite__small">Saving doesn’t register you.</p>' +
-        '<a class="textlink" href="/app/events">Find an event' + icon('chev', 'i--sm') + '</a></div>';
+      html += '<div class="invite invite--art"><img class="invite__art" src="/assets/app/art/saved-empty.png" alt="" aria-hidden="true" width="64" height="64" decoding="async">' +
+        '<div><p class="invite__lead">Save events to see your next games here.</p>' +
+        '<p class="invite__small">Saving doesn’t register you.</p></div></div>';
     }
     html += '</section>';
 
     // 3. This week — a deadline or today's event, plus tournament updates
     d.otherNotices = others.length ? '<button class="noticebtn noticebtn--quiet" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
-      '<span>' + others.length + (myAlerts.length ? ' more' : '') + ' tournament update' + (others.length === 1 ? '' : 's') + '</span>' + CHEV + '</button>' : '';
+      '<span data-upd-label>' + updatesLabel(currentNotices) + '</span>' + CHEV + '</button>' : '';
     html += thisWeek(d);
 
     // 4. News & community — the community story, then the latest news
     var st = d.story;
-    var news = d.news.slice().sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : 1; }).slice(0, 2);
+    var nowMs = Date.now();
+    var news = d.news.filter(function (n) { return n.id && !Logic.isExpiredNotice(n, nowMs); })
+      .sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : 1; }).slice(0, 2);
     if ((st && st.headline) || news.length) {
       html += '<section class="section" aria-labelledby="h-news">' + sectionHead('h-news', 'News & community', '/app/more/news', 'All news');
       if (st && st.headline) {
@@ -603,7 +704,7 @@
       }
       if (news.length) {
         html += '<ul class="rows newsrows">' + news.map(function (n) {
-          return '<li><a class="row" href="/app/more/news"><span class="row__main">' +
+          return '<li><a class="row" href="/app/news/' + encodeURIComponent(n.id) + '"><span class="row__main">' +
             (n.date ? '<span class="row__meta">' + esc(fmt(n.date, { month: 'long', day: 'numeric' })) + '</span>' : '') +
             '<span class="row__title">' + esc(n.title) + '</span></span>' + CHEV + '</a></li>';
         }).join('') + '</ul>';
@@ -619,7 +720,7 @@
       html += '<section class="section" aria-labelledby="h-greens">' + sectionHead('h-greens', 'Around the greens', '/app/results', 'All results') +
         '<a class="achieve" href="/app/results/' + encodeURIComponent(r.id) + '">' +
         (w && w.photo ? '<span class="achieve__frame"><img class="achieve__img" src="' + esc(w.photo) + '" alt="' + esc(w.who) + '" loading="lazy" data-hide-on-error></span>' : '') +
-        '<span class="achieve__body"><span class="eyebrow">' + esc(label || 'Latest result') + '</span>' +
+        '<span class="achieve__body"><span class="eyebrow eyebrow--medal">' + icon('medal', 'i--sm') + esc(label || 'Latest result') + '</span>' +
         (w ? '<span class="achieve__who">' + esc(w.who) + '</span>' : '') +
         '<span class="achieve__event">' + esc(shortTitle(r.t.title)) + '</span>' +
         (r.t.meta ? '<span class="achieve__meta">' + esc(r.t.meta) + '</span>' : '') +
@@ -677,9 +778,11 @@
   // event happening today. Broadcasts are in the SW TV section.
   function thisWeek(d) {
     var today = d.today, horizon = addDays(today, 7), item = null;
-    var dl = d.events.map(function (x) { return { x: x, st: entryStatus(x, today) }; })
-      .filter(function (o) { return o.st && o.st.kind === 'open' && o.st.close <= horizon; })
-      .sort(function (a, b) { return a.st.close < b.st.close ? -1 : a.st.close > b.st.close ? 1 : 0; })[0];
+    var fol = followed();
+    var dl = Logic.preferFollowed(
+      d.events.map(function (x) { return { x: x, clubIds: x.clubIds, st: entryStatus(x, today) }; })
+        .filter(function (o) { return o.st && o.st.kind === 'open' && o.st.close <= horizon; }),
+      fol, function (o) { return o.st.close; })[0];
     if (dl) item = { href: '/app/events/' + encodeURIComponent(dl.x.id), date: dl.st.close, kicker: 'Entry deadline',
       title: dl.x.short, meta: 'Entries close ' + fmt(dl.st.close, { weekday: 'long', month: 'long', day: 'numeric' }) + (dl.x.clubLabel ? ' · ' + dl.x.clubLabel : '') };
     if (!item) {
@@ -688,6 +791,17 @@
         meta: [t.clubLabel, startTime(t.e.time)].filter(Boolean).join(' · ') };
     }
     var notes = d.otherNotices || '';
+    // The next event from a club you follow (not already shown, not saved)
+    var ids = saved();
+    var fromClubs = fol.length ? d.events.filter(function (x) {
+      var p = eventPhase(x, today);
+      return (p === 'upcoming' || p === 'now') && ids.indexOf(x.id) < 0 && (!item || item.href !== '/app/events/' + encodeURIComponent(x.id)) &&
+        x.clubIds.some(function (c) { return fol.indexOf(c) >= 0; });
+    })[0] : null;
+    if (fromClubs) notes = '<ul class="list"><li class="evrow">' + dateBlock(fromClubs) + '<a class="evrow__main" href="/app/events/' + encodeURIComponent(fromClubs.id) + '">' +
+      '<span class="eyebrow">From clubs you follow</span><span class="evrow__title">' + esc(fromClubs.short) + '</span>' +
+      '<span class="evrow__meta">' + esc([dateRangeLabel(fromClubs.dates, true), fromClubs.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
+      statusLine(entryStatus(fromClubs, today)) + '</a>' + saveBtn(fromClubs.id, fromClubs.short) + '</li></ul>' + notes;
     if (!item && !notes) return '';
     return '<section class="section" aria-labelledby="h-week">' + sectionHead('h-week', 'This week') +
       (item ? '<a class="week" href="' + esc(item.href) + '">' +
@@ -726,7 +840,8 @@
   function eventsList(params) {
     setTitle('Events');
     var today = todayISO();
-    return loadEvents().then(function (events) {
+    return Promise.all([loadEvents(), loadResults().catch(function () { return []; })]).then(function (all) {
+      var events = all[0];
       var hasPast = events.some(function (x) { return eventPhase(x, today) === 'past'; });
       var show = params.get('show') || 'upcoming';
       if (show === 'past' && !hasPast) show = 'upcoming';
@@ -748,7 +863,7 @@
         '<div class="filters">' +
         '<label><span class="sr-only">Category</span><select id="f-cat">' + opt('', 'All categories', f.cat) +
         CATS.map(function (c) { return opt(c, c, f.cat); }).join('') + '</select></label>' +
-        '<label><span class="sr-only">Club</span><select id="f-club">' + opt('', 'All clubs', f.club) +
+        '<label><span class="sr-only">Club</span><select id="f-club">' + opt('', 'All clubs', f.club) + opt('followed', 'Followed clubs', f.club) +
         Object.keys(clubs).sort(function (a, b) { return clubs[a] < clubs[b] ? -1 : 1; }).map(function (k) { return opt(k, clubs[k], f.club); }).join('') + '</select></label>' +
         '<label><span class="sr-only">Month</span><select id="f-month">' + opt('', 'Any month', f.month) +
         Object.keys(months).sort().map(function (k) { return opt(k, months[k], f.month); }).join('') + '</select></label>' +
@@ -768,7 +883,8 @@
           if (show === 'saved' && sv.indexOf(x.id) < 0) return false;
           if (month && !(x.dates && x.dates.start.slice(0, 7) === month)) return false;
           if (cat && x.cat !== cat) return false;
-          if (club && x.clubId !== club) return false;
+          if (club === 'followed') { var fol = followed(); if (!x.clubIds.some(function (c) { return fol.indexOf(c) >= 0; })) return false; }
+          else if (club && x.clubId !== club) return false;
           if (q && (x.e.title + ' ' + (x.e.subtitle || '') + ' ' + x.club + ' ' + x.clubLabel + ' ' + (x.e.format || '') + ' ' + (x.e.club && x.e.club.address || '')).toLowerCase().indexOf(q) < 0) return false;
           return true;
         });
@@ -776,7 +892,12 @@
         var filtered = q || month || cat || club;
         var out = document.getElementById('ev-results');
         if (!list.length) {
-          out.innerHTML = show === 'saved' && !filtered
+          var onlyFollowed = club === 'followed' && !q && !month && !cat;
+          out.innerHTML = club === 'followed' && !followed().length
+            ? state('empty', 'You’re not following any clubs yet', 'Follow a club to see its events here first.', '<a class="btn" href="/app/more/clubs">Find a club</a> <button class="btn btn--ghost" type="button" data-all-clubs>Browse all events</button>')
+            : onlyFollowed
+            ? state('empty', show === 'past' ? 'No completed events from your followed clubs' : show === 'saved' ? 'No saved events from your followed clubs' : 'No upcoming events from your followed clubs', '', '<button class="btn" type="button" data-all-clubs>Browse all events</button>')
+            : show === 'saved' && !filtered
             ? state('empty', 'No saved events yet', 'Tap the bookmark on any event to keep it here. Saving doesn’t enter you in the event.')
             : state('empty', 'No events match', filtered ? 'Try a different search or clear the filters.' : '',
                 filtered ? '<button class="btn btn--ghost" type="button" data-clear>Clear filters</button>' : '');
@@ -820,6 +941,9 @@
       });
       // Unsaving on the Saved list takes the row away
       view.addEventListener('saved-change', function () { if (show === 'saved') apply(); });
+      view.addEventListener('click', function (ev) {
+        if (ev.target.closest('[data-all-clubs]')) { document.getElementById('f-club').value = ''; apply(); }
+      });
       apply();
     });
   }
@@ -929,10 +1053,11 @@
     if (phase !== 'past') acts.push('<a class="btn btn--split btn--primary-wide" href="?tab=entry" data-goto-tab="entry">Entry details' + icon('chev') + '</a>');
     else if (hasResult) acts.push('<a class="btn btn--split btn--primary-wide" href="?tab=results" data-goto-tab="results">See the results' + icon('chev') + '</a>');
     if (e.club && safeUrl(e.club.mapUrl)) acts.push('<a class="btn btn--ghost" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>');
-    if (x.dates && phase !== 'past') acts.push('<a class="btn btn--ghost" href="' + icsHref(x) + '" download="' + esc(x.id) + '.ics">' + icon('cal') + 'Add to calendar</a>');
+    if (x.dates && phase !== 'past') acts.push('<a class="btn btn--ghost" href="' + icsHref(x) + '" download="' + esc(x.id) + '.ics" data-ics>' + icon('cal') + 'Add to calendar</a>');
     var on = isSaved(x.id);
     acts.push('<button class="btn btn--ghost" type="button" data-save="' + esc(x.id) + '" data-title="' + esc(x.short) + '" data-on="' + on + '" aria-label="' + esc(saveLabel(on, x.short)) + '">' + icon('bookmark') +
       '<span aria-hidden="true">' + (on ? 'Saved' : 'Save') + '</span></button>');
+    acts.push(shareBtn(x.e.title, '/app/events/' + x.id));
     h += '<div class="actions">' + acts.join('') + '</div>';
     h += '<p class="note">Saving an event keeps it in your list. It does not register your team.</p>';
 
@@ -1028,20 +1153,21 @@
     return divisionsHtml(r.t);
   }
 
-  // .ics for "Add to calendar" — an all-day event in the user's calendar app
+  // .ics for "Add to calendar" — an all-day event in the user's calendar
+  // app. It is a one-time copy: later venue or date changes don't follow.
   function icsHref(x) {
-    var e = x.e, d = x.dates;
-    var fold = function (s) { return String(s || '').replace(/[\\,;]/g, function (c) { return '\\' + c; }).replace(/\n/g, '\\n'); };
-    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Southwest Bowls//App//EN', 'BEGIN:VEVENT',
+    var e = x.e, d = x.dates, T = Logic.icsText;
+    var doc = Logic.icsDocument(['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Southwest Bowls//App//EN', 'BEGIN:VEVENT',
       'UID:' + x.id + '@swlawnbowls.org',
       'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, ''),
       'DTSTART;VALUE=DATE:' + d.start.replace(/-/g, ''),
       'DTEND;VALUE=DATE:' + addDays(d.end, 1).replace(/-/g, ''),
-      'SUMMARY:' + fold(e.title),
-      'LOCATION:' + fold([e.club && e.club.name, e.club && e.club.address].filter(Boolean).join(', ')),
-      'DESCRIPTION:' + fold([e.time, e.format && cap(e.format), e.fee && 'Entry ' + e.fee, e.deadline, location.origin + '/event?id=' + x.id].filter(Boolean).join('\n')),
-      'END:VEVENT', 'END:VCALENDAR'];
-    return 'data:text/calendar;charset=utf-8,' + encodeURIComponent(lines.join('\r\n'));
+      'SUMMARY:' + T(e.title),
+      'LOCATION:' + T([e.club && e.club.name, e.club && e.club.address].filter(Boolean).join(', ')),
+      'DESCRIPTION:' + T([e.time, e.format && cap(e.format), e.fee && 'Entry ' + e.fee, e.deadline, Logic.canonicalUrl('/app/events/' + x.id)].filter(Boolean).join('\n')),
+      'URL:' + Logic.canonicalUrl('/app/events/' + x.id),
+      'END:VEVENT', 'END:VCALENDAR']);
+    return 'data:text/calendar;charset=utf-8,' + encodeURIComponent(doc);
   }
 
   /* ---------------------------------------------------------------
@@ -1103,7 +1229,8 @@
         (r.t.meta ? '<p class="eyebrow">' + esc(r.t.meta) + '</p>' : '') +
         '<h1 class="detail-title">' + esc(r.t.title) + '</h1>' +
         divisionsHtml(r.t) +
-        (r.eventId ? '<ul class="rows" style="margin-top:32px">' + linkRow('/app/events/' + encodeURIComponent(r.eventId), 'cal', 'Event details') + '</ul>' : '');
+        '<div class="actions" style="margin-top:24px">' + shareBtn(r.t.title + ' — results', '/app/results/' + r.id) + '</div>' +
+        (r.eventId ? '<ul class="rows" style="margin-top:16px">' + linkRow('/app/events/' + encodeURIComponent(r.eventId), 'cal', 'Event details') + '</ul>' : '');
     });
   }
   var ORD = ['', '1st', '2nd', '3rd'];
@@ -1330,7 +1457,7 @@
           menuRow('/app/events?show=saved', 'bookmark', 'Saved events') +
           menuRow('/app/more/clubs', 'pin', 'Find a club') +
           '<li><button class="row" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
-            '<span class="row__main"><span class="row__title">Tournament updates</span>' + (n ? '<span class="row__meta">' + n + ' current</span>' : '') + '</span>' + CHEV + '</button></li>') +
+            '<span class="row__main"><span class="row__title">Tournament updates</span>' + (n ? '<span class="row__meta" data-upd-label="short">' + updatesShort(currentNotices) + '</span>' : '') + '</span>' + CHEV + '</button></li>') +
         menuGroup('h-explore', 'Explore Southwest',
           menuRow('/app/more/play', 'flag', 'Play & learn') +
           menuRow('/app/more/news', 'news', 'News') +
@@ -1361,19 +1488,41 @@
     });
   }
 
+  // News: every item has its own page at /app/news/<id>. Expired notices
+  // (a sale or sign-up that has closed) stay readable, marked as ended.
+  function newsEnded(n) { return Logic.isExpiredNotice(n, Date.now()); }
   function newsList() {
     setTitle('News');
     return getJSON('/news-data.json').then(function (d) {
-      var items = (d.items || []).slice().sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : 1; });
+      var items = (d.items || []).filter(function (n) { return n.id; }).slice().sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : 1; });
       view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>News</h1></div>' +
-        (items.length ? items.map(function (n) {
-          var link = appLink(n.link || '');
-          return '<article class="resrow"><p class="eyebrow">' + (n.date ? esc(fmt(n.date, { month: 'long', day: 'numeric', year: 'numeric' })) : '') + '</p>' +
-            '<h2 class="resrow__title" style="margin-top:4px">' + esc(n.title) + '</h2>' +
-            (n.body ? '<p style="margin-top:8px">' + esc(n.body) + '</p>' : '') +
-            (link ? '<a class="btn btn--ghost" style="margin-top:12px" href="' + esc(link.href) + '"' + (link.ext ? ' target="_blank" rel="noopener"' : '') + '>' +
-              (link.ext ? icon('ext') : '') + esc(link.label) + '</a>' : '') + '</article>';
-        }).join('') : state('empty', 'No news right now', ''));
+        (items.length ? '<ul class="rows newsrows">' + items.map(function (n) {
+          return '<li><a class="row" href="/app/news/' + encodeURIComponent(n.id) + '"><span class="row__main">' +
+            '<span class="row__meta">' + (n.date ? esc(fmt(n.date, { month: 'long', day: 'numeric', year: 'numeric' })) : '') + (newsEnded(n) ? ' · Ended' : '') + '</span>' +
+            '<span class="row__title">' + esc(n.title) + '</span></span>' + CHEV + '</a></li>';
+        }).join('') + '</ul>' : state('empty', 'No news right now', ''));
+    });
+  }
+  function newsArticle(params, id) {
+    setTitle('News');
+    return getJSON('/news-data.json').then(function (d) {
+      var n = (d.items || []).filter(function (x) { return x.id === id; })[0];
+      if (!n) { view.innerHTML = backLink('/app/more/news', 'News') + state('empty', 'We couldn’t find that story', 'It may have been removed.', '<a class="btn" href="/app/more/news">All news</a>'); return; }
+      setTitle(n.title);
+      var link = appLink(n.link || '');
+      var ended = newsEnded(n), until = Logic.expiryTime(n.expires);
+      view.innerHTML = backLink('/app/more/news', 'News') +
+        '<p class="eyebrow">' + (n.date ? esc(fmt(n.date, { month: 'long', day: 'numeric', year: 'numeric' })) : '') + '</p>' +
+        '<h1 class="detail-title">' + esc(n.title) + '</h1>' +
+        (ended ? '<p class="note"><b>This has ended.</b>It closed ' + esc(new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(until))) + '.</p>' : '') +
+        (safeUrl(n.image) ? '<img class="article__img" src="' + esc(n.image) + '" alt="" loading="lazy" data-hide-on-error>' : '') +
+        String(n.body || '').split(/\n\s*\n/).map(function (para) { return '<p class="article__p">' + esc(para) + '</p>'; }).join('') +
+        '<div class="actions">' +
+          (link && !ended ? '<a class="btn btn--split" href="' + esc(link.href) + '"' + (link.ext ? ' target="_blank" rel="noopener"' : '') + '>' + esc(link.label) + icon(link.ext ? 'ext' : 'chev') + '</a>' : '') +
+          (link && ended ? '<a class="btn btn--ghost" href="' + esc(link.href) + '"' + (link.ext ? ' target="_blank" rel="noopener"' : '') + '>' + (link.ext ? icon('ext') : '') + esc(link.label) + '</a>' : '') +
+          shareBtn(n.title, '/app/news/' + n.id) +
+        '</div>';
+      view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
     });
   }
 
@@ -1389,7 +1538,7 @@
         var q = document.getElementById('q').value.trim().toLowerCase();
         var list = clubs.filter(function (c) { return !q || (c.name + ' ' + c.city + ' ' + (c.summary || '')).toLowerCase().indexOf(q) >= 0; });
         document.getElementById('c-list').innerHTML = list.length ? '<p class="count">' + list.length + ' club' + (list.length === 1 ? '' : 's') + '</p><ul class="rows">' + list.map(function (c) {
-          return linkRow('/app/more/clubs/' + slugify(c.name), 'pin', c.name, c.city + (c.status === 'private' ? ' · Private club' : ''));
+          return linkRow('/app/more/clubs/' + slugify(c.name), isFollowing(c.id || slugify(c.name)) ? 'star' : 'pin', c.name, c.city + (c.status === 'private' ? ' · Private club' : '') + (isFollowing(c.id || slugify(c.name)) ? ' · Following' : ''));
         }).join('') + '</ul>' : state('empty', 'No clubs match', 'Try another name or city.');
         history.replaceState(history.state, '', '/app/more/clubs' + (q ? '?q=' + encodeURIComponent(document.getElementById('q').value.trim()) : ''));
       }
@@ -1409,9 +1558,11 @@
       if (c.phone) acts.push('<a class="btn btn--ghost" href="' + esc(tel(c.phone)) + '">' + icon('phone') + 'Call</a>');
       if (c.email) acts.push('<a class="btn btn--ghost" href="mailto:' + esc(c.email) + '">' + icon('mail') + 'Email</a>');
       if (safeUrl(c.website)) acts.push('<a class="btn btn--ghost" href="' + esc(c.website) + '" target="_blank" rel="noopener">' + icon('globe') + 'Website</a>');
+      var cid = c.id || slugify(c.name);
       view.innerHTML = backLink('/app/more/clubs', 'Clubs') + '<p class="eyebrow">' + esc(c.city) + (c.status === 'private' ? ' · Private club' : '') + '</p>' +
         '<h1 class="detail-title">' + esc(c.name) + '</h1>' +
-        '<div class="actions">' + acts.join('') + '</div>' +
+        '<div class="actions">' + acts.join('') + followBtn(cid, c.name) + '</div>' +
+        '<p class="muted" style="margin-top:8px">Following is saved on this phone and puts this club’s events first. It doesn’t turn on notifications.</p>' +
         (c.summary ? '<section class="block"><p><b>' + esc(c.summary) + '</b></p>' + (c.details ? '<p>' + esc(c.details) + '</p>' : '') + '</section>' : c.details ? '<section class="block"><p>' + esc(c.details) + '</p></section>' : '') +
         ((c.phone || c.email) ? '<section class="block"><h2>Contact</h2><ul class="rows">' +
           (c.phone ? linkRow(tel(c.phone), 'phone', c.phone) : '') +
@@ -1431,8 +1582,25 @@
       '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-cache>Clear offline copies</button></div></section>' +
       '<section class="settings" aria-labelledby="h-sv"><h2 id="h-sv">Saved events</h2><p>' + (n ? n + ' event' + (n === 1 ? '' : 's') + ' saved on this phone. Saving an event doesn’t enter you in it.' : 'No events saved yet.') + '</p>' +
       (n ? '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-saved>Clear saved events</button></div>' : '') + '</section>' +
+      '<section class="settings" aria-labelledby="h-fc"><h2 id="h-fc">Followed clubs</h2><div id="fc-list"></div></section>' +
       (!standalone ? '<section class="settings" aria-labelledby="h-inst"><h2 id="h-inst">Add to your home screen</h2><p>Get the Southwest Bowls icon on your phone.</p><div class="actions"><a class="btn" href="/get-the-app" target="_blank" rel="noopener">How to add it</a></div></section>' : '') +
       '<p class="footnote">Southwest Bowls app · information from swlawnbowls.org</p>';
+    // Followed clubs list (names from clubs-data.json); unfollow in place
+    getJSON('/clubs-data.json').then(function (d) {
+      function draw() {
+        var box = document.getElementById('fc-list'); if (!box) return;
+        var fol = followed();
+        var mine = (d.clubs || []).filter(function (c) { return fol.indexOf(c.id) >= 0; });
+        box.innerHTML = mine.length
+          ? '<p>On this phone only. Their events come first in Events and on Home.</p><ul class="rows rows--menu">' + mine.map(function (c) {
+              return '<li><div class="row">' + icon('star') + '<span class="row__main"><span class="row__title">' + esc(c.name) + '</span><span class="row__meta">' + esc(c.city || '') + '</span></span>' +
+                '<button class="btn btn--ghost btn--sm" type="button" data-follow="' + esc(c.id) + '" data-name="' + esc(c.name) + '" aria-pressed="true" aria-label="Unfollow ' + esc(c.name) + '"><span>Following</span></button></div></li>';
+            }).join('') + '</ul>'
+          : '<p>You’re not following any clubs. Follow a club from its page to see its events first.</p><div class="actions"><a class="btn btn--ghost" href="/app/more/clubs">Find a club</a></div>';
+      }
+      draw();
+      view.addEventListener('follow-change', draw);
+    }).catch(function () {});
     view.addEventListener('click', function (ev) {
       if (ev.target.closest('[data-clear-saved]')) { store('saved', []); toast('Saved events cleared'); render(); }
       if (ev.target.closest('[data-clear-cache]')) {
@@ -1521,6 +1689,7 @@
     [/^\/app\/more\/clubs\/?$/, clubsList, 'more'],
     [/^\/app\/more\/clubs\/([^/]+)\/?$/, clubDetail, 'more'],
     [/^\/app\/more\/news\/?$/, newsList, 'more'],
+    [/^\/app\/news\/([a-z0-9-]+)\/?$/, newsArticle, 'more'],
     [/^\/app\/more\/settings\/?$/, settings, 'more'],
     [/^\/app\/more\/(play|division|ladies-day|archives|follow)\/?$/, subsection, 'more'],
     [/^\/app\/page\/([a-z0-9-]+)\/?$/, infoPage, 'more']
@@ -1579,6 +1748,11 @@
       setSaved(sid, !isSaved(sid), sv.getAttribute('data-title') || '');
       return;
     }
+    var sh = ev.target.closest('[data-share]');
+    if (sh) { share(sh.getAttribute('data-share-title'), sh.getAttribute('data-share')); return; }
+    var fo = ev.target.closest('[data-follow]');
+    if (fo) { var fid = fo.getAttribute('data-follow'); setFollowing(fid, !isFollowing(fid), fo.getAttribute('data-name') || ''); return; }
+    if (ev.target.closest('[data-ics]')) toast('Calendar file saved', 'It’s a one-time copy: it won’t change if the venue or date changes.');
     // Appearance and text size
     var th = ev.target.closest('[data-theme-choice]');
     if (th) { store('theme', th.getAttribute('data-theme-choice')); applyTheme(); return; }

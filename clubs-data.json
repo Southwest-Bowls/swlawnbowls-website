@@ -1,7 +1,8 @@
 {
-  "_note": "The 26 SWD clubs. Read by /club-info and the app. lat/lng are the club green.",
+  "_note": "The 26 SWD clubs. Read by /club-info and the app. lat/lng are the club green. 'id' is the club's permanent id (app follows and links use it; never change it). 'aliases' lists other spellings used for this club as a tournament venue in events-data.json.",
   "clubs": [
     {
+      "id": "beverly-hills",
       "name": "Beverly Hills",
       "city": "Beverly Hills",
       "status": "open",
@@ -15,6 +16,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608404694567-8T4JRUSPGSFPB35GT3J4/0F43AE3B-3E91-4B0E-AEFC-0D0C44BC6629_1_201_a.jpg"
     },
     {
+      "id": "cambria",
       "name": "Cambria",
       "city": "Cambria",
       "status": "open",
@@ -27,6 +29,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608665301829-J9O1E7V0VFKXZ2JXW0F9/Cambria_1A.jpg"
     },
     {
+      "id": "casta-del-sol",
       "name": "Casta del Sol",
       "city": "Mission Viejo",
       "status": "private",
@@ -39,6 +42,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1606943010486-LTWOOZDHPEO6HF3SNTDB/Casa_del_Sol.jpg"
     },
     {
+      "id": "coronado",
       "name": "Coronado",
       "city": "Coronado",
       "status": "open",
@@ -51,6 +55,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608404273219-97A0JDZJLWLSF0LU5UAO/26RM8820.jpg"
     },
     {
+      "id": "friendly-valley",
       "name": "Friendly Valley",
       "city": "Santa Clarita",
       "status": "private",
@@ -63,6 +68,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608665279480-19LBIV6XUZB0KK2J2E0P/image4.jpg"
     },
     {
+      "id": "hemet-joslyn",
       "name": "Hemet-Joslyn",
       "city": "Hemet",
       "status": "open",
@@ -76,6 +82,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608246644560-9GTQ0TXIFM7NIK8XKI8Y/Hemet.jpg"
     },
     {
+      "id": "hermosa-beach",
       "name": "Hermosa Beach",
       "city": "Hermosa Beach",
       "status": "open",
@@ -88,6 +95,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1609269053395-EKA8JFNHNECCOWSPZTEQ/Hormosa_Beach.JPG"
     },
     {
+      "id": "holmby-park",
       "name": "Holmby Park",
       "city": "Los Angeles",
       "status": "open",
@@ -100,6 +108,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1609268221090-8P9361ISD09063YUVFRG/Holmby_Park.jpg"
     },
     {
+      "id": "laguna-beach",
       "name": "Laguna Beach",
       "city": "Laguna Beach",
       "status": "open",
@@ -112,6 +121,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608665254983-YY6VY2INHDK8IA46LTWX/LBLBC_%2521.jpg"
     },
     {
+      "id": "laguna-woods",
       "name": "Laguna Woods",
       "city": "Laguna Woods",
       "status": "private",
@@ -124,6 +134,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608404174012-ZXPZEDK7D44QM6O73SE8/LWoods_2A.jpg"
     },
     {
+      "id": "long-beach",
       "name": "Long Beach",
       "city": "Long Beach",
       "status": "open",
@@ -136,6 +147,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608665224294-NMF5P0LF38YT9XBAN0PT/LongBeachLBC.jpg"
     },
     {
+      "id": "mackenzie-park",
       "name": "MacKenzie Park",
       "city": "Santa Barbara",
       "status": "open",
@@ -148,6 +160,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608404222254-O00LSW59D9R41OFGFC1U/MacKenziePark_2.jpg"
     },
     {
+      "id": "newport-harbor",
       "name": "Newport Harbor",
       "city": "Corona del Mar",
       "status": "open",
@@ -160,6 +173,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608665174411-JV9MCPUP7V1O1TXJE1II/NPH_2A.jpg"
     },
     {
+      "id": "oaks-north",
       "name": "Oaks North",
       "city": "San Diego",
       "status": "private",
@@ -172,6 +186,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608665195554-BOVP2AZVZF2MII4DHQ16/OaksNorth.jpg"
     },
     {
+      "id": "oxnard-joslyn",
       "name": "Oxnard-Joslyn",
       "city": "Oxnard",
       "status": "open",
@@ -181,9 +196,13 @@
       "lng": -119.179,
       "summary": "Senior-center-based club in Wilson Park with a central Oxnard location.",
       "details": "The club is part of the Oxnard Senior Center in Wilson Park, located downtown at 350 North “C” Street. It was founded through the efforts of Marcellus L. Joslyn.",
-      "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1609268984814-IESAB0DVKISY47PN6T6A/Oxnard_Joslyn.jpg"
+      "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1609268984814-IESAB0DVKISY47PN6T6A/Oxnard_Joslyn.jpg",
+      "aliases": [
+        "Oxnard Lawn Bowls Club"
+      ]
     },
     {
+      "id": "pasadena",
       "name": "Pasadena",
       "city": "Pasadena",
       "status": "open",
@@ -196,6 +215,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608847252244-BULN6ZD22HS10X2Y9F46/Pasadena.jpg"
     },
     {
+      "id": "pomona",
       "name": "Pomona",
       "city": "Pomona",
       "status": "open",
@@ -208,6 +228,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5ec321c2af33de48734cc929/1589847897715-EWKVJ35VXQ5P9CDGSYVT/image-asset.jpeg"
     },
     {
+      "id": "redlands",
       "name": "Redlands",
       "city": "Redlands",
       "status": "open",
@@ -220,6 +241,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1609293182404-U6KBN9LSL9WRH5T4DHCL/Redlands2.jpg"
     },
     {
+      "id": "riverside",
       "name": "Riverside",
       "city": "Riverside",
       "status": "open",
@@ -232,6 +254,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5ec321c2af33de48734cc929/1589847898345-D40VLF9LAM9L2XYZ5A1B/image-asset.jpeg"
     },
     {
+      "id": "san-diego",
       "name": "San Diego",
       "city": "San Diego",
       "status": "open",
@@ -244,6 +267,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1609442460686-HQZRO0LAJAR9D43O669G/SanDiego.jpg"
     },
     {
+      "id": "santa-ana",
       "name": "Santa Ana",
       "city": "Santa Ana",
       "status": "open",
@@ -256,6 +280,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1609790641798-E588E5ZYUIYKKUE4ZRF8/SantaAna_LBC1.jpg"
     },
     {
+      "id": "santa-anita",
       "name": "Santa Anita",
       "city": "Arcadia",
       "status": "open",
@@ -265,9 +290,13 @@
       "lng": -118.033,
       "summary": "One of only two clubs in the United States with four greens, including lights for night bowling.",
       "details": "Santa Anita welcomes new members and notes that after only one or two lessons, players are ready for social bowling. The four greens are located at 405 S. Santa Anita Ave. in Arcadia County Park, and the club hosts the annual Southwest Open.",
-      "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1606945090584-KA7W5H49Z7XW8QT9YVKQ/Santa_Anita.jpg"
+      "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1606945090584-KA7W5H49Z7XW8QT9YVKQ/Santa_Anita.jpg",
+      "aliases": [
+        "Santa Anita Bowling Green Club"
+      ]
     },
     {
+      "id": "santa-barbara",
       "name": "Santa Barbara",
       "city": "Santa Barbara",
       "status": "open",
@@ -280,6 +309,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608665115418-ODLFUQGJYTHA5S8PMU0J/SB%2BLawn%2BBowls%2BClub_2.jpg"
     },
     {
+      "id": "santa-monica",
       "name": "Santa Monica",
       "city": "Santa Monica",
       "status": "open",
@@ -292,6 +322,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/1608665134205-LJ7VN8I0DZ4DTK2HK6PR/SantaMonica.jpg"
     },
     {
+      "id": "sun-city",
       "name": "Sun City",
       "city": "Menifee",
       "status": "private",
@@ -304,6 +335,7 @@
       "image": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/901ce48d-1c26-4726-854a-dfbc0fd201b3/sun%2Bcity%2Bclub.JPG"
     },
     {
+      "id": "the-groves",
       "name": "The Groves",
       "city": "Irvine",
       "status": "private",
