@@ -99,6 +99,7 @@
     sliders: '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="9" cy="18" r="2"/>',
     news: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>',
     flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     share: '<path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
     star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
     medal: '<circle cx="12" cy="15" r="5"/><path d="M8.5 11 6 3h4l2 5 2-5h4l-2.5 8"/>',
@@ -166,8 +167,8 @@
   function closeDialog() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
   document.getElementById('dlg-close').addEventListener('click', closeDialog);
   dlg.addEventListener('click', function (ev) { if (ev.target === dlg) closeDialog(); });
-  document.getElementById('theme-btn').addEventListener('click', function () {
-    openDialog('Appearance', '<p>Light, dark, or match your phone’s setting.</p>' + themeChoices());
+  document.addEventListener('click', function (ev) {
+    if (ev.target.closest('[data-theme-open]')) openDialog('Appearance', '<p>Light, dark, or match your phone’s setting.</p>' + themeChoices());
   });
 
   /* ---------------------------------------------------------------
@@ -473,9 +474,10 @@
   /* ---------------------------------------------------------------
      Shared pieces of markup
      --------------------------------------------------------------- */
-  function dateBlock(x, accent) {
-    if (!x.dates) return '<span class="dateblock' + (accent ? ' dateblock--accent' : '') + '" aria-hidden="true"><small>TBA</small><b>–</b></span>';
-    return '<span class="dateblock' + (accent ? ' dateblock--accent' : '') + '" aria-hidden="true"><small>' +
+  function dateBlock(x, accent, onTint) {
+    var cls = 'dateblock' + (accent ? ' dateblock--accent' : '') + (onTint ? ' dateblock--ontint' : '');
+    if (!x.dates) return '<span class="' + cls + '" aria-hidden="true"><small>TBA</small><b>–</b></span>';
+    return '<span class="' + cls + '" aria-hidden="true"><small>' +
       fmt(x.dates.start, { month: 'short' }) + '</small><b>' + fmt(x.dates.start, { day: 'numeric' }) + '</b></span>';
   }
   function eventRow(x, today) {
@@ -505,27 +507,33 @@
       (meta ? '<span class="row__meta">' + esc(meta) + '</span>' : '') + '</span>' + (ext ? extLabel(opts.extText) : CHEV) + '</a></li>';
   }
 
-  function championPanel(r, cls) {
+  // When a result was played: the month and day in its meta line, in its year
+  function resultDate(r) { var d = parseDates((r.t.meta || '') + ' ' + (r.year || '')); return d ? d.start : ''; }
+  function resultBlock(r) {
+    var d = resultDate(r);
+    return d ? '<span class="dateblock" aria-hidden="true"><small>' + fmt(d, { month: 'short' }) + '</small><b>' + fmt(d, { day: 'numeric' }) + '</b></span>'
+      : '<span class="dateblock" aria-hidden="true">' + icon('trophy') + '</span>';
+  }
+  // The latest champions: warm orange card; a photo only when it is of these winners
+  function championPanel(r) {
     var f = firsts(r);
     if (!f.length) return '';
-    var eyebrow = f.length === 1 ? (f[0].where ? f[0].where + ' champions' : 'Champions') : f[0].where + ' winners';
-    return '<a class="panel' + (cls ? ' ' + cls : '') + '" href="/app/results/' + encodeURIComponent(r.id) + '">' +
-      '<span class="eyebrow">' + esc(eyebrow) + '</span>' +
-      '<span class="panel__title">' + esc(f[0].who) + '</span>' +
-      '<span class="panel__sub">' + esc(shortTitle(r.t.title)) + '</span>' +
-      (r.t.meta ? '<span class="panel__meta">' + esc(r.t.meta) + '</span>' : '') +
-      (f.length > 1 ? '<span class="panel__meta">+ ' + (f.length - 1) + ' more division winner' + (f.length > 2 ? 's' : '') + '</span>' : '') +
-      '</a>';
+    var w = f[0];
+    var kicker = f.length === 1 ? 'Latest champions' : 'Latest result · ' + w.where + ' winners';
+    return '<a class="champ tint tint--orange" href="/app/results/' + encodeURIComponent(r.id) + '">' +
+      (w.photo ? '<img class="champ__img" src="' + esc(w.photo) + '" alt="' + esc(w.who) + '" width="96" height="120" loading="lazy" data-hide-on-error>' : '') +
+      '<span class="champ__body"><span class="champ__kicker">' + icon('trophy') + esc(kicker) + '</span>' +
+      '<span class="champ__who">' + esc(w.who) + '</span>' +
+      '<span class="champ__meta">' + esc([shortTitle(r.t.title), r.t.meta].filter(Boolean).join(' · ')) + '</span>' +
+      (f.length > 1 ? '<span class="champ__meta">+ ' + (f.length - 1) + ' more division winner' + (f.length > 2 ? 's' : '') + '</span>' : '') +
+      '<span class="textlink">View result' + icon('chev', 'i--sm') + '</span></span></a>';
   }
   function resultRow(r) {
     var f = firsts(r);
-    var who = !f.length ? '' : f.length === 1 ? f[0].who : f[0].where + ' winners: ' + f[0].who;
-    return '<li><a class="resrow" href="/app/results/' + encodeURIComponent(r.id) + '">' +
-      '<span class="resrow__title">' + esc(shortTitle(r.t.title)) + '</span>' +
-      (r.t.meta ? '<span class="resrow__meta">' + esc(r.t.meta) + '</span>' : '') +
-      (who ? '<span class="resrow__who">' + esc(who) + '</span>' : '') +
-      (f.length > 1 ? '<span class="resrow__meta">+ ' + (f.length - 1) + ' more division winner' + (f.length > 2 ? 's' : '') + '</span>' : '') +
-      '</a></li>';
+    var who = !f.length ? 'Published result' : f.length === 1 ? f[0].who : f[0].where + ' winners: ' + f[0].who;
+    return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(r.id) + '">' + resultBlock(r) +
+      '<span class="rcard__body"><span class="rcard__title">' + esc(shortTitle(r.t.title)) + '</span>' +
+      '<span class="rcard__meta">' + esc(who) + '</span></span>' + CHEV + '</a></li>';
   }
 
   function state(kind, title, body, action) {
@@ -541,6 +549,13 @@
   function loading() {
     return '<div class="skel" role="status"><span class="sr-only">Loading…</span><span class="skel__h"></span><span class="skel__l"></span>' +
       '<span class="skel__b"></span><span class="skel__b"></span></div>';
+  }
+  // Every main screen opens with the same compact header: a short heading,
+  // the section name, and one restrained decorative graphic.
+  function pageHead(title, label, art) {
+    var g = art === 'bowls' ? '<img class="phead__art" src="/assets/app/art/welcome-bowls.png" alt="" aria-hidden="true" width="121" height="48" decoding="async">'
+      : art ? '<span class="phead__icon phead__icon--' + art + '" aria-hidden="true">' + icon(art === 'trophy' ? 'trophy' : 'tv') + '</span>' : '';
+    return '<header class="phead"><div class="phead__text"><h1>' + esc(title) + '</h1><p class="phead__label">' + esc(label) + '</p></div>' + g + '</header>';
   }
   function setTitle(t) { document.title = (t ? t + ' · ' : '') + 'Southwest Bowls'; }
 
@@ -606,11 +621,9 @@
   /* ---------------------------------------------------------------
      HOME
      --------------------------------------------------------------- */
-  // Home is the overview: personal and timely first, community after.
-  // Events stays the complete directory.
-  //   1 greeting + Find events / My saved events shortcuts
-  //   2 Your next games (alerts on saved events lead it)
-  //   3 This week · 4 News & community · 5 Around the greens · 6 SW TV
+  // Home is a compact overview, not a feed: identity, real search, four
+  // section tiles, your next saved game, and one community story. Longer
+  // lists live in Events, Results, Watch and News.
   var CRITICAL = /cancel|postpon|venue|reschedul|new date|moved/i;
   function isCritical(x) { return !!x.e.alert && CRITICAL.test((x.e.alertLabel || '') + ' ' + x.e.alert); }
 
@@ -619,22 +632,21 @@
     var today = todayISO();
     return Promise.all([
       loadEvents(),
-      loadResults().catch(function () { return []; }),
-      getJSON('/streams-data.json').catch(function () { return { streams: [] }; }),
-      getJSON('/app-home-data.json').catch(function () { return {}; }),
-      getJSON('/news-data.json').catch(function () { return { items: [] }; })
+      getJSON('/app-home-data.json').catch(function () { return {}; })
     ]).then(function (all) {
-      var data = { events: all[0], results: all[1], streams: all[2].streams || [], story: all[3].feature || null,
-        news: all[4].items || [], today: today };
+      var data = { events: all[0], story: all[1].feature || null, today: today };
       drawHome(data);
-      // Saving or unsaving anywhere on Home redraws it straight away
+      // Saving or unsaving on Home redraws it straight away
       view.addEventListener('saved-change', function (ev) {
         var y = window.scrollY;
         drawHome(data);
         window.scrollTo(0, y);
         if (ev.detail && !ev.detail.on) { var h = document.getElementById('h-next'); if (h) h.focus({ preventScroll: true }); }
       });
-      checkLiveForHome(data);
+      if (sessionStorage.getItem('swd:refocusSearch')) {
+        sessionStorage.removeItem('swd:refocusSearch');
+        var hq = document.getElementById('hq'); if (hq) hq.focus();
+      }
     });
   }
 
@@ -645,170 +657,156 @@
     var mine = d.events.filter(function (x) { return ids.indexOf(x.id) >= 0; });
     var mineNext = mine.filter(function (x) { return live.indexOf(x) >= 0; });   // already in date order
 
-    // 1. Greeting and two compact shortcuts — no hero
-    var html = '<div class="intro intro--compact"><h1>Your Southwest.</h1><div class="intro__row"><p>On the green. In the game. Together.</p>' +
-      '<img class="intro__art" src="/assets/app/art/welcome-bowls.png" alt="" aria-hidden="true" width="181" height="72" decoding="async"></div></div>' +
-      '<nav class="shortcuts" aria-label="Shortcuts">' +
-      '<a class="shortcut" href="/app/events">' + icon('cal') + '<span>Find events</span></a>' +
-      '<a class="shortcut" href="/app/events?show=saved">' + icon('bookmark') + '<span>My saved events</span></a>' +
-      '</nav>';
+    // 1. Identity: logo on its white plate, one heading, one line
+    var html = '<header class="hhead"><span class="logo-plate"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="64" height="75"></span>' +
+      '<div class="hhead__text"><h1>Your Southwest.</h1><p>On the green. Together.</p></div>' +
+      '<button class="iconbtn hhead__theme" type="button" data-theme-open aria-haspopup="dialog" aria-label="Appearance: light, dark or system">' + icon('sun') + '</button></header>';
 
-    // 2. Your next games — a cancellation or venue change on a saved event leads
+    // 2. Real search (events, clubs, results)
+    html += '<form class="search search--home" role="search" action="/app/search" data-home-search>' + icon('search') +
+      '<label class="sr-only" for="hq">Search events, clubs, results</label>' +
+      '<input id="hq" type="search" name="q" placeholder="Search events, clubs, results" autocomplete="off" enterkeyhint="search"></form>';
+
+    // 3. Four section tiles
+    html += '<nav class="tiles" aria-label="Sections">' + [
+      ['/app/events', 'cal', 'Events', 'Find your next game', 'blue'],
+      ['/app/results', 'trophy', 'Results', 'See who won', 'orange'],
+      ['/app/more/clubs', 'pin', 'Clubs', 'Find your people', 'blush'],
+      ['/app/watch', 'tv', 'Watch', 'Southwest TV', 'ink']
+    ].map(function (t) {
+      return '<a class="tile tile--' + t[4] + '" href="' + t[0] + '">' + icon(t[1]) + '<span class="tile__label">' + t[2] + '</span><span class="tile__sub">' + t[3] + '</span></a>';
+    }).join('') + '</nav>';
+
+    // Urgent: a change to a saved event, or unread tournament updates — one strip each
     var myAlerts = mineNext.filter(isCritical);
     currentNotices = live.filter(function (x) { return x.e.alert; });
-    var others = currentNotices.filter(function (x) { return myAlerts.indexOf(x) < 0; });
-    html += '<section class="section section--first" aria-labelledby="h-next"><div class="section__head"><h2 class="section__title" id="h-next" tabindex="-1">Your next games</h2>' +
-      (mine.length ? '<a class="section__more" href="/app/events?show=saved">View saved' + icon('chev', 'i--sm') + '</a>' : '') + '</div>';
+    var unread = unreadCount(currentNotices);
     html += myAlerts.map(function (x) {
       return '<a class="alert" href="/app/events/' + encodeURIComponent(x.id) + '">' + icon('alert') +
         '<span><b>' + esc(x.e.alertLabel || 'Update') + ' · ' + esc(x.short) + '</b><span class="alert__text">' + esc(x.e.alert) + '</span></span></a>';
     }).join('');
+    if (unread) {
+      html += '<button class="strip" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
+        '<span data-upd-label>' + updatesLabel(currentNotices) + '</span>' + CHEV + '</button>';
+    }
+
+    // 4. Your next game — the nearest upcoming saved event
+    html += '<section class="hsec" aria-labelledby="h-next"><div class="section__head"><h2 class="section__title" id="h-next" tabindex="-1">Your next game</h2>' +
+      '<a class="section__more" href="/app/events?show=saved">' + (mine.length ? 'All saved (' + mine.length + ')' : 'Saved') + icon('chev', 'i--sm') + '</a></div>';
     if (mineNext.length) {
-      html += '<ul class="list">' + mineNext.slice(0, 2).map(function (x) { return gameRow(x, today); }).join('') + '</ul>';
-    } else if (mine.length) {
-      html += '<div class="invite"><p class="invite__lead">No upcoming saved events.</p>' +
-        '<a class="textlink" href="/app/events?show=saved">View saved events' + icon('chev', 'i--sm') + '</a></div>';
+      var x = mineNext[0], st = entryStatus(x, today);
+      html += '<div class="nextcard tint tint--blue">' + dateBlock(x, false, true) +
+        '<a class="nextcard__main" href="/app/events/' + encodeURIComponent(x.id) + '"><span class="nextcard__title">' + esc(x.short) + '</span>' +
+        '<span class="nextcard__meta">' + esc([dateRangeLabel(x.dates), x.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
+        (st ? statusLine(st) : '') + '</a>' + saveBtn(x.id, x.short) + '</div>';
     } else {
-      html += '<div class="invite invite--art"><img class="invite__art" src="/assets/app/art/saved-empty.png" alt="" aria-hidden="true" width="64" height="64" decoding="async">' +
-        '<div><p class="invite__lead">Save events to see your next games here.</p>' +
-        '<p class="invite__small">Saving doesn’t register you.</p></div></div>';
+      var fol = followed();
+      var fromClub = fol.length ? live.filter(function (y) { return y.clubIds.some(function (c) { return fol.indexOf(c) >= 0; }); })[0] : null;
+      html += '<div class="nextcard nextcard--empty tint tint--blue"><div class="nextcard__main">' +
+        '<span class="nextcard__title">' + (mine.length ? 'No upcoming saved events.' : 'Make this space yours.') + '</span>' +
+        '<span class="nextcard__meta">' + (mine.length ? 'Your saved events have all been played.' : 'Save an event to see it here.') + '</span>' +
+        (fromClub ? '<a class="nextcard__club" href="/app/events/' + encodeURIComponent(fromClub.id) + '">Next from a club you follow: ' + esc(fromClub.short) + ' · ' + esc(dateRangeLabel(fromClub.dates)) + '</a>' : '') +
+        '<a class="textlink" href="' + (mine.length ? '/app/events?show=saved' : '/app/events') + '">' + (mine.length ? 'View saved events' : 'Browse events') + icon('chev', 'i--sm') + '</a></div>' +
+        '<img class="nextcard__art" src="/assets/app/art/saved-empty.png" alt="" aria-hidden="true" width="64" height="64" decoding="async"></div>';
     }
     html += '</section>';
 
-    // 3. This week — a deadline or today's event, plus tournament updates
-    d.otherNotices = others.length ? '<button class="noticebtn noticebtn--quiet" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
-      '<span data-upd-label>' + updatesLabel(currentNotices) + '</span>' + CHEV + '</button>' : '';
-    html += thisWeek(d);
-
-    // 4. News & community — the community story, then the latest news
-    var st = d.story;
-    var nowMs = Date.now();
-    var news = d.news.filter(function (n) { return n.id && !Logic.isExpiredNotice(n, nowMs); })
-      .sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : 1; }).slice(0, 2);
-    if ((st && st.headline) || news.length) {
-      html += '<section class="section" aria-labelledby="h-news">' + sectionHead('h-news', 'News & community', '/app/more/news', 'All news');
-      if (st && st.headline) {
-        var ph = st.photo || {};
-        html += '<article class="story" aria-labelledby="h-story">' +
-          (safeUrl(ph.src) ? '<figure class="story__fig"><img class="story__img" src="' + esc(ph.src) + '" alt="' + esc(ph.alt || '') + '"' +
-            (ph.width && ph.height ? ' width="' + (+ph.width) + '" height="' + (+ph.height) + '"' : '') + ' loading="lazy" decoding="async"' +
-            ' style="' + (ph.aspect ? 'aspect-ratio:' + esc(ph.aspect) + ';' : '') + (ph.focus ? 'object-position:' + esc(ph.focus) : '') + '" data-hide-on-error>' +
-            '</figure>' : '') +
-          (st.eyebrow ? '<p class="eyebrow">' + esc(st.eyebrow) + '</p>' : '') +
-          '<h3 class="story__title" id="h-story">' + esc(st.headline) + '</h3>' +
-          (st.summary ? '<p class="story__text">' + esc(st.summary) + '</p>' : '') +
-          (st.champions && st.champions.length
-            ? '<button class="textlink" type="button" data-story aria-haspopup="dialog">' + esc(st.actionLabel || 'Read more') + icon('chev', 'i--sm') + '</button>'
-            : st.source && safeUrl(st.source.url) ? '<a class="textlink" href="' + esc(st.source.url) + '" target="_blank" rel="noopener">' + esc(st.actionLabel || 'Read more') + icon('ext', 'i--sm') + '</a>' : '') +
-          '</article>';
-      }
-      if (news.length) {
-        html += '<ul class="rows newsrows">' + news.map(function (n) {
-          return '<li><a class="row" href="/app/news/' + encodeURIComponent(n.id) + '"><span class="row__main">' +
-            (n.date ? '<span class="row__meta">' + esc(fmt(n.date, { month: 'long', day: 'numeric' })) + '</span>' : '') +
-            '<span class="row__title">' + esc(n.title) + '</span></span>' + CHEV + '</a></li>';
-        }).join('') + '</ul>';
-      }
-      html += '</section>';
+    // 5. Around the greens — one real community story; the full feed is News
+    var sto = d.story;
+    if (sto && sto.headline) {
+      var ph = sto.photo || {};
+      html += '<section class="hsec" aria-labelledby="h-greens"><div class="section__head"><h2 class="section__title" id="h-greens">Around the greens</h2>' +
+        '<a class="section__more" href="/app/more/news">News' + icon('chev', 'i--sm') + '</a></div>' +
+        '<div class="gcard">' + (safeUrl(ph.src) ? '<img class="gcard__img" src="' + esc(ph.src) + '" alt="' + esc(ph.alt || '') + '" width="72" height="72" loading="lazy" data-hide-on-error>' : '') +
+        '<div class="gcard__body"><p class="gcard__title">' + esc(sto.cardTitle || sto.headline) + '</p>' +
+        (sto.cardLine ? '<p class="gcard__meta">' + esc(sto.cardLine) + '</p>' : '') +
+        (sto.champions && sto.champions.length
+          ? '<button class="textlink" type="button" data-story aria-haspopup="dialog">' + esc(sto.actionLabel || 'Read more') + icon('chev', 'i--sm') + '</button>'
+          : sto.source && safeUrl(sto.source.url) ? '<a class="textlink" href="' + esc(sto.source.url) + '" target="_blank" rel="noopener">' + esc(sto.actionLabel || 'Read more') + icon('ext', 'i--sm') + '</a>' : '') +
+        '</div></div></section>';
     }
-
-    // 5. Around the greens — the actual latest published result
-    var r = d.results[0];
-    if (r) {
-      var f = firsts(r), w = f[0];
-      var label = !w ? '' : f.length === 1 ? (w.where ? w.where + ' champions' : 'Champions') : w.where + ' winners';
-      html += '<section class="section" aria-labelledby="h-greens">' + sectionHead('h-greens', 'Around the greens', '/app/results', 'All results') +
-        '<a class="achieve" href="/app/results/' + encodeURIComponent(r.id) + '">' +
-        (w && w.photo ? '<span class="achieve__frame"><img class="achieve__img" src="' + esc(w.photo) + '" alt="' + esc(w.who) + '" loading="lazy" data-hide-on-error></span>' : '') +
-        '<span class="achieve__body"><span class="eyebrow eyebrow--medal">' + icon('medal', 'i--sm') + esc(label || 'Latest result') + '</span>' +
-        (w ? '<span class="achieve__who">' + esc(w.who) + '</span>' : '') +
-        '<span class="achieve__event">' + esc(shortTitle(r.t.title)) + '</span>' +
-        (r.t.meta ? '<span class="achieve__meta">' + esc(r.t.meta) + '</span>' : '') +
-        (f.length > 1 ? '<span class="achieve__meta">+ ' + (f.length - 1) + ' more division winner' + (f.length > 2 ? 's' : '') + '</span>' : '') +
-        '</span>' + CHEV + '</a></section>';
-    }
-
-    // 6. SW TV — live only when YouTube says so; otherwise the next scheduled broadcast
-    html += '<div id="home-tv">' + tvSection(d) + '</div>';
-
-    // Small secondary links (existing in-app routes)
-    html += '<nav class="minor" aria-label="Get started"><a href="/app/more/clubs">Find a club' + icon('chev', 'i--sm') + '</a>' +
-      '<a href="/app/page/learnmore">Learn to bowl' + icon('chev', 'i--sm') + '</a></nav>';
 
     view.innerHTML = html;
-    // Text and actions must still work when a photo doesn't load
     view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) {
-      img.addEventListener('error', function () { (img.closest('.story__fig') || img.closest('.achieve__frame') || img).hidden = true; });
+      img.addEventListener('error', function () { img.hidden = true; });
     });
     var sb = view.querySelector('[data-story]');
     if (sb) sb.addEventListener('click', function () { storyDialog(d.story); });
+    var hs = view.querySelector('[data-home-search]');
+    hs.addEventListener('submit', function (ev) { ev.preventDefault(); openSearch(document.getElementById('hq').value); });
+    document.getElementById('hq').addEventListener('input', function () { openSearch(this.value); });
+  }
+  // Typing on Home moves to the full search screen, keeping the caret.
+  function openSearch(q) {
+    go('/app/search' + (q ? '?q=' + encodeURIComponent(q) : ''));
+    setTimeout(function () {
+      var sq = document.getElementById('sq');
+      if (sq) { sq.focus(); var n = sq.value.length; try { sq.setSelectionRange(n, n); } catch (e) {} }
+    }, 60);
   }
 
-  function tvSection(d) {
-    var today = d.today, row;
-    if (d.liveVideo) {
-      row = '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="live-tag">LIVE</span>' +
-        '<span class="row__title" style="margin-top:4px"><b>' + esc(d.liveVideo.title) + '</b></span><span class="row__meta">Streaming now on SW TV</span></span>' + CHEV + '</a>';
-    } else {
-      var s = d.streams.filter(function (x) { return x.date >= today; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
-      row = s
-        ? '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="row__title"><b>' + esc(s.title) + '</b></span>' +
-          '<span class="row__meta">Scheduled broadcast · ' + esc(s.date === today ? 'Today' : fmt(s.date, { weekday: 'short', month: 'short', day: 'numeric' })) +
-          (s.venue ? ' · ' + esc(s.venue) : '') + '</span></span>' + CHEV + '</a>'
-        : '<a class="row" href="/app/watch">' + icon('tv') + '<span class="row__main"><span class="row__title"><b>Replays and lessons</b></span>' +
-          '<span class="row__meta">Past livestreams and HOW! lessons</span></span>' + CHEV + '</a>';
-    }
-    return '<section class="section" aria-labelledby="h-tv">' + sectionHead('h-tv', 'SW TV', '/app/watch', 'Watch') +
-      '<ul class="rows rows--menu"><li>' + row + '</li></ul></section>';
-  }
-
-  // A saved event on Home: date, club, the real entry status, any alert
-  function gameRow(x, today) {
-    var e = x.e, st = entryStatus(x, today);
-    return '<li class="evrow">' + dateBlock(x) +
-      '<a class="evrow__main" href="/app/events/' + encodeURIComponent(x.id) + '">' +
-      '<span class="evrow__title">' + esc(x.short) + '</span>' +
-      '<span class="evrow__meta">' + esc([dateRangeLabel(x.dates, true), x.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
-      (st ? statusLine(st) : '') +
-      (e.alert ? '<span class="status status--update">' + icon('bell') + esc(e.alertLabel || 'Update') + '</span>' : '') +
-      '</a>' + saveBtn(x.id, x.short) + '</li>';
-  }
-
-  // One timely item: an entry deadline in the next 7 days, otherwise an
-  // event happening today. Broadcasts are in the SW TV section.
-  function thisWeek(d) {
-    var today = d.today, horizon = addDays(today, 7), item = null;
-    var fol = followed();
-    var dl = Logic.preferFollowed(
-      d.events.map(function (x) { return { x: x, clubIds: x.clubIds, st: entryStatus(x, today) }; })
-        .filter(function (o) { return o.st && o.st.kind === 'open' && o.st.close <= horizon; }),
-      fol, function (o) { return o.st.close; })[0];
-    if (dl) item = { href: '/app/events/' + encodeURIComponent(dl.x.id), date: dl.st.close, kicker: 'Entry deadline',
-      title: dl.x.short, meta: 'Entries close ' + fmt(dl.st.close, { weekday: 'long', month: 'long', day: 'numeric' }) + (dl.x.clubLabel ? ' · ' + dl.x.clubLabel : '') };
-    if (!item) {
-      var t = d.events.filter(function (x) { return eventPhase(x, today) === 'now'; })[0];
-      if (t) item = { href: '/app/events/' + encodeURIComponent(t.id), date: today, kicker: 'Today', title: t.short,
-        meta: [t.clubLabel, startTime(t.e.time)].filter(Boolean).join(' · ') };
-    }
-    var notes = d.otherNotices || '';
-    // The next event from a club you follow (not already shown, not saved)
-    var ids = saved();
-    var fromClubs = fol.length ? d.events.filter(function (x) {
-      var p = eventPhase(x, today);
-      return (p === 'upcoming' || p === 'now') && ids.indexOf(x.id) < 0 && (!item || item.href !== '/app/events/' + encodeURIComponent(x.id)) &&
-        x.clubIds.some(function (c) { return fol.indexOf(c) >= 0; });
-    })[0] : null;
-    if (fromClubs) notes = '<ul class="list"><li class="evrow">' + dateBlock(fromClubs) + '<a class="evrow__main" href="/app/events/' + encodeURIComponent(fromClubs.id) + '">' +
-      '<span class="eyebrow">From clubs you follow</span><span class="evrow__title">' + esc(fromClubs.short) + '</span>' +
-      '<span class="evrow__meta">' + esc([dateRangeLabel(fromClubs.dates, true), fromClubs.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
-      statusLine(entryStatus(fromClubs, today)) + '</a>' + saveBtn(fromClubs.id, fromClubs.short) + '</li></ul>' + notes;
-    if (!item && !notes) return '';
-    return '<section class="section" aria-labelledby="h-week">' + sectionHead('h-week', 'This week') +
-      (item ? '<a class="week" href="' + esc(item.href) + '">' +
-      (item.date ? '<span class="dateblock" aria-hidden="true"><small>' + fmt(item.date, { month: 'short' }) + '</small><b>' + fmt(item.date, { day: 'numeric' }) + '</b></span>' : icon('tv')) +
-      '<span class="week__body">' + (item.tag || '<span class="eyebrow">' + esc(item.kicker) + '</span>') +
-      '<span class="week__title">' + esc(item.title) + '</span><span class="week__meta">' + esc(item.meta) + '</span></span>' + CHEV + '</a>' : '') +
-      notes + '</section>';
+  // SEARCH — events, clubs and results from the site's own data files
+  function fold(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function searchScreen(params) {
+    setTitle('Search');
+    var today = todayISO();
+    return Promise.all([loadEvents(), getJSON('/clubs-data.json').catch(function () { return { clubs: [] }; }), loadResults().catch(function () { return []; })]).then(function (all) {
+      var EV = all[0].map(function (x) { return { x: x, t: fold([x.e.title, x.e.subtitle, x.club, x.clubLabel, x.e.format, x.e.date, x.cat].join(' ')) }; });
+      var CL = (all[1].clubs || []).map(function (c) { return { c: c, t: fold([c.name, c.city, c.summary].join(' ')) }; });
+      var RS = all[2].map(function (r) { return { r: r, t: fold([r.t.title, r.t.meta, r.names].join(' ')) }; });
+      var expand = params.get('all') || '';
+      view.innerHTML = '<div class="searchbar"><a class="iconbtn" href="/app" data-back data-close-search aria-label="Close search">' + icon('back') + '</a>' +
+        '<form class="search search--page" role="search">' + icon('search') + '<label class="sr-only" for="sq">Search events, clubs, results</label>' +
+        '<input id="sq" type="search" placeholder="Search events, clubs, results" value="' + esc(params.get('q') || '') + '" autocomplete="off" enterkeyhint="search"></form></div>' +
+        '<div id="s-out"></div>';
+      var input = document.getElementById('sq');
+      function group(key, title, items, row) {
+        if (!items.length) return '';
+        var shown = expand === key ? items : items.slice(0, 5);
+        return '<section class="sgroup" aria-labelledby="sg-' + key + '"><h2 class="group-title" id="sg-' + key + '">' + title + ' <span class="muted">(' + items.length + ')</span></h2>' +
+          '<ul class="rows rows--menu">' + shown.map(row).join('') + '</ul>' +
+          (items.length > shown.length ? '<button class="textlink" type="button" data-expand="' + key + '">Show all ' + items.length + ' ' + title.toLowerCase() + icon('chev', 'i--sm') + '</button>' : '') + '</section>';
+      }
+      function apply() {
+        var raw = input.value.trim(), q = fold(raw), terms = q.split(/\s+/).filter(Boolean);
+        var out = document.getElementById('s-out');
+        var u = new URLSearchParams(); if (raw) u.set('q', raw); if (raw && expand) u.set('all', expand);
+        history.replaceState(history.state, '', '/app/search' + (u.toString() ? '?' + u : ''));
+        if (!terms.length) {
+          out.innerHTML = '<p class="muted" style="margin-top:16px">Search tournament names, clubs, cities and player names.</p>' +
+            '<ul class="rows rows--menu" style="margin-top:12px">' + menuRow('/app/events', 'cal', 'Browse events') + menuRow('/app/more/clubs', 'pin', 'Browse clubs') + menuRow('/app/results', 'trophy', 'Browse results') + '</ul>';
+          return;
+        }
+        var hit = function (o) { return terms.every(function (w) { return o.t.indexOf(w) >= 0; }); };
+        var ev = EV.filter(hit).map(function (o) { return o.x; });
+        var up = ev.filter(function (x) { return eventPhase(x, today) !== 'past'; });
+        var past = ev.filter(function (x) { return eventPhase(x, today) === 'past'; }).reverse();
+        ev = up.concat(past);
+        var cl = CL.filter(hit).map(function (o) { return o.c; });
+        var rs = RS.filter(hit).map(function (o) { return o.r; });
+        if (!ev.length && !cl.length && !rs.length) {
+          out.innerHTML = state('empty', 'No matches for “' + raw + '”', 'Try a different spelling or fewer words.', '<button class="btn btn--ghost" type="button" data-clear-search>Clear search</button>');
+          return;
+        }
+        out.innerHTML = '<p class="sr-only" aria-live="polite">' + (ev.length + cl.length + rs.length) + ' matches</p>' +
+          group('events', 'Events', ev, function (x) {
+            var ph = eventPhase(x, today);
+            return menuRow('/app/events/' + encodeURIComponent(x.id), 'cal', x.short,
+              (ph === 'past' ? 'Completed' : ph === 'now' ? 'Today' : 'Upcoming') + ' · ' + [dateRangeLabel(x.dates, true), x.clubLabel].filter(Boolean).join(' · '));
+          }) +
+          group('clubs', 'Clubs', cl, function (c) { return menuRow('/app/more/clubs/' + encodeURIComponent(c.id || slugify(c.name)), 'pin', c.name, c.city); }) +
+          group('results', 'Results', rs, function (r) { return menuRow('/app/results/' + encodeURIComponent(r.id), 'trophy', shortTitle(r.t.title), r.t.meta || ''); });
+      }
+      var tmr;
+      input.addEventListener('input', function () { expand = ''; clearTimeout(tmr); tmr = setTimeout(apply, 120); });
+      view.querySelector('form').addEventListener('submit', function (ev) { ev.preventDefault(); apply(); input.blur(); });
+      view.addEventListener('click', function (ev) {
+        var x = ev.target.closest('[data-expand]'); if (x) { expand = x.getAttribute('data-expand'); apply(); }
+        if (ev.target.closest('[data-clear-search]')) { input.value = ''; apply(); input.focus(); }
+        if (ev.target.closest('[data-close-search]')) { try { sessionStorage.setItem('swd:refocusSearch', '1'); } catch (e) {} }
+      });
+      apply();
+    });
   }
 
   function storyDialog(st) {
@@ -852,22 +850,24 @@
       });
       var f = { q: params.get('q') || '', month: params.get('month') || '', cat: params.get('cat') || '', club: clubKey(params.get('club') || '') };
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
-      var segs = [['upcoming', 'Upcoming']].concat(hasPast ? [['past', 'Completed']] : []).concat([['saved', 'Saved']]);
-      view.innerHTML =
-        '<div class="intro" style="margin-bottom:0"><h1>Events</h1><p>Find your next game.</p></div>' +
+      var segs = [['upcoming', 'Upcoming'], ['saved', 'Saved']].concat(hasPast ? [['past', 'Completed']] : []);
+      var nSet = (f.cat ? 1 : 0) + (f.club ? 1 : 0);
+      view.innerHTML = pageHead('Find your next game.', 'Events', 'bowls') +
+        '<label class="search">' + icon('search') + '<span class="sr-only">Search events or clubs</span>' +
+        '<input type="search" id="q" placeholder="Search events" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
         '<div class="segmented" role="group" aria-label="Which events">' + segs.map(function (k) {
           return '<button type="button" data-show="' + k[0] + '" aria-pressed="' + (k[0] === show) + '">' + k[1] + '</button>';
         }).join('') + '</div>' +
-        '<label class="search">' + icon('search') + '<span class="sr-only">Search events or clubs</span>' +
-        '<input type="search" id="q" placeholder="Search events or clubs" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
-        '<div class="filters">' +
+        '<div class="monthbar tint tint--blue">' + icon('cal') +
+        '<label class="monthbar__month"><span class="sr-only">Month</span><select id="f-month">' + opt('', 'Any month', f.month) +
+        Object.keys(months).sort().map(function (k) { return opt(k, months[k], f.month); }).join('') + '</select></label>' +
+        '<button class="monthbar__filters" type="button" data-filters aria-expanded="' + (nSet > 0) + '" aria-controls="filters-panel">Filters<span class="monthbar__n" id="f-n">' + (nSet ? ' (' + nSet + ')' : '') + '</span></button></div>' +
+        '<div class="filters" id="filters-panel"' + (nSet ? '' : ' hidden') + '>' +
         '<label><span class="sr-only">Category</span><select id="f-cat">' + opt('', 'All categories', f.cat) +
         CATS.map(function (c) { return opt(c, c, f.cat); }).join('') + '</select></label>' +
         '<label><span class="sr-only">Club</span><select id="f-club">' + opt('', 'All clubs', f.club) + opt('followed', 'Followed clubs', f.club) +
         Object.keys(clubs).sort(function (a, b) { return clubs[a] < clubs[b] ? -1 : 1; }).map(function (k) { return opt(k, clubs[k], f.club); }).join('') + '</select></label>' +
-        '<label><span class="sr-only">Month</span><select id="f-month">' + opt('', 'Any month', f.month) +
-        Object.keys(months).sort().map(function (k) { return opt(k, months[k], f.month); }).join('') + '</select></label>' +
-        '</div><div id="ev-results"></div>';
+        '</div><div id="ev-results"></div><p class="footnote">Save a game. Find it on Home.</p>';
 
       function apply() {
         var qRaw = document.getElementById('q').value.trim(), q = qRaw.toLowerCase();
@@ -875,6 +875,8 @@
         var cat = document.getElementById('f-cat').value;
         var club = document.getElementById('f-club').value;
         ['f-month', 'f-cat', 'f-club'].forEach(function (id) { var el = document.getElementById(id); el.classList.toggle('is-set', !!el.value); });
+        var nF = (cat ? 1 : 0) + (club ? 1 : 0);
+        document.getElementById('f-n').textContent = nF ? ' (' + nF + ')' : '';
         var sv = saved();
         var list = events.filter(function (x) {
           var p = eventPhase(x, today);
@@ -909,11 +911,12 @@
             var up = list.filter(function (x) { return eventPhase(x, today) !== 'past'; });
             var past = list.filter(function (x) { return eventPhase(x, today) === 'past'; }).reverse();
             out.innerHTML = head +
-              (up.length ? '<ul class="list">' + up.map(function (x) { return eventRow(x, today); }).join('') + '</ul>'
+              (up.length ? '<ul class="list list--cards">' + up.map(function (x) { return eventRow(x, today); }).join('') + '</ul>'
                 : '<p class="muted" style="margin:12px 0">No upcoming saved events.</p>') +
-              (past.length ? '<h2 class="group-title" id="h-past">Past</h2><ul class="list" aria-labelledby="h-past">' + past.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '');
+              (past.length ? '<h2 class="group-title" id="h-past">Past</h2><ul class="list list--cards" aria-labelledby="h-past">' + past.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '');
           } else {
-            out.innerHTML = head + '<ul class="list">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>';
+            out.innerHTML = head + (show === 'upcoming' ? '<h2 class="section__title list-title">Coming up</h2>' : '') +
+              '<ul class="list list--cards">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>';
           }
         }
         var u = new URLSearchParams();
@@ -943,6 +946,12 @@
       view.addEventListener('saved-change', function () { if (show === 'saved') apply(); });
       view.addEventListener('click', function (ev) {
         if (ev.target.closest('[data-all-clubs]')) { document.getElementById('f-club').value = ''; apply(); }
+        var fb = ev.target.closest('[data-filters]');
+        if (fb) {
+          var panel = document.getElementById('filters-panel'), open = panel.hidden;
+          panel.hidden = !open; fb.setAttribute('aria-expanded', open);
+          if (open) document.getElementById('f-cat').focus();
+        }
       });
       apply();
     });
@@ -1179,16 +1188,18 @@
       var f = { q: params.get('q') || '', cat: params.get('cat') || '', year: params.get('year') || '' };
       var years = {}; list.forEach(function (r) { if (r.year) years[r.year] = 1; });
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
-      view.innerHTML = '<div class="intro"><h1>Results</h1><p>Celebrating Southwest bowlers.</p></div>' +
+      view.innerHTML = pageHead('The people. The wins.', 'Results', 'trophy') +
+        '<label class="search">' + icon('search') + '<span class="sr-only">Search results or players</span>' +
+        '<input type="search" id="q" placeholder="Search results or players" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
         (list.length ? championPanel(list[0]) : '') +
-        '<section class="section" aria-labelledby="h-latest">' + sectionHead('h-latest', 'Latest results') +
-        '<label class="search">' + icon('search') + '<span class="sr-only">Search results</span>' +
-        '<input type="search" id="q" placeholder="Search tournaments or players" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
-        '<div class="filters">' +
+        '<section class="section" aria-labelledby="h-latest">' + sectionHead('h-latest', 'Recent results') +
+        '<div class="filters filters--quiet">' +
         '<label><span class="sr-only">Category</span><select id="f-cat">' + opt('', 'All categories', f.cat) + CATS.map(function (c) { return opt(c, c, f.cat); }).join('') + '</select></label>' +
         '<label><span class="sr-only">Year</span><select id="f-year">' + opt('', 'All years', f.year) + Object.keys(years).sort().reverse().map(function (y) { return opt(y, y, f.year); }).join('') + '</select></label>' +
         '</div><div id="res-list"></div></section>' +
-        '<ul class="rows" style="margin-top:24px">' + linkRow('/archive', 'doc', '2022–2025 results', 'The results archive', { ext: true }) + '</ul>';
+        '<ul class="rows" style="margin-top:24px">' + linkRow('/archive', 'doc', '2022–2025 results', 'The results archive', { ext: true }) + '</ul>' +
+        '<p class="footnote">Find a result. Celebrate your club.</p>';
+      view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
       function apply() {
         var qRaw = document.getElementById('q').value.trim(), q = qRaw.toLowerCase();
         var cat = document.getElementById('f-cat').value, year = document.getElementById('f-year').value;
@@ -1201,7 +1212,7 @@
         });
         var filtered = q || cat || year;
         document.getElementById('res-list').innerHTML = out.length
-          ? '<p class="count" aria-live="polite">' + out.length + ' tournament' + (out.length === 1 ? '' : 's') + (filtered ? ' <button class="clear" type="button" data-clear>Clear filters</button>' : '') + '</p><ul class="list">' + out.map(resultRow).join('') + '</ul>'
+          ? '<p class="count" aria-live="polite">' + out.length + ' tournament' + (out.length === 1 ? '' : 's') + (filtered ? ' <button class="clear" type="button" data-clear>Clear filters</button>' : '') + '</p><ul class="list list--plain">' + out.map(resultRow).join('') + '</ul>'
           : state('empty', 'No results match', 'Try a different name or clear the filters.', '<button class="btn btn--ghost" type="button" data-clear>Clear filters</button>');
         var u = new URLSearchParams();
         if (q) u.set('q', qRaw); if (cat) u.set('cat', cat); if (year) u.set('year', year);
@@ -1307,13 +1318,6 @@
           });
       });
   }
-  function checkLiveForHome(d) {
-    ytData().then(function (vids) {
-      d.liveVideo = vids.filter(function (v) { return v.state === 'live'; })[0] || null;
-      var slot = document.getElementById('home-tv');
-      if (d.liveVideo && slot) slot.innerHTML = tvSection(d);
-    }).catch(function () {});
-  }
   function fmtTime(isoStr, withTime) {
     var o = { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric' };
     if (withTime) { o.hour = 'numeric'; o.minute = '2-digit'; }
@@ -1325,49 +1329,69 @@
       (tagHtml || '') + '<span class="poster__play" aria-hidden="true">' + playSvg() + '</span></button></div>' +
       '<p class="video-title">' + esc(v.title) + '</p>' + (meta ? '<p class="video-meta">' + esc(meta) + '</p>' : '') + '</div>';
   }
+  // Watch: one charcoal feature, then replays and what's coming. States
+  // are said in words: Live (only when YouTube says so), Scheduled,
+  // Replay, or Unavailable. Scheduled coverage never gets a play button.
   function watch() {
     setTitle('Watch');
     var today = todayISO();
-    view.innerHTML = '<div class="intro"><h1>SW TV</h1><p>Livestreams, replays and HOW! lessons from Southwest Bowls.</p></div>' +
-      '<div id="w-next"></div><div id="w-live">' + loading() + '</div><div id="w-plan"></div><div id="w-recent"></div>' +
-      '<section class="section"><ul class="rows">' +
-      linkRow(YT_CHANNEL_URL, 'tv', 'SW TV on YouTube', 'Subscribe to get notified when we go live', { ext: true, extText: 'YouTube' }) +
-      linkRow('https://www.youtube.com/playlist?list=PLHSDPOGEH8batQ10BOOCBnrK-msAl-FUO', 'info', 'HOW! Lessons playlist', 'Learn to read the head and more', { ext: true, extText: 'YouTube' }) +
+    view.innerHTML = pageHead('From the greens.', 'Southwest TV', 'play') +
+      '<div id="w-feature">' + loading() + '</div><div id="w-again"></div><div id="w-next"></div><p class="footnote" id="w-status"></p>' +
+      '<section class="section" aria-labelledby="h-more-tv"><h2 class="section__title" id="h-more-tv">More from SW TV</h2><ul class="rows rows--menu">' +
+      menuRow(YT_CHANNEL_URL, 'tv', 'SW TV on YouTube', 'Subscribe to hear when we go live') +
+      menuRow('https://www.youtube.com/playlist?list=PLHSDPOGEH8batQ10BOOCBnrK-msAl-FUO', 'info', 'HOW! Lessons', 'Learn to read the head and more') +
       '</ul></section>';
+    return Promise.all([
+      getJSON('/streams-data.json').catch(function () { return { streams: [] }; }),
+      ytData().catch(function () { return null; })
+    ]).then(function (all) {
+      var plan = (all[0].streams || []).filter(function (s) { return s.date >= today; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+      var vids = all[1];
+      var live = vids ? vids.filter(function (v) { return v.state === 'live'; }) : [];
+      var ytSoon = vids ? vids.filter(function (v) { return v.state === 'upcoming'; }) : [];
+      var recent = vids ? vids.filter(function (v) { return v.state === 'none'; }).slice(0, 4) : [];
+      var when = function (s) { return (s.date === today ? 'Today' : fmt(s.date, { month: 'short', day: 'numeric' })) + (s.venue ? ' · ' + s.venue : ''); };
 
-    getJSON('/streams-data.json').then(function (d) {
-      var plan = (d.streams || []).filter(function (s) { return s.date >= today; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).slice(0, 5);
-      if (!plan.length) return;
-      var n = plan[0];
-      document.getElementById('w-next').innerHTML = '<article class="watch-card"><span class="watch-card__icon">' + icon('tv') + '</span>' +
-        '<p class="eyebrow">Next scheduled broadcast</p><h2>' + esc(n.title) + '</h2>' +
-        '<p>' + esc(n.date === today ? 'Today' : fmt(n.date, { weekday: 'long', month: 'long', day: 'numeric' })) + (n.venue ? '<br>' + esc(n.venue) : '') + '</p>' +
-        '<a class="btn btn--split btn--block" href="' + esc(safeUrl(n.link) || YT_CHANNEL_URL) + '" target="_blank" rel="noopener">Open SW TV' + icon('ext') + '</a></article>';
-      if (plan.length > 1) {
-        document.getElementById('w-plan').innerHTML = '<section class="section" aria-labelledby="h-plan">' + sectionHead('h-plan', 'Coming to SW TV') + '<ul class="list">' +
-          plan.slice(1).map(function (s) {
-            return '<li class="evrow"><span class="dateblock" aria-hidden="true"><small>' + fmt(s.date, { month: 'short' }) + '</small><b>' + fmt(s.date, { day: 'numeric' }) + '</b></span>' +
-              '<span class="evrow__main"><span class="evrow__title">' + esc(s.title) + '</span><span class="evrow__meta">' + esc(fmt(s.date, { weekday: 'long', month: 'long', day: 'numeric' })) + (s.venue ? ' · ' + esc(s.venue) : '') + '</span></span></li>';
-          }).join('') + '</ul></section>';
+      // Feature
+      var feat;
+      if (live.length) {
+        var v = live[0];
+        feat = '<article class="media"><div class="media__frame">' + poster(v, '<span class="live-tag">LIVE</span>') + '</div>' +
+          '<p class="media__kicker">Live now on SW TV</p><h2 class="media__title">' + esc(v.title) + '</h2></article>';
+      } else if (plan.length) {
+        var n = plan[0];
+        feat = '<article class="media"><div class="media__art"><img src="/assets/app/art/welcome-bowls.png" alt="" aria-hidden="true" width="181" height="72">' +
+          '<span class="media__badge" aria-hidden="true">' + icon('cal') + '</span></div>' +
+          '<p class="media__kicker">Next scheduled coverage</p><h2 class="media__title">' + esc(n.title) + '</h2>' +
+          '<p class="media__meta">' + esc(when(n)) + ' · not live yet</p>' +
+          '<a class="textlink textlink--onink" href="' + esc(safeUrl(n.link) || YT_CHANNEL_URL) + '" target="_blank" rel="noopener">Open SW TV on YouTube' + icon('ext', 'i--sm') + '</a></article>';
+      } else {
+        feat = '<article class="media"><p class="media__kicker">Southwest TV</p><h2 class="media__title">No coverage scheduled right now.</h2>' +
+          '<p class="media__meta">New dates appear here when they’re planned.</p></article>';
       }
-      document.getElementById('w-plan').insertAdjacentHTML('beforeend', '<p class="muted" style="margin-top:12px">Planned dates from the SW TV schedule; schedules may change. A stream shows as live only when YouTube says it is.</p>');
-    }).catch(function () {});
+      document.getElementById('w-feature').innerHTML = feat;
 
-    return ytData().then(function (vids) {
-      var live = vids.filter(function (v) { return v.state === 'live'; });
-      var upcoming = vids.filter(function (v) { return v.state === 'upcoming'; });
-      var recent = vids.filter(function (v) { return v.state === 'none'; }).slice(0, 6);
-      var top = '';
-      if (live.length) top += '<section class="section" aria-labelledby="h-live">' + sectionHead('h-live', 'Live now') + '<div class="videos">' + live.map(function (v) { return poster(v, '<span class="live-tag">LIVE</span>'); }).join('') + '</div></section>';
-      if (upcoming.length) top += '<section class="section" aria-labelledby="h-sched">' + sectionHead('h-sched', 'Scheduled on YouTube') + '<div class="videos">' +
-        upcoming.map(function (v) { return poster(v, '<span class="tag">' + icon('clock', 'i--sm') + esc(v.scheduled ? fmtTime(v.scheduled, true) : 'Scheduled') + '</span>'); }).join('') + '</div></section>';
-      if (!live.length && !upcoming.length) top += '<p class="muted" style="margin-top:16px">Nothing is live right now. When SW TV goes live, it shows here.</p>';
-      document.getElementById('w-live').innerHTML = top;
-      if (recent.length) document.getElementById('w-recent').innerHTML = '<section class="section" aria-labelledby="h-rec">' + sectionHead('h-rec', 'Replays & videos') + '<div class="videos">' +
-        recent.map(function (v) { return poster(v, v.wasLive ? '<span class="tag">Replay</span>' : '', fmtTime(v.when)); }).join('') + '</div></section>';
-    }).catch(function () {
-      document.getElementById('w-live').innerHTML = '<p class="muted" style="margin-top:16px">' +
-        (navigator.onLine ? 'Videos didn’t load. Open SW TV on YouTube instead.' : 'Videos need a connection.') + '</p>';
+      // Watch again
+      document.getElementById('w-again').innerHTML = '<section class="section" aria-labelledby="h-again">' +
+        '<div class="section__head"><h2 class="section__title" id="h-again">Watch again</h2><a class="section__more" href="' + YT_CHANNEL_URL + '" target="_blank" rel="noopener">Replays' + icon('ext', 'i--sm') + '</a></div>' +
+        (recent.length
+          ? '<div class="videos">' + recent.map(function (x) { return poster(x, x.wasLive ? '<span class="tag">Replay</span>' : '', fmtTime(x.when)); }).join('') + '</div>'
+          : '<ul class="rows rows--menu">' + menuRow(YT_CHANNEL_URL, 'tv', 'Southwest replays', vids ? 'Browse the video library' : 'Videos didn’t load here — browse them on YouTube') + '</ul>') +
+        '</section>';
+
+      // Coming next: the rest of the schedule, plus anything YouTube has scheduled
+      var rest = (live.length ? plan : plan.slice(1)).slice(0, 4);
+      var rows = rest.map(function (s) {
+        return '<li class="evrow"><span class="dateblock" aria-hidden="true"><small>' + fmt(s.date, { month: 'short' }) + '</small><b>' + fmt(s.date, { day: 'numeric' }) + '</b></span>' +
+          '<span class="evrow__main"><span class="evrow__title">' + esc(s.title) + '</span><span class="evrow__meta">Scheduled coverage' + (s.venue ? ' · ' + esc(s.venue) : '') + '</span></span></li>';
+      }).concat(ytSoon.map(function (y) {
+        return '<li>' + menuRow('https://www.youtube.com/watch?v=' + encodeURIComponent(y.id), 'clock', y.title, 'Scheduled on YouTube' + (y.scheduled ? ' · ' + fmtTime(y.scheduled, true) : '')).replace(/^<li>|<\/li>$/g, '') + '</li>';
+      }));
+      document.getElementById('w-next').innerHTML = rows.length ? '<section class="section" aria-labelledby="h-coming"><h2 class="section__title" id="h-coming">Coming next</h2>' +
+        '<ul class="list list--cards">' + rows.join('') + '</ul></section>' : '';
+
+      document.getElementById('w-status').textContent = !vids ? 'Live status unavailable right now — check SW TV on YouTube.'
+        : live.length ? '' : 'No live broadcast right now.';
     });
   }
 
@@ -1379,7 +1403,7 @@
   // A menu row: icon, label, chevron. Website destinations open in a new
   // window and say so; everything else is an in-app screen.
   function menuRow(href, iconName, label, meta) {
-    var web = /^https?:/i.test(href) || !/^\/app\b/.test(href);
+    var web = /^https?:/i.test(href) || (href.charAt(0) === '/' && !/^\/app\b/.test(href));   // tel: and mailto: open the phone's own apps
     return '<li><a class="row" href="' + esc(href) + '"' + (web ? ' target="_blank" rel="noopener"' : '') + '>' +
       icon(iconName || 'chev') + '<span class="row__main"><span class="row__title">' + esc(label) + '</span>' +
       (meta ? '<span class="row__meta">' + esc(meta) + '</span>' : '') + '</span>' +
@@ -1401,7 +1425,7 @@
 
   // Each subsection: path, heading, icon, and its rows built from nav-data
   var SUBSECTIONS = {
-    play: { title: 'Play & learn', icon: 'flag', rows: function () {
+    play: { title: 'Learn bowls', icon: 'flag', rows: function () {
       return [['/app/page/learnmore', 'Learn to bowl'], ['/app/page/coachinghub', 'Coaching'], ['/app/page/umpires', 'Umpires'], ['/app/page/markers', 'Markers']];
     } },
     division: { title: 'Division information', icon: 'info', rows: function (nav) {
@@ -1432,6 +1456,10 @@
       });
       return rows.sort(function (a, b) { return b[2] - a[2]; });
     } },
+    resources: { title: 'Resources', icon: 'doc', rows: function () {
+      return [['/app/more/division', 'Division information', 'info'], ['/app/more/ladies-day', 'Ladies Day', 'people'],
+        ['/app/more/archives', 'Archives', 'archive'], ['/app/more/follow', 'Follow us', 'tv']];
+    } },
     follow: { title: 'Follow us', icon: 'people', rows: function () {
       return [[YT_CHANNEL_URL, 'YouTube · SW TV', 'tv'], [FACEBOOK_URL, 'Facebook', 'people']];
     } }
@@ -1452,26 +1480,25 @@
     return loadEvents().catch(function () { return []; }).then(function (events) {
       currentNotices = events.filter(function (x) { var p = eventPhase(x, today); return x.e.alert && (p === 'upcoming' || p === 'now'); });
       var n = currentNotices.length;
-      var html = '<div class="intro"><h1>More</h1></div>' +
-        menuGroup('h-quick', 'Quick access',
+      view.innerHTML = pageHead('Your Southwest.', 'More', 'bowls') +
+        '<a class="feature-tile tint tint--blue" href="/app/more/clubs">' + icon('pin') +
+          '<span class="feature-tile__body"><span class="feature-tile__title">Find your club</span><span class="feature-tile__sub">Visit. Play. Belong.</span></span>' + CHEV + '</a>' +
+        '<h2 class="section__title list-title">Explore</h2>' +
+        '<nav class="tiles tiles--small" aria-label="Explore">' + [
+          ['/app/more/news', 'news', 'News', 'blush'],
+          ['/app/more/play', 'flag', 'Learn bowls', 'orange'],
+          ['/app/more/resources', 'doc', 'Resources', 'blue'],
+          ['/app/page/about-us', 'info', 'About Southwest', 'plain']
+        ].map(function (t) { return '<a class="tile tile--' + t[3] + '" href="' + t[0] + '">' + icon(t[1]) + '<span class="tile__label">' + t[2] + '</span></a>'; }).join('') + '</nav>' +
+        '<h2 class="section__title list-title">Make it yours</h2>' +
+        '<ul class="rows rows--menu rows--cards">' +
           menuRow('/app/events?show=saved', 'bookmark', 'Saved events') +
-          menuRow('/app/more/clubs', 'pin', 'Find a club') +
           '<li><button class="row" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
-            '<span class="row__main"><span class="row__title">Tournament updates</span>' + (n ? '<span class="row__meta" data-upd-label="short">' + updatesShort(currentNotices) + '</span>' : '') + '</span>' + CHEV + '</button></li>') +
-        menuGroup('h-explore', 'Explore Southwest',
-          menuRow('/app/more/play', 'flag', 'Play & learn') +
-          menuRow('/app/more/news', 'news', 'News') +
-          menuRow('/app/more/division', 'info', 'Division information') +
-          menuRow('/app/more/ladies-day', 'people', 'Ladies Day') +
-          menuRow('/app/more/archives', 'archive', 'Archives')) +
-        menuGroup('h-help', 'Help & settings',
-          menuRow('/app/page/contact-us', 'mail', 'Contact') +
-          menuRow('/app/more/settings', 'sliders', 'App settings')) +
-        '<ul class="rows rows--menu rows--quiet">' +
-          menuRow('/app/more/follow', 'tv', 'Follow us') +
-          menuRow('/', 'globe', 'Southwest website') +
-        '</ul>';
-      view.innerHTML = html;
+            '<span class="row__main"><span class="row__title">Tournament updates</span>' + (n ? '<span class="row__meta" data-upd-label="short">' + updatesShort(currentNotices) + '</span>' : '') + '</span>' + CHEV + '</button></li>' +
+          menuRow('/app/more/settings', 'sliders', 'App settings', 'Appearance & text size') +
+          menuRow('/app/page/contact-us', 'mail', 'Help & contact', 'Contact Southwest Bowls') +
+        '</ul>' +
+        '<ul class="rows rows--menu rows--quiet">' + menuRow('/', 'globe', 'Southwest website') + '</ul>';
     });
   }
 
@@ -1481,7 +1508,8 @@
     setTitle(sec.title);
     return getJSON('/nav-data.json').catch(function () { return { items: [] }; }).then(function (nav) {
       var rows = sec.rows(nav);
-      view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>' + esc(sec.title) + '</h1></div>' +
+      var up = ['division', 'ladies-day', 'archives', 'follow'].indexOf(key) >= 0 ? ['/app/more/resources', 'Resources'] : ['/app/more', 'More'];
+      view.innerHTML = backLink(up[0], up[1]) + '<div class="intro"><h1>' + esc(sec.title) + '</h1></div>' +
         (rows.length ? '<ul class="rows rows--menu">' + rows.map(function (r) {
           return menuRow(r[0], r[2] && typeof r[2] === 'string' ? r[2] : key === 'archives' ? 'archive' : 'doc', r[1]);
         }).join('') + '</ul>' : state('empty', 'Nothing here yet', ''));
@@ -1509,7 +1537,7 @@
       var n = (d.items || []).filter(function (x) { return x.id === id; })[0];
       if (!n) { view.innerHTML = backLink('/app/more/news', 'News') + state('empty', 'We couldn’t find that story', 'It may have been removed.', '<a class="btn" href="/app/more/news">All news</a>'); return; }
       setTitle(n.title);
-      var link = appLink(n.link || '');
+      var link = n.resultId ? { href: '/app/results/' + encodeURIComponent(n.resultId), label: 'See the results' } : appLink(n.link || '');
       var ended = newsEnded(n), until = Logic.expiryTime(n.expires);
       view.innerHTML = backLink('/app/more/news', 'News') +
         '<p class="eyebrow">' + (n.date ? esc(fmt(n.date, { month: 'long', day: 'numeric', year: 'numeric' })) : '') + '</p>' +
@@ -1531,14 +1559,16 @@
     return getJSON('/clubs-data.json').then(function (d) {
       var clubs = d.clubs || [];
       var q0 = params.get('q') || '';
-      view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>Clubs</h1><p>Cambria to Coronado.</p></div>' +
+      view.innerHTML = backLink('/app/more', 'More') + pageHead('Find your club.', 'Clubs · Cambria to Coronado', 'bowls') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search clubs</span>' +
         '<input type="search" id="q" placeholder="Search by club or city" value="' + esc(q0) + '" autocomplete="off"></label><div id="c-list"></div>';
       function apply() {
-        var q = document.getElementById('q').value.trim().toLowerCase();
-        var list = clubs.filter(function (c) { return !q || (c.name + ' ' + c.city + ' ' + (c.summary || '')).toLowerCase().indexOf(q) >= 0; });
-        document.getElementById('c-list').innerHTML = list.length ? '<p class="count">' + list.length + ' club' + (list.length === 1 ? '' : 's') + '</p><ul class="rows">' + list.map(function (c) {
-          return linkRow('/app/more/clubs/' + slugify(c.name), isFollowing(c.id || slugify(c.name)) ? 'star' : 'pin', c.name, c.city + (c.status === 'private' ? ' · Private club' : '') + (isFollowing(c.id || slugify(c.name)) ? ' · Following' : ''));
+        var q = fold(document.getElementById('q').value.trim());
+        var list = clubs.filter(function (c) { return !q || fold(c.name + ' ' + c.city + ' ' + (c.summary || '')).indexOf(q) >= 0; });
+        document.getElementById('c-list').innerHTML = list.length ? '<p class="count">' + list.length + ' club' + (list.length === 1 ? '' : 's') + '</p><ul class="list list--plain">' + list.map(function (c) {
+          var id = c.id || slugify(c.name), on = isFollowing(id);
+          return '<li><a class="rcard" href="/app/more/clubs/' + encodeURIComponent(id) + '"><span class="clubdot' + (on ? ' clubdot--on' : '') + '" aria-hidden="true">' + icon(on ? 'star' : 'pin') + '</span>' +
+            '<span class="rcard__body"><span class="rcard__title">' + esc(c.name) + '</span><span class="rcard__meta">' + esc(c.city + (c.status === 'private' ? ' · Private club' : '') + (on ? ' · Following' : '')) + '</span></span>' + CHEV + '</a></li>';
         }).join('') + '</ul>' : state('empty', 'No clubs match', 'Try another name or city.');
         history.replaceState(history.state, '', '/app/more/clubs' + (q ? '?q=' + encodeURIComponent(document.getElementById('q').value.trim()) : ''));
       }
@@ -1549,25 +1579,29 @@
   function clubDetail(params, slug) {
     setTitle('Club');
     return getJSON('/clubs-data.json').then(function (d) {
-      var c = (d.clubs || []).filter(function (x) { return slugify(x.name) === slug; })[0];
+      var c = (d.clubs || []).filter(function (x) { return (x.id || slugify(x.name)) === slug || slugify(x.name) === slug; })[0];
       if (!c) { view.innerHTML = backLink('/app/more/clubs', 'Clubs') + state('empty', 'Club not found', '', '<a class="btn" href="/app/more/clubs">All clubs</a>'); return; }
       setTitle(c.name);
+      var cid = c.id || slugify(c.name);
       var maps = c.lat && c.lng ? 'https://www.google.com/maps/search/?api=1&query=' + c.lat + ',' + c.lng : '';
-      var acts = [];
-      if (maps) acts.push('<a class="btn btn--split btn--primary-wide" href="' + maps + '" target="_blank" rel="noopener">Directions' + icon('ext') + '</a>');
+      // Only a local, unflagged photo is shown (never a hotlink, never a doubtful one)
+      var photo = c.image && /^\/photos\//.test(c.image) && !c.imageNeedsReview ? c.image : '';
+      var acts = [followBtn(cid, c.name)];
+      if (maps) acts.push('<a class="btn btn--ghost" href="' + maps + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>');
       if (c.phone) acts.push('<a class="btn btn--ghost" href="' + esc(tel(c.phone)) + '">' + icon('phone') + 'Call</a>');
       if (c.email) acts.push('<a class="btn btn--ghost" href="mailto:' + esc(c.email) + '">' + icon('mail') + 'Email</a>');
       if (safeUrl(c.website)) acts.push('<a class="btn btn--ghost" href="' + esc(c.website) + '" target="_blank" rel="noopener">' + icon('globe') + 'Website</a>');
-      var cid = c.id || slugify(c.name);
-      view.innerHTML = backLink('/app/more/clubs', 'Clubs') + '<p class="eyebrow">' + esc(c.city) + (c.status === 'private' ? ' · Private club' : '') + '</p>' +
+      view.innerHTML = backLink('/app/more/clubs', 'Clubs') +
+        (photo ? '<img class="club__img" src="' + esc(photo) + '" alt="' + esc(c.name) + ' lawn bowling club" loading="lazy" data-hide-on-error>' : '') +
+        '<p class="eyebrow">' + esc(c.city) + (c.status === 'private' ? ' · Private club' : '') + '</p>' +
         '<h1 class="detail-title">' + esc(c.name) + '</h1>' +
-        '<div class="actions">' + acts.join('') + followBtn(cid, c.name) + '</div>' +
+        (c.summary ? '<p class="club__summary">' + esc(c.summary) + '</p>' : '') +
+        '<div class="actions">' + acts.join('') + '</div>' +
         '<p class="muted" style="margin-top:8px">Following is saved on this phone and puts this club’s events first. It doesn’t turn on notifications.</p>' +
-        (c.summary ? '<section class="block"><p><b>' + esc(c.summary) + '</b></p>' + (c.details ? '<p>' + esc(c.details) + '</p>' : '') + '</section>' : c.details ? '<section class="block"><p>' + esc(c.details) + '</p></section>' : '') +
-        ((c.phone || c.email) ? '<section class="block"><h2>Contact</h2><ul class="rows">' +
-          (c.phone ? linkRow(tel(c.phone), 'phone', c.phone) : '') +
-          (c.email ? linkRow('mailto:' + c.email, 'mail', c.email) : '') +
-          '</ul></section>' : '');
+        ((c.phone || c.email) ? '<section class="block"><h2>Contact</h2><ul class="rows rows--menu">' +
+          (c.phone ? menuRow(tel(c.phone), 'phone', c.phone) : '') + (c.email ? menuRow('mailto:' + c.email, 'mail', c.email) : '') + '</ul></section>' : '') +
+        (c.details ? '<details class="fold"><summary><span>About the club</span>' + CHEV + '</summary><p style="padding-bottom:16px">' + esc(c.details) + '</p></details>' : '');
+      view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
     });
   }
 
@@ -1691,7 +1725,8 @@
     [/^\/app\/more\/news\/?$/, newsList, 'more'],
     [/^\/app\/news\/([a-z0-9-]+)\/?$/, newsArticle, 'more'],
     [/^\/app\/more\/settings\/?$/, settings, 'more'],
-    [/^\/app\/more\/(play|division|ladies-day|archives|follow)\/?$/, subsection, 'more'],
+    [/^\/app\/more\/(play|division|ladies-day|archives|follow|resources)\/?$/, subsection, 'more'],
+    [/^\/app\/search\/?$/, searchScreen, 'home'],
     [/^\/app\/page\/([a-z0-9-]+)\/?$/, infoPage, 'more']
   ];
   var scrollMemory = {};

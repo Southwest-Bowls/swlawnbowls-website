@@ -1,5 +1,5 @@
 {
-  "_readme": "Each item has a permanent 'id' (its address in the app: /app/news/<id>) — never change an id once published. Optional: 'kind': 'notice' plus 'expires' for something people must act on by a deadline (a sale, a sign-up). 'expires' is either a date (YYYY-MM-DD, meaning the end of that day in California) or an exact time with offset (2026-09-12T10:00:00-07:00). Expired notices leave the app's Home but stay readable in News. Stories (results, achievements) have no 'expires' and never leave News.",
+  "_readme": "Each item has a permanent 'id' (its address in the app: /app/news/<id>) — never change an id once published. Optional: 'kind': 'notice' plus 'expires' for something people must act on by a deadline (a sale, a sign-up). 'expires' is either a date (YYYY-MM-DD, meaning the end of that day in California) or an exact time with offset (2026-09-12T10:00:00-07:00). Expired notices leave the app's Home but stay readable in News. Stories (results, achievements) have no 'expires' and never leave News. Optional 'resultId' (an id from results-data.json) makes the story's results button open that exact result.",
   "items": [
     {
       "id": "2026-09-07-all-comers-ii-corey-vose-and",
@@ -7,7 +7,8 @@
       "type": "results",
       "title": "All Comers II — Corey Vose and Avery Burton Take the Title",
       "body": "Labor Day weekend at Hermosa Beach LBC. Corey Vose and Avery Burton won the second annual All Comers Open Pairs. Dean Warmington and Angel Rocha finished second, Michael Siddall and Bill Brault third, and Tom Richeson and Phil Dunn fourth. Full top eight on the Results page.",
-      "link": "https://swlawnbowls-website.vercel.app/results"
+      "link": "https://swlawnbowls-website.vercel.app/results",
+      "resultId": "all-comers-open-pairs-2026"
     },
     {
       "id": "2026-09-10-division-shirt-store-closing-saturday-september",
@@ -26,7 +27,8 @@
       "type": "results",
       "title": "Eileen Morton Powerplay Triples — Susan Trenschel, Tamara Murray and Chris Trenschel Take the Title",
       "body": "Saturday, August 29 · Santa Barbara LBC. Susan Trenschel, Tamara Murray and Chris Trenschel won the Eileen Morton Powerplay Triples. Tony Santos, Nancy Santos and Rob Humphrey finished second, and Gloria Brown, Jack Bucey and Tim Adkins third. Full podium and photos on the Results page.",
-      "link": "https://swlawnbowls-website.vercel.app/results"
+      "link": "https://swlawnbowls-website.vercel.app/results",
+      "resultId": "eileen-morton-powerplay-triples-2026"
     },
     {
       "id": "2026-08-28-disciplinary-policy-and-procedures-updated",

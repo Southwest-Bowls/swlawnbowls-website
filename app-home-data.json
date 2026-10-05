@@ -1,5 +1,5 @@
 {
-  "_readme": "The community story at the top of the phone app's Home (/app). Edit this file to change it. Every line must be supported by the source story linked in 'source', and should say which year it is about. Photos must already be in photos/ (never hotlink); give their real width and height. 'aspect' is the shape shown on Home and 'focus' is the point kept in view when cropping — choose them per photo so faces (and certificates or medals) stay in frame, and check on a phone. Remove the whole 'feature' block to hide the story.",
+  "_readme": "The community story at the top of the phone app's Home (/app). Edit this file to change it. Every line must be supported by the source story linked in 'source', and should say which year it is about. Photos must already be in photos/ (never hotlink); give their real width and height. 'aspect' is the shape shown on Home and 'focus' is the point kept in view when cropping — choose them per photo so faces (and certificates or medals) stay in frame, and check on a phone. Remove the whole 'feature' block to hide the story. 'cardTitle' and 'cardLine' are the short version shown in Home's 'Around the greens' card.",
   "feature": {
     "eyebrow": "Our people · 2026 national champions",
     "headline": "Three national titles for Southwest.",
@@ -37,6 +37,8 @@
     "source": {
       "label": "The full story on the website",
       "url": "/home-feature"
-    }
+    },
+    "cardTitle": "National champions",
+    "cardLine": "Javier Goez & Angel Gomez"
   }
 }
