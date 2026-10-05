@@ -938,3 +938,33 @@ html[data-text="xlarge"] .mfact__value { text-align: left; }
 }
 .mform__err { color: var(--brand-red); font-weight: 700; font-size: var(--fs-sm); margin-top: var(--s2); min-height: 1em; }
 :root[data-theme="dark"] .mform__err { color: #ff8a9a; }
+
+/* ---------- My SWD hub ----------------------------------------------- */
+.mysec + .mysec { margin-top: var(--s8); }
+.mysec .muted { margin-top: var(--s2); }
+.tag--preview { background: var(--tint-orange); color: var(--heading); border: 1px solid rgba(0,0,0,.08); }
+:root[data-theme="dark"] .tag--preview { color: #fff; border-color: transparent; }
+.mcard--soon { padding-bottom: var(--s4); }
+.mcard__lead { margin-top: var(--s2); font-weight: 700; color: var(--heading); }
+.mhelp { margin-top: var(--s4); }
+.mhelp__list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s3); font-size: var(--fs-sm); }
+.mhelp__list b { display: block; color: var(--heading); }
+.nextcard__note { display: block; font-size: var(--fs-xs); color: var(--text-2); margin-top: 4px; }
+
+/* ---------- Watch: compact upcoming feature, real thumbnails ---------- */
+.media--compact { display: flex; gap: var(--s3); align-items: center; padding: var(--s3); }
+.media--compact .media__logo { flex: none; width: 76px; height: 76px; display: grid; place-items: center; }
+.media--compact .media__logo img { width: 100%; height: auto; }
+.media--compact .media__body { min-width: 0; }
+.media--compact .media__title { font-size: 1.125rem; }
+.media--compact .media__kicker, .media--compact .media__title, .media--compact .media__meta { padding: 0; }
+@media (max-width: 360px) { .media--compact .media__logo { width: 60px; height: 60px; } }
+html[data-text="xlarge"] .media--compact { flex-direction: column; align-items: flex-start; }
+.poster__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.poster__img--logo { object-fit: contain; padding: 14%; background: #fff; }
+.poster .poster__play, .poster .tag, .poster .live-tag { z-index: 1; }
+
+/* ---------- People (board) on information pages ---------------------- */
+.people .person { display: block; }
+.person__body { display: block; margin-top: 4px; }
+.person__link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 2px; overflow-wrap: anywhere; font-weight: 700; }
