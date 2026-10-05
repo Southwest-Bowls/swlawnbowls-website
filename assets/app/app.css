@@ -968,3 +968,58 @@ html[data-text="xlarge"] .media--compact { flex-direction: column; align-items: 
 .people .person { display: block; }
 .person__body { display: block; margin-top: 4px; }
 .person__link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 2px; overflow-wrap: anywhere; font-weight: 700; }
+
+/* ---------- Digital membership card ---------------------------------- */
+.idcard {
+  position: relative; margin: var(--s2) 0 0; padding: var(--s4); border-radius: 22px; overflow: hidden;
+  min-height: 210px; color: #fff; isolation: isolate;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(0, 174, 239, .28) 0, rgba(0, 174, 239, 0) 55%),
+    radial-gradient(90% 80% at 0% 100%, rgba(190, 30, 45, .45) 0, rgba(190, 30, 45, 0) 60%),
+    linear-gradient(135deg, #2e1729 0%, #231120 60%, #1a0c18 100%);
+  box-shadow: 0 10px 28px rgba(35, 17, 32, .28), inset 0 0 0 1px rgba(255, 255, 255, .08);
+}
+.idcard::after {   /* a quiet bowls-green arc, like a jack line */
+  content: ""; position: absolute; z-index: -1; right: -60px; bottom: -90px; width: 220px; height: 220px; border-radius: 50%;
+  border: 2px solid rgba(251, 176, 64, .35);
+}
+.idcard__top { display: flex; align-items: center; gap: var(--s3); }
+.idcard__logo { flex: none; width: 46px; height: 52px; display: grid; place-items: center; background: #fff; border-radius: 12px; padding: 4px; }
+.idcard__logo img { width: 100%; height: auto; }
+.idcard__org { flex: 1; min-width: 0; line-height: 1.2; }
+.idcard__org b { display: block; font-size: 1.0625rem; letter-spacing: .01em; }
+.idcard__org span { display: block; font-size: .75rem; color: #e2dbe0; text-transform: uppercase; letter-spacing: .08em; margin-top: 2px; }
+.idcard__season { flex: none; font-weight: 800; font-size: 1.125rem; color: var(--sun-orange); letter-spacing: .02em; }
+.idcard__body { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s4); }
+.idcard__photo {
+  flex: none; width: 84px; height: 104px; border-radius: 14px; overflow: hidden; cursor: pointer; padding: 0;
+  display: grid; place-items: center; align-content: center; gap: 4px;
+  background: rgba(255, 255, 255, .1); border: 1.5px dashed rgba(255, 255, 255, .55); color: #fff; font-size: .75rem; font-weight: 700;
+}
+.idcard__photo .i { width: 30px; height: 30px; }
+.idcard__photo { position: relative; }
+.idcard__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.idcard__photo:has(img) { border: 2px solid #fff; }
+.idcard__who { flex: 1; min-width: 0; }
+.idcard__label { font-size: .6875rem; text-transform: uppercase; letter-spacing: .1em; color: #cfc4cc; }
+.idcard__label + .idcard__name, .idcard__label + .idcard__clubname { margin-top: 1px; }
+.idcard__name { font-size: 1.375rem; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; margin-bottom: var(--s2); }
+.idcard__clubname { font-weight: 700; overflow-wrap: anywhere; }
+.idcard__club { flex: none; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: #fff; border: 2px solid #fff; align-self: flex-start; }
+.idcard__club img { width: 100%; height: 100%; object-fit: cover; }
+.idcard__club--logo img { object-fit: contain; padding: 4px; }
+.idcard__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s4); }
+.idchip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--r-pill); font-size: .75rem; font-weight: 700; background: rgba(255, 255, 255, .14); color: #fff; }
+.idchip--ok .i { color: #6fdc8c; }
+.idchip--novice { background: var(--sun-orange); color: #231120; }
+.idcard__foot { margin-top: var(--s3); font-size: .6875rem; color: #cfc4cc; letter-spacing: .04em; }
+.idcard__note { margin-top: var(--s2); }
+.linkbtn { border: 0; background: none; padding: 0 2px; min-height: 44px; color: var(--link); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.mcard__club { margin-top: var(--s1); }
+@media (max-width: 360px) {
+  .idcard { padding: var(--s3); }
+  .idcard__photo { width: 72px; height: 90px; }
+  .idcard__club { width: 46px; height: 46px; }
+  .idcard__name { font-size: 1.1875rem; }
+}
+html[data-text="xlarge"] .idcard__body { flex-wrap: wrap; }
