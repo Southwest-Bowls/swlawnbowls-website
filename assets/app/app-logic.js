@@ -118,12 +118,68 @@
   }
   function icsDocument(lines) { return lines.map(icsFold).join('\r\n') + '\r\n'; }
 
+  // ---- Season standings (the Division's published Google Sheets) --------
+  // A published sheet's embed link → the same sheet as CSV (null if not one)
+  function standingsCsvUrl(embedUrl) {
+    var m = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/e\/([A-Za-z0-9_-]+)\/pubhtml/.exec(embedUrl || '');
+    return m ? 'https://docs.google.com/spreadsheets/d/e/' + m[1] + '/pub?output=csv' : null;
+  }
+  // RFC 4180 CSV: quoted fields, doubled quotes, commas and newlines inside quotes
+  function parseCsv(text) {
+    var rows = [], row = [], f = '', q = false, i, c;
+    text = String(text || '').replace(/^\uFEFF/, '');
+    for (i = 0; i < text.length; i++) {
+      c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; }
+        else f += c;
+      } else if (c === '"') q = true;
+      else if (c === ',') { row.push(f); f = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(f); rows.push(row); row = []; f = '';
+      } else f += c;
+    }
+    if (f !== '' || row.length) { row.push(f); rows.push(row); }
+    return rows;
+  }
+  // Sheet layout: an optional title row, then "Player, Ranking, Total Points,
+  // <one column per event>". Names are kept exactly as written; rows without
+  // a name are skipped; events where a player scored 0 are left out.
+  function standingsFromCsv(text) {
+    var rows = parseCsv(text), h = -1, i;
+    for (i = 0; i < rows.length; i++) if (/^\s*player\s*$/i.test(rows[i][0] || '')) { h = i; break; }
+    if (h < 0) return null;
+    var head = rows[h].map(function (x) { return x.trim(); });
+    var title = h > 0 ? rows.slice(0, h).map(function (r) { return r.join(' ').trim(); }).filter(Boolean)[0] || '' : '';
+    var rk = head.findIndex(function (x) { return /^rank/i.test(x); });
+    var tp = head.findIndex(function (x) { return /total/i.test(x); });
+    var players = [];
+    rows.slice(h + 1).forEach(function (r) {
+      var name = (r[0] || '').trim();
+      if (!name) return;
+      var events = [];
+      head.forEach(function (label, j) {
+        if (j === 0 || j === rk || j === tp || !label) return;
+        var v = parseFloat(r[j]);
+        if (v) events.push({ event: label, points: v });
+      });
+      players.push({ name: name, rank: parseInt(r[rk], 10) || null, points: parseFloat(r[tp]) || 0, events: events });
+    });
+    players.sort(function (a, b) { return (a.rank || 1e9) - (b.rank || 1e9) || b.points - a.points; });
+    var counts = {};
+    players.forEach(function (p) { if (p.rank) counts[p.rank] = (counts[p.rank] || 0) + 1; });
+    players.forEach(function (p) { p.tied = !!p.rank && counts[p.rank] > 1; });
+    return { title: title, events: head.filter(function (x, j) { return j > 0 && j !== rk && j !== tp && x; }), players: players };
+  }
+
   var api = {
     TZ: TZ, CANONICAL_ORIGIN: CANONICAL_ORIGIN,
     endOfDayLA: endOfDayLA, expiryTime: expiryTime, isExpiredNotice: isExpiredNotice,
     updateVersion: updateVersion, clubIdsForVenue: clubIdsForVenue, aliasMapFrom: aliasMapFrom,
     preferFollowed: preferFollowed, canonicalUrl: canonicalUrl, slugify: slugify,
-    icsText: icsText, icsFold: icsFold, icsDocument: icsDocument
+    icsText: icsText, icsFold: icsFold, icsDocument: icsDocument,
+    standingsCsvUrl: standingsCsvUrl, parseCsv: parseCsv, standingsFromCsv: standingsFromCsv
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SWDLogic = api;

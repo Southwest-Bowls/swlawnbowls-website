@@ -872,3 +872,41 @@ html[data-text="xlarge"] .hhead__mark img { height: 38px; }
 .logotile__name { font-weight: 700; font-size: var(--fs-sm); }
 a.logotile .ext { margin-top: auto; }
 #partners:focus { outline: none; }
+
+/* ---------- Season standings --------------------------------------- */
+.standlink { display: flex; gap: var(--s3); align-items: center; padding: var(--s3) var(--s4); border-radius: 18px; text-decoration: none; margin: var(--s2) 0; min-height: 64px; }
+.standlink > .i:first-child { width: 26px; height: 26px; flex: none; color: #0079a8; }
+:root[data-theme="dark"] .standlink > .i:first-child { color: #fff; }
+.standlink__body { flex: 1; min-width: 0; }
+.standlink__title { display: block; font-weight: 700; font-size: var(--fs-lg); color: var(--heading); }
+.standlink__meta { display: block; font-size: var(--fs-sm); color: var(--text-2); }
+.stands { list-style: none; margin: var(--s2) 0 0; padding: 0; background: var(--surface); border-radius: 18px; overflow: hidden; }
+.stands > li + li { border-top: 1px solid var(--line); }
+.stand > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: var(--s3);
+  min-height: 56px; padding: var(--s2) var(--s4);
+}
+.stand > summary::-webkit-details-marker { display: none; }
+.stand__rank {
+  flex: none; min-width: 44px; height: 36px; padding: 0 6px; border-radius: 10px;
+  display: inline-grid; place-items: center; background: var(--subtle); font-weight: 700; font-size: var(--fs-sm);
+}
+.stand--1 .stand__rank { background: var(--accent); color: var(--accent-ink); }
+.stand--2 .stand__rank { background: var(--tint-orange); color: var(--heading); }
+.stand--3 .stand__rank { background: var(--tint-blush); color: var(--heading); }
+:root[data-theme="dark"] .stand--2 .stand__rank, :root[data-theme="dark"] .stand--3 .stand__rank { color: #fff; }
+.stand__name { flex: 1; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+.stand__pts { flex: none; color: var(--text-2); font-size: var(--fs-sm); white-space: nowrap; }
+.stand__pts b { color: var(--heading); font-size: var(--fs-md); }
+.stand > summary .chev { flex: none; transition: transform .2s ease; }
+.stand[open] > summary .chev { transform: rotate(90deg); }
+.stand[open] > summary { background: var(--subtle); }
+.stand__events { list-style: none; margin: 0; padding: var(--s2) var(--s4) var(--s3) calc(var(--s4) + 44px + var(--s3)); }
+.stand__events li { display: flex; justify-content: space-between; gap: var(--s3); padding: 6px 0; font-size: var(--fs-sm); }
+.stand__events li + li { border-top: 1px dashed var(--line); }
+.stand__events b { color: var(--heading); }
+.stand__none { padding: var(--s2) var(--s4) var(--s3) calc(var(--s4) + 44px + var(--s3)); font-size: var(--fs-sm); color: var(--text-2); }
+@media (max-width: 360px) {
+  .stand > summary { padding: var(--s2) var(--s3); gap: var(--s2); }
+  .stand__events, .stand__none { padding-left: var(--s4); }
+}

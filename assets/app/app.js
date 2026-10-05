@@ -1195,14 +1195,15 @@
      --------------------------------------------------------------- */
   function resultsList(params) {
     setTitle('Results');
-    return loadResults().then(function (list) {
+    return Promise.all([loadResults(), standingsLink()]).then(function (all) {
+      var list = all[0], standLink = all[1];
       var f = { q: params.get('q') || '', cat: params.get('cat') || '', year: params.get('year') || '' };
       var years = {}; list.forEach(function (r) { if (r.year) years[r.year] = 1; });
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
       view.innerHTML = pageHead('The people. The wins.', 'Results', 'trophy') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search results or players</span>' +
         '<input type="search" id="q" placeholder="Search results or players" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
-        (list.length ? championPanel(list[0]) : '') +
+        (list.length ? championPanel(list[0]) : '') + standLink +
         '<section class="section" aria-labelledby="h-latest">' + sectionHead('h-latest', 'Recent results') +
         '<div class="filters filters--quiet">' +
         '<label><span class="sr-only">Category</span><select id="f-cat">' + opt('', 'All categories', f.cat) + CATS.map(function (c) { return opt(c, c, f.cat); }).join('') + '</select></label>' +
@@ -1255,6 +1256,127 @@
         (r.eventId ? '<ul class="rows" style="margin-top:16px">' + linkRow('/app/events/' + encodeURIComponent(r.eventId), 'cal', 'Event details') + '</ul>' : '');
     });
   }
+  // ---- Season standings ------------------------------------------------
+  // The Division keeps the points in two published Google Sheets, listed in
+  // content/standings.json (the website's /standings page). The app reads
+  // the same sheets, so updating the sheet updates the app. The last copy is
+  // kept on the phone for when there is no signal.
+  function loadStandingsSources() {
+    return getJSON('/content/standings.json').then(function (page) {
+      return (page.sections || []).filter(function (s) { return s.type === 'embed' && Logic.standingsCsvUrl(s.url); }).map(function (s) {
+        var h = s.heading || '';
+        var key = /women|ladies/i.test(h) ? 'women' : /\bmen/i.test(h) ? 'men' : slugify(h);
+        return { key: key, heading: h, label: key === 'women' ? 'Women’s' : key === 'men' ? 'Men’s' : h, year: yearOf(h), csv: Logic.standingsCsvUrl(s.url) };
+      });
+    });
+  }
+  var standingsCache = {};
+  function loadStandings(src) {
+    if (standingsCache[src.key]) return standingsCache[src.key];
+    standingsCache[src.key] = fetch(src.csv, { cache: 'no-cache' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    }).then(function (text) {
+      var s = Logic.standingsFromCsv(text);
+      if (!s || !s.players.length) throw new Error('No standings in sheet');
+      store('standings:' + src.key, { at: Date.now(), csv: text });
+      return s;
+    }).catch(function (e) {
+      delete standingsCache[src.key];
+      var saved = store('standings:' + src.key);
+      var s = saved && Logic.standingsFromCsv(saved.csv);
+      if (!s) throw e;
+      s.savedAt = saved.at;
+      return s;
+    });
+    return standingsCache[src.key];
+  }
+  function standingRow(p) {
+    var rank = p.rank ? (p.tied ? 'T' : '') + p.rank : '–';
+    var said = p.rank ? (p.tied ? 'Tied ' : '') + ordinal(p.rank) : 'Unranked';
+    return '<li><details class="stand' + (p.rank && p.rank <= 3 ? ' stand--' + p.rank : '') + '"><summary>' +
+      '<span class="stand__rank" aria-hidden="true">' + esc(rank) + '</span>' +
+      '<span class="stand__name"><span class="sr-only">' + esc(said) + ': </span>' + esc(p.name) + '</span>' +
+      '<span class="stand__pts"><b>' + esc(p.points) + '</b> pts</span>' + CHEV + '</summary>' +
+      (p.events.length
+        ? '<ul class="stand__events">' + p.events.map(function (e) { return '<li><span>' + esc(e.event) + '</span><b>' + esc(e.points) + '</b></li>'; }).join('') + '</ul>'
+        : '<p class="stand__none">No points yet this season.</p>') +
+      '</details></li>';
+  }
+  function standings(params) {
+    setTitle('Standings');
+    return loadStandingsSources().then(function (srcs) {
+      if (!srcs.length) { view.innerHTML = backLink('/app/results', 'Results') + state('empty', 'No standings published yet', ''); return; }
+      var cur = srcs.filter(function (s) { return s.key === params.get('list'); })[0] || srcs[0];
+      var year = srcs[0].year;
+      view.innerHTML = backLink('/app/results', 'Results') +
+        pageHead((year ? year + ' ' : '') + 'Standings', 'Season points', 'trophy') +
+        '<div class="segmented" role="tablist" aria-label="Which standings">' + srcs.map(function (s) {
+          var on = s.key === cur.key;
+          return '<button type="button" role="tab" id="tab-' + esc(s.key) + '" aria-controls="panel" aria-selected="' + on + '" tabindex="' + (on ? 0 : -1) + '" data-list="' + esc(s.key) + '">' + esc(s.label) + '</button>';
+        }).join('') + '</div>' +
+        '<label class="search">' + icon('search') + '<span class="sr-only">Find a player</span>' +
+        '<input type="search" id="q" placeholder="Find a player" value="' + esc(params.get('q') || '') + '" autocomplete="off" enterkeyhint="search"></label>' +
+        '<div id="panel" role="tabpanel" tabindex="-1"></div>' +
+        '<ul class="rows" style="margin-top:24px">' + linkRow('/standings', 'doc', 'Standings on the website', 'The full sheet with every column', { ext: true }) + '</ul>' +
+        '<p class="footnote">Tap a name to see points by event. Points are kept by the Division and update here when the sheet changes.</p>';
+      var data = null, token = 0;
+      function draw() {
+        var panel = document.getElementById('panel');
+        panel.setAttribute('aria-labelledby', 'tab-' + cur.key);
+        if (!data) return;
+        var qRaw = document.getElementById('q').value.trim(), q = fold(qRaw);
+        var list = q ? data.players.filter(function (p) { return fold(p.name).indexOf(q) >= 0; }) : data.players;
+        panel.innerHTML = (data.savedAt ? '<p class="note" role="note"><b>Saved copy</b>Showing the standings as of ' + esc(new Date(data.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) + '. Connect to see the latest.</p>' : '') +
+          (list.length
+            ? '<p class="count" aria-live="polite">' + list.length + ' player' + (list.length === 1 ? '' : 's') + (q ? ' <button class="clear" type="button" data-clear>Clear</button>' : '') + '</p>' +
+              '<ol class="stands" aria-label="' + esc(cur.heading) + '">' + list.map(standingRow).join('') + '</ol>'
+            : state('empty', 'No player by that name', 'Check the spelling or clear the search.', '<button class="btn btn--ghost" type="button" data-clear>Clear search</button>'));
+        var u = new URLSearchParams();
+        if (cur.key !== srcs[0].key) u.set('list', cur.key);
+        if (qRaw) u.set('q', qRaw);
+        history.replaceState(history.state, '', '/app/standings' + (u.toString() ? '?' + u : ''));
+      }
+      function show(src) {
+        cur = src; data = null;
+        view.querySelectorAll('[role="tab"]').forEach(function (b) {
+          var on = b.getAttribute('data-list') === src.key;
+          b.setAttribute('aria-selected', on); b.setAttribute('tabindex', on ? 0 : -1);
+        });
+        var mine = ++token;
+        document.getElementById('panel').innerHTML = loading();
+        draw();
+        return loadStandings(src).then(function (s) { if (mine === token) { data = s; draw(); } }, function () {
+          if (mine === token) document.getElementById('panel').innerHTML = errorState();
+        });
+      }
+      var t;
+      document.getElementById('q').addEventListener('input', function () { clearTimeout(t); t = setTimeout(draw, 120); });
+      view.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-list]');
+        if (b) { show(srcs.filter(function (s) { return s.key === b.getAttribute('data-list'); })[0]); return; }
+        if (ev.target.closest('[data-clear]')) { document.getElementById('q').value = ''; draw(); return; }
+        if (ev.target.closest('[data-retry]')) { ev.stopPropagation(); show(cur); }
+      });
+      view.querySelector('[role="tablist"]').addEventListener('keydown', function (ev) {
+        if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+        var i = srcs.indexOf(cur), n = srcs[(i + (ev.key === 'ArrowRight' ? 1 : srcs.length - 1)) % srcs.length];
+        show(n); view.querySelector('[data-list="' + n.key + '"]').focus();
+      });
+      return show(cur);
+    });
+  }
+  // A compact way in from Results
+  function standingsLink() {
+    return loadStandingsSources().then(function (srcs) {
+      if (!srcs.length) return '';
+      var y = srcs[0].year;
+      return '<a class="standlink tint tint--blue" href="/app/standings">' + icon('medal') +
+        '<span class="standlink__body"><span class="standlink__title">' + esc((y ? y + ' ' : '') + 'Standings') + '</span>' +
+        '<span class="standlink__meta">' + esc(srcs.map(function (s) { return s.label; }).join(' & ')) + ' season points</span></span>' + CHEV + '</a>';
+    }).catch(function () { return ''; });
+  }
+
   var ORD = ['', '1st', '2nd', '3rd'];
   function ordinal(n) { n = +n; if (ORD[n]) return ORD[n]; var s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
   function placeItem(p, winnerLabel) {
@@ -1445,7 +1567,7 @@
       var ag = navFind(nav, function (h) { return /^\/20\d{2}-season-agenda$/.test(h); });
       var y = yearOf(st && st.label);
       return [['/app/page/about-us', 'About Southwest'],
-        ['/app/page/standings', (y ? y + ' standings' : 'Standings')],
+        ['/app/standings', (y ? y + ' standings' : 'Standings')],
         ['/us-nationals-teams', 'U.S. Nationals teams'],
         ['/app/page/bowlsdevelopmnetfund', 'Bowls Development Fund'],
         ['/policies-and-procedures', 'Policies & procedures'],
@@ -1482,7 +1604,6 @@
     ['play', 'division', 'ladies-day'].forEach(function (k) {
       SUBSECTIONS[k].rows({ items: [] }).forEach(function (r) { if (r[0] === '/app/page/' + pageId) hit = k; });
     });
-    if (pageId === 'standings') hit = 'division';
     return hit ? { href: '/app/more/' + hit, label: SUBSECTIONS[hit].title } : { href: '/app/more', label: 'More' };
   }
 
@@ -1752,6 +1873,8 @@
     [/^\/app\/events\/?$/, eventsList, 'events'],
     [/^\/app\/events\/([^/]+)\/?$/, eventDetail, 'events'],
     [/^\/app\/results\/?$/, resultsList, 'results'],
+    [/^\/app\/standings\/?$/, standings, 'results'],
+    [/^\/app\/page\/standings\/?$/, standings, 'results'],
     [/^\/app\/results\/([^/]+)\/?$/, resultDetail, 'results'],
     [/^\/app\/watch\/?$/, watch, 'watch'],
     [/^\/app\/more\/?$/, more, 'more'],

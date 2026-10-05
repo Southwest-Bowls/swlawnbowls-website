@@ -87,3 +87,23 @@ test('calendar files: escaped text, lines folded at 75 octets, CRLF throughout',
   assert.strictEqual(doc.split('\r\n')[1] + doc.split('\r\n').slice(2, -2).map((l) => l.slice(1)).join(''), long);
   assert.ok(!/\r(?!\n)/.test(doc));
 });
+
+test('standings: sheet link becomes its CSV; only real published sheets qualify', () => {
+  const page = require('../content/standings.json');
+  const urls = page.sections.filter((s) => s.type === 'embed').map((s) => L.standingsCsvUrl(s.url));
+  assert.strictEqual(urls.length, 2);
+  urls.forEach((u) => assert.match(u, /^https:\/\/docs\.google\.com\/spreadsheets\/d\/e\/[\w-]+\/pub\?output=csv$/));
+  assert.strictEqual(L.standingsCsvUrl('https://evil.example/spreadsheets/d/e/x/pubhtml'), null);
+});
+
+test('standings: ranks, ties, totals and per-event points read exactly as published', () => {
+  const csv = '2026 Test Standings,,,,\r\nPlayer,Ranking,Total Points,"Pairs, Open",Singles\r\n' +
+    'B Player,2,20,10,10\r\n"Smith, ""Jo""",1,25,25,0\r\nC Player,2,20,0,20\r\n,,,,\r\n';
+  const s = L.standingsFromCsv(csv);
+  assert.strictEqual(s.title, '2026 Test Standings');
+  assert.deepStrictEqual(s.events, ['Pairs, Open', 'Singles']);
+  assert.deepStrictEqual(s.players.map((p) => [p.name, p.rank, p.points, p.tied]),
+    [['Smith, "Jo"', 1, 25, false], ['B Player', 2, 20, true], ['C Player', 2, 20, true]]);
+  assert.deepStrictEqual(s.players[0].events, [{ event: 'Pairs, Open', points: 25 }], 'zero-point events left out');
+  assert.strictEqual(L.standingsFromCsv('no header here'), null);
+});
