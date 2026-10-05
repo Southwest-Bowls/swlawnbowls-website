@@ -113,7 +113,11 @@ html[data-text="large"]  { font-size: 112.5%; }
 html[data-text="xlarge"] { font-size: 125%; }
 
 * { box-sizing: border-box; }
-html, body { overflow-x: hidden; }
+/* Never put overflow on html/body: on iPhone Safari that detaches the fixed
+   tab bar while scrolling. Clip sideways overflow on the content instead. */
+.view { overflow-x: hidden; overflow-x: clip; }
+/* Installed app: no rubber-band bounce dragging the page under the tab bar */
+@media (display-mode: standalone) { html, body { overscroll-behavior-y: none; } }
 body {
   margin: 0;
   background: var(--bg);
@@ -632,6 +636,7 @@ dialog.dlg::backdrop { background: var(--backdrop); }
 /* ---------- Bottom tab bar ----------------------------------------- */
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  transform: translateZ(0); -webkit-backface-visibility: hidden; backface-visibility: hidden;   /* own layer: stays put on iOS scroll */
   display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--bg); border-top: 1px solid var(--line);
   padding: 8px calc(8px + var(--safe-r)) max(10px, var(--safe-b)) calc(8px + var(--safe-l));
