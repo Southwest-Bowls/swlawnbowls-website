@@ -157,7 +157,13 @@ async function main() {
       console.error(e.message);
       send(res, 500, { error: 'Something went wrong. Nothing was changed.' });
     }
-  }).listen(PORT, '127.0.0.1', () => console.log(`Roster review (local, private): http://localhost:${PORT}  — reviewing as ${OPERATOR}`));
+  }).on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+      console.error(`The review screen is already running (port ${PORT} is in use).\nOpen http://localhost:${PORT} in your browser, or stop the other one first.\nTo use another port: SWD_REVIEW_PORT=8792 npm run review`);
+      process.exit(1);
+    }
+    throw e;
+  }).listen(PORT, '127.0.0.1', () => console.log(`Roster review (local, private): http://localhost:${PORT}  — reviewing as ${OPERATOR}\nPress Ctrl+C to stop.`));
 }
 
 if (require.main === module) main();
