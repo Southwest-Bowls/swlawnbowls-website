@@ -14,7 +14,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const R = require('./roster');
-const { openDb } = require('./db');
+const { openDb, closeOnExit, DbBusyError } = require('./db');
 
 const EXPECTED_COLUMNS = ['source_sheet', 'source_row', 'sexcalc m', 'sexcalc w', 'dues sw man', 'dues sw woman',
   'dues us man', 'dues us woman', 'Novices', 'name_Last', 'name_First', 'add_St', 'unit', 'city', 'add_state',
@@ -178,7 +178,10 @@ if (require.main === module) {
   const dir = arg('--dir', path.join(os.homedir(), 'Downloads', 'Southwest-Member-Platform'));
   const source = arg('--source', path.join(os.homedir(), 'Downloads', '2026 SWD Alpha list of membership 072726.xlsx'));
   (async () => {
-    const db = await openDb(arg('--db'));
+    let db;
+    try { db = await openDb(arg('--db')); }
+    catch (e) { console.error(e instanceof DbBusyError ? 'Stop the review screen first (Ctrl+C in its window), then run the import.\n' + e.message : e.message); process.exitCode = 1; return; }
+    closeOnExit(db);
     const s = await importRoster(db, { dir, source, sourceName: path.basename(source), dryRun: a.includes('--dry-run'), operator: arg('--operator', process.env.SWD_OPERATOR || 'GG') });
     printSummary(s);
     await db.close();

@@ -47,6 +47,23 @@ audit before staging anything. Use `--dir` / `--source` for other paths.
 * Members, contacts, accounts and links stay empty until approval.
 * Decisions and audit events can't be changed or deleted.
 
+## Keeping the database safe
+
+* Run **one** review screen or import at a time. A second one now stops
+  with a message instead of opening the database (two at once can
+  damage it).
+* Stop the review screen with **Ctrl+C** — it closes the database safely.
+* Each time the database opens, a backup copy is saved in
+  `.data/backups/` (the newest 10 are kept).
+
+### If the database won't open
+
+1. Stop every review screen / import (Ctrl+C), then try again.
+2. Still failing: rename `.data/local-db` (e.g. `local-db-damaged`) and
+   copy the newest folder from `.data/backups/` to `.data/local-db`.
+3. With no review decisions yet, you can also just rename it and run
+   `npm run import` — the roster stages again exactly as before.
+
 ## Still to decide (with the roster owner)
 
 What the dues markers (x/X/blank), `Novices` and `begnov` mean; which

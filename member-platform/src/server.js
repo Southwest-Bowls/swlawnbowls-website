@@ -10,7 +10,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { openDb } = require('./db');
+const { openDb, closeOnExit, DbBusyError } = require('./db');
 
 const PORT = +(process.env.SWD_REVIEW_PORT || 8790);
 const OPERATOR = process.env.SWD_OPERATOR || 'GG';
@@ -43,7 +43,14 @@ function rowView(r) {
 }
 
 async function main() {
-  const db = await openDb(process.env.SWD_DB_DIR);   // default: the private local database
+  let db;
+  try { db = await openDb(process.env.SWD_DB_DIR); }   // default: the private local database (locked, backed up)
+  catch (e) {
+    if (e instanceof DbBusyError) console.error('The review screen (or an import) is already running.\n' + e.message + `\nIf it is open, use it at http://localhost:${PORT}`);
+    else console.error(e.message);
+    process.exit(1);
+  }
+  closeOnExit(db, 'Review screen');
   const q = (s, p) => db.query(s, p).then((r) => r.rows);
 
   async function summary() {
@@ -157,8 +164,9 @@ async function main() {
       console.error(e.message);
       send(res, 500, { error: 'Something went wrong. Nothing was changed.' });
     }
-  }).on('error', (e) => {
+  }).on('error', async (e) => {
     if (e.code === 'EADDRINUSE') {
+      await db.close();
       console.error(`The review screen is already running (port ${PORT} is in use).\nOpen http://localhost:${PORT} in your browser, or stop the other one first.\nTo use another port: SWD_REVIEW_PORT=8792 npm run review`);
       process.exit(1);
     }

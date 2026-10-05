@@ -88,3 +88,16 @@ test('a club mapping cannot be approved without a club, a reviewer and a reason'
   await assert.rejects(db.query(`UPDATE club_crosswalk SET status = 'approved' WHERE id = $1`, [id]), /check/i);
   await db.query(`UPDATE club_crosswalk SET status = 'approved', approved_club_id = 'testville', decided_by = 't', reason = 'Same club' WHERE id = $1`, [id]);
 });
+
+test('only one program can open a database folder; a backup is made before opening', async () => {
+  const { DbBusyError } = require('../src/db');
+  const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'swd-db-')), 'local-db');
+  const a = await openDb(dir);
+  await assert.rejects(openDb(dir), (e) => e instanceof DbBusyError);
+  await a.close();
+  const b = await openDb(dir);   // after a clean close it opens again…
+  await b.close();
+  const backups = fs.readdirSync(path.join(path.dirname(dir), 'backups'));
+  assert.ok(backups.length >= 1, '…and the second open made a backup first');
+  assert.ok(!fs.existsSync(dir + '.lock'), 'lock released on close');
+});
