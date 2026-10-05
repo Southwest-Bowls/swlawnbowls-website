@@ -11,3 +11,4 @@ private/
 *.roster.*
 # Member platform: local admin tools and database (not part of the public site)
 member-platform/
+supabase/

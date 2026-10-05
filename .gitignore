@@ -32,3 +32,6 @@ member-platform/.data/
 member-platform/node_modules/
 private/
 *.roster.*
+
+# Supabase CLI working files (project link)
+supabase/
