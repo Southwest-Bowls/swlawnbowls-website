@@ -828,3 +828,9 @@ html[data-text="xlarge"] .tabbar a { font-size: .6875rem; }
 .club__img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 18px; margin: var(--s2) 0 var(--s4); background: var(--subtle); }
 .club__summary { margin-top: var(--s2); }
 .btn--follow { flex-basis: 100% !important; }
+
+/* Narrow phones with enlarged text: keep the search prompt whole (still ≥16px, so iOS won't zoom) */
+@media (max-width: 400px) {
+  html[data-text="large"] .search input, html[data-text="xlarge"] .search input { font-size: max(16px, .875rem); padding-left: 42px; }
+  html[data-text="large"] .search .i, html[data-text="xlarge"] .search .i { left: 12px; }
+}
