@@ -34,4 +34,4 @@ private/
 *.roster.*
 
 # Supabase CLI working files (project link)
-supabase/
+/supabase/
