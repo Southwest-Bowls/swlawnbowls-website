@@ -23,12 +23,15 @@ class DbBusyError extends Error {}
 function alive(pid) { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } }
 
 // Exclusive lock beside the database folder: <dir>.lock holding our pid
+const OPEN_HERE = new Set();   // folders this program already has open
 function lock(dir) {
   const file = dir + '.lock';
+  if (OPEN_HERE.has(file)) throw new DbBusyError('The member database is already open in this program.');
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       fs.writeFileSync(file, String(process.pid), { flag: 'wx' });
-      return () => { try { if (fs.readFileSync(file, 'utf8') === String(process.pid)) fs.unlinkSync(file); } catch (e) {} };
+      OPEN_HERE.add(file);
+      return () => { OPEN_HERE.delete(file); try { if (fs.readFileSync(file, 'utf8') === String(process.pid)) fs.unlinkSync(file); } catch (e) {} };
     } catch (e) {
       if (e.code !== 'EEXIST') throw e;
       const pid = +fs.readFileSync(file, 'utf8') || 0;
