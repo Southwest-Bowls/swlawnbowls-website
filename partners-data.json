@@ -1,0 +1,12 @@
+{
+  "_readme": "Partners and affiliations shown in the app (More → About Southwest, and Home's 'Partners & affiliations' link). Logos are the website's own files in photos/home/ (also used on site-home.html). 'url' is the outbound link: only fill it in from an official source — the partner logos currently have no link on swlawnbowls.org, so they are null and the app shows them without a link. Bowls USA and World Bowls links are the ones already used on the website.",
+  "partners": [
+    { "name": "Aero Bowls USA",   "logo": "/photos/home/03-partner-aero.png",      "width": 800, "height": 470, "url": null },
+    { "name": "Henselite USA",    "logo": "/photos/home/04-partner-henselite.png", "width": 800, "height": 224, "url": null },
+    { "name": "Drakes Pride USA", "logo": "/photos/home/05-partner-drakes.png",    "width": 800, "height": 448, "url": null }
+  ],
+  "memberOf": [
+    { "name": "Bowls USA",   "logo": "/photos/home/06-member-bowlsusa.png",   "width": 800, "height": 234, "url": "https://www.bowlsusa.us/" },
+    { "name": "World Bowls", "logo": "/photos/home/07-member-worldbowls.png", "width": 800, "height": 800, "url": "https://www.worldbowls.com/" }
+  ]
+}

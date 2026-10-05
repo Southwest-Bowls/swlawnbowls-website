@@ -9,3 +9,5 @@ tests/
 # Private member data must never be deployed (next phase: roster staging)
 private/
 *.roster.*
+# Member platform: local admin tools and database (not part of the public site)
+member-platform/

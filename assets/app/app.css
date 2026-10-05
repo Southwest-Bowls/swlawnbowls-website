@@ -688,7 +688,7 @@ html[data-text="xlarge"] .tabbar a { font-size: .6875rem; }
 .tint .textlink, .tint a.textlink { color: var(--on-tint-link); }
 
 /* Home identity header */
-.hhead { display: flex; align-items: center; gap: var(--s3); margin: var(--s2) 0 var(--s3); padding-top: var(--safe-t); }
+.hhead { display: flex; align-items: center; gap: var(--s3); margin: var(--s1) 0 var(--s3); padding-top: var(--safe-t); }
 .hhead .logo-plate { padding: 10px; }
 .hhead__text { flex: 1; min-width: 0; }
 .hhead h1 { font-size: clamp(1.25rem, 6vw, 1.625rem); line-height: 1.15; letter-spacing: -.01em; }
@@ -712,7 +712,7 @@ html[data-text="xlarge"] .tabbar a { font-size: .6875rem; }
 
 /* Search on the page background is a white field */
 .search input { background: var(--surface); border-color: var(--line); }
-.search--home { margin-bottom: var(--s3); }
+.search--home { margin-bottom: var(--s2); }
 .searchbar { display: flex; align-items: center; gap: var(--s2); margin: var(--s4) 0 var(--s2); padding-top: var(--safe-t); }
 .searchbar .search { flex: 1; margin: 0; }
 .sgroup { margin-top: var(--s5); }
@@ -721,7 +721,7 @@ html[data-text="xlarge"] .tabbar a { font-size: .6875rem; }
 /* 2×2 tiles */
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin: 0 0 var(--s4); }
 .tile {
-  display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; min-height: 84px; padding: var(--s3) var(--s4);
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; min-height: 76px; padding: var(--s3) var(--s4);
   border-radius: 18px; text-decoration: none; color: var(--text); background: var(--surface);
 }
 .tile > .i { width: 22px; height: 22px; margin-bottom: auto; padding-bottom: 4px; box-sizing: content-box; }
@@ -749,7 +749,7 @@ html[data-text="xlarge"] .tabbar a { font-size: .6875rem; }
 .alert { background: var(--surface); }
 
 /* Home sections */
-.hsec { margin-top: var(--s4); }
+.hsec { margin-top: var(--s3); }
 .hsec .section__head { margin-bottom: var(--s2); }
 .nextcard { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-radius: 18px; }
 .nextcard__main { flex: 1; min-width: 0; display: block; color: inherit; text-decoration: none; }
@@ -834,3 +834,36 @@ html[data-text="xlarge"] .tabbar a { font-size: .6875rem; }
   html[data-text="large"] .search input, html[data-text="xlarge"] .search input { font-size: max(16px, .875rem); padding-left: 42px; }
   html[data-text="large"] .search .i, html[data-text="xlarge"] .search .i { left: 12px; }
 }
+
+/* ===================================================================
+   Official branding (Oct 2026): tagline graphic, Livestream TV logo,
+   partner & affiliation logos. Original files at their own proportions;
+   light plates keep their lettering readable in dark mode.
+   =================================================================== */
+.art-plate { display: inline-grid; place-items: center; background: transparent; border-radius: 10px; line-height: 0; }
+:root[data-theme="dark"] .art-plate { background: #fff; padding: 4px 6px; }
+.hhead { flex-wrap: wrap; row-gap: var(--s2); }
+.hhead__tag { flex: 1 1 100%; margin: 0 !important; font-size: .75rem !important; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+.hhead__mark { margin-top: 6px; }
+.hhead__mark img { height: 44px; width: auto; max-width: 100%; }
+html[data-text="xlarge"] .hhead__mark img { height: 38px; }
+.minorlink { display: flex; align-items: center; gap: var(--s3); min-height: 48px; margin-top: var(--s3); padding: 0 var(--s4); border-radius: 14px; background: var(--surface); color: var(--text); text-decoration: none; font-weight: 700; font-size: .9375rem; }
+.minorlink span { flex: 1; }
+.minorlink > .i:first-child { color: var(--link); }
+.i--brand { fill: currentColor; stroke: none; }
+.row > .i--brand:first-child, .tile > .i--brand { color: #1877f2; }
+:root[data-theme="dark"] .row > .i--brand:first-child { color: #fff; }
+.art-plate--round { background: #fff; border-radius: 50%; padding: 6px; }
+.media__art .art-plate--round img { height: 112px; width: auto; }
+.art-plate--row { flex: none; width: 54px; height: 54px; padding: 3px; }
+.art-plate--row img { width: 100%; height: 100%; object-fit: contain; }
+.tag--upcoming { background: var(--tint-blue); color: var(--text); }
+.media .tag--upcoming { background: var(--socal-blue); color: #000; }
+.media__kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.logotiles, .page-sec .logotiles { list-style: none; margin: var(--s3) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: var(--s3); }
+.logotile { display: flex; flex-direction: column; gap: var(--s2); height: 100%; padding: var(--s3); border-radius: 16px; background: var(--surface); color: var(--text); text-decoration: none; min-height: 44px; }
+.logotile__plate { display: grid; place-items: center; height: 96px; padding: var(--s2); border-radius: 12px; background: #fff; }
+.logotile__plate img { max-width: 100%; max-height: 80px; width: auto; height: auto; object-fit: contain; }
+.logotile__name { font-weight: 700; font-size: var(--fs-sm); }
+a.logotile .ext { margin-top: auto; }
+#partners:focus { outline: none; }

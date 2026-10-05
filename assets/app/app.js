@@ -105,7 +105,10 @@
     medal: '<circle cx="12" cy="15" r="5"/><path d="M8.5 11 6 3h4l2 5 2-5h4l-2.5 8"/>',
     archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>'
   };
+  // Facebook's official mark, from Simple Icons (CC0) — filled, not redrawn
+  var FACEBOOK_PATH = '<path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/>';
   function icon(name, cls) {
+    if (name === 'facebook') return '<svg class="i i--brand' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + FACEBOOK_PATH + '</svg>';
     return '<svg class="i' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (PATHS[name] || '') + '</svg>';
   }
   var CHEV = icon('chev', 'chev i--sm');
@@ -659,8 +662,10 @@
 
     // 1. Identity: logo on its white plate, one heading, one line
     var html = '<header class="hhead"><span class="logo-plate"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="64" height="75"></span>' +
-      '<div class="hhead__text"><h1>Your Southwest.</h1><p>On the green. Together.</p></div>' +
-      '<button class="iconbtn hhead__theme" type="button" data-theme-open aria-haspopup="dialog" aria-label="Appearance: light, dark or system">' + icon('sun') + '</button></header>';
+      '<div class="hhead__text"><h1>Your Southwest.</h1>' +
+      '<span class="art-plate hhead__mark"><img src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls — A Sport for Life!" width="341" height="160" decoding="async"></span></div>' +
+      '<button class="iconbtn hhead__theme" type="button" data-theme-open aria-haspopup="dialog" aria-label="Appearance: light, dark or system">' + icon('sun') + '</button>' +
+      '<p class="hhead__tag">26 Clubs · One Sport · One Community.</p></header>';
 
     // 2. Real search (events, clubs, results)
     html += '<form class="search search--home" role="search" action="/app/search" data-home-search>' + icon('search') +
@@ -725,6 +730,8 @@
           : sto.source && safeUrl(sto.source.url) ? '<a class="textlink" href="' + esc(sto.source.url) + '" target="_blank" rel="noopener">' + esc(sto.actionLabel || 'Read more') + icon('ext', 'i--sm') + '</a>' : '') +
         '</div></div></section>';
     }
+
+    html += '<a class="minorlink" href="/app/page/about-us#partners">' + icon('people') + '<span>Partners &amp; affiliations</span>' + CHEV + '</a>';
 
     view.innerHTML = html;
     view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) {
@@ -1364,9 +1371,8 @@
           '<p class="media__kicker">Live now on SW TV</p><h2 class="media__title">' + esc(v.title) + '</h2></article>';
       } else if (plan.length) {
         var n = plan[0];
-        feat = '<article class="media"><div class="media__art"><img src="/assets/app/art/welcome-bowls.png" alt="" aria-hidden="true" width="181" height="72">' +
-          '<span class="media__badge" aria-hidden="true">' + icon('cal') + '</span></div>' +
-          '<p class="media__kicker">Next scheduled coverage</p><h2 class="media__title">' + esc(n.title) + '</h2>' +
+        feat = '<article class="media"><div class="media__art"><span class="art-plate art-plate--round"><img src="/photos/home/livestream-tv-logo.png" alt="Livestream Southwest Bowls TV" width="400" height="380" decoding="async"></span></div>' +
+          '<p class="media__kicker"><span class="tag tag--upcoming">Upcoming</span> Next scheduled coverage</p><h2 class="media__title">' + esc(n.title) + '</h2>' +
           '<p class="media__meta">' + esc(when(n)) + ' · not live yet</p>' +
           '<a class="textlink textlink--onink" href="' + esc(safeUrl(n.link) || YT_CHANNEL_URL) + '" target="_blank" rel="noopener">Open SW TV on YouTube' + icon('ext', 'i--sm') + '</a></article>';
       } else {
@@ -1386,8 +1392,10 @@
       // Coming next: the rest of the schedule, plus anything YouTube has scheduled
       var rest = (live.length ? plan : plan.slice(1)).slice(0, 4);
       var rows = rest.map(function (s) {
-        return '<li class="evrow"><span class="dateblock" aria-hidden="true"><small>' + fmt(s.date, { month: 'short' }) + '</small><b>' + fmt(s.date, { day: 'numeric' }) + '</b></span>' +
-          '<span class="evrow__main"><span class="evrow__title">' + esc(s.title) + '</span><span class="evrow__meta">Scheduled coverage' + (s.venue ? ' · ' + esc(s.venue) : '') + '</span></span></li>';
+        return '<li class="evrow"><span class="art-plate art-plate--round art-plate--row"><img src="/photos/home/livestream-tv-logo.png" alt="" width="400" height="380" loading="lazy" decoding="async"></span>' +
+          '<span class="evrow__main"><span class="evrow__title">' + esc(s.title) + '</span>' +
+          '<span class="evrow__meta">' + esc(fmt(s.date, { weekday: 'short', month: 'short', day: 'numeric' })) + (s.venue ? ' · ' + esc(s.venue) : '') + '</span>' +
+          '<span class="status"><span class="tag tag--upcoming">Upcoming</span> Scheduled coverage</span></span></li>';
       }).concat(ytSoon.map(function (y) {
         return '<li>' + menuRow('https://www.youtube.com/watch?v=' + encodeURIComponent(y.id), 'clock', y.title, 'Scheduled on YouTube' + (y.scheduled ? ' · ' + fmtTime(y.scheduled, true) : '')).replace(/^<li>|<\/li>$/g, '') + '</li>';
       }));
@@ -1462,10 +1470,10 @@
     } },
     resources: { title: 'Resources', icon: 'doc', rows: function () {
       return [['/app/more/division', 'Division information', 'info'], ['/app/more/ladies-day', 'Ladies Day', 'people'],
-        ['/app/more/archives', 'Archives', 'archive'], ['/app/more/follow', 'Follow us', 'tv']];
+        ['/app/more/archives', 'Archives', 'archive'], ['/app/more/follow', 'Follow Southwest', 'facebook']];
     } },
-    follow: { title: 'Follow us', icon: 'people', rows: function () {
-      return [[YT_CHANNEL_URL, 'YouTube · SW TV', 'tv'], [FACEBOOK_URL, 'Facebook', 'people']];
+    follow: { title: 'Follow Southwest', icon: 'people', rows: function () {
+      return [[FACEBOOK_URL, 'Follow us on Facebook', 'facebook'], [YT_CHANNEL_URL, 'Watch SW TV on YouTube', 'tv']];
     } }
   };
   // Which subsection an information page belongs to, for its Back link
@@ -1501,6 +1509,11 @@
             '<span class="row__main"><span class="row__title">Tournament updates</span>' + (n ? '<span class="row__meta" data-upd-label="short">' + updatesShort(currentNotices) + '</span>' : '') + '</span>' + CHEV + '</button></li>' +
           menuRow('/app/more/settings', 'sliders', 'App settings', 'Appearance & text size') +
           menuRow('/app/page/contact-us', 'mail', 'Help & contact', 'Contact Southwest Bowls') +
+        '</ul>' +
+        '<h2 class="section__title list-title">Follow Southwest</h2>' +
+        '<ul class="rows rows--menu rows--cards">' +
+          menuRow(FACEBOOK_URL, 'facebook', 'Follow us on Facebook') +
+          menuRow(YT_CHANNEL_URL, 'tv', 'Watch SW TV on YouTube') +
         '</ul>' +
         '<ul class="rows rows--menu rows--quiet">' + menuRow('/', 'globe', 'Southwest website') + '</ul>';
     });
@@ -1653,9 +1666,27 @@
      Information pages (content/<id>.json) — same renderer rules as
      page.html, laid out for a phone
      --------------------------------------------------------------- */
+  // Logo tiles: the original logos at their own proportions, on light plates.
+  // A tile is a link only when partners-data.json has an official URL.
+  function logoTiles(list) {
+    return '<ul class="logotiles">' + list.map(function (o) {
+      var img = '<img src="' + esc(o.logo) + '" alt="" width="' + (+o.width || 400) + '" height="' + (+o.height || 200) + '" loading="lazy" decoding="async">';
+      var body = '<span class="logotile__plate">' + img + '</span><span class="logotile__name">' + esc(o.name) + '</span>';
+      return '<li>' + (safeUrl(o.url)
+        ? '<a class="logotile" href="' + esc(o.url) + '" target="_blank" rel="noopener">' + body + '<span class="ext">' + icon('ext', 'i--sm') + 'Website<span class="sr-only"> (opens ' + esc(o.name) + ' website)</span></span></a>'
+        : '<div class="logotile">' + body + '</div>') + '</li>';
+    }).join('') + '</ul>';
+  }
+  function partnersHtml(pd) {
+    if (!pd) return '';
+    return '<section class="page-sec" id="partners" tabindex="-1" aria-labelledby="h-partners"><h2 id="h-partners">Our Partners</h2>' + logoTiles(pd.partners || []) + '</section>' +
+      '<section class="page-sec" aria-labelledby="h-memberof"><h2 id="h-memberof">Proud Member of</h2>' + logoTiles(pd.memberOf || []) + '</section>';
+  }
   function infoPage(params, id) {
     setTitle('');
-    return getJSON('/content/' + encodeURIComponent(id) + '.json').then(function (d) {
+    var partners = id === 'about-us' ? getJSON('/partners-data.json').catch(function () { return null; }) : Promise.resolve(null);
+    return Promise.all([getJSON('/content/' + encodeURIComponent(id) + '.json'), partners]).then(function (all) {
+      var d = all[0], pd = all[1];
       setTitle(d.title || '');
       var fig = function (im) {
         var src = safeUrl(im.src); if (!src) return '';
@@ -1709,7 +1740,7 @@
           var r = R[s.type]; if (!r) return '';
           var inner = r(s); if (!inner) return '';
           return '<section class="page-sec">' + (s.heading && s.type !== 'embed' ? '<h2>' + esc(s.heading) + '</h2>' : '') + inner + '</section>';
-        }).join('');
+        }).join('') + partnersHtml(pd);
     });
   }
 
@@ -1761,6 +1792,9 @@
       var key = path + location.search;
       var y = (history.state && history.state.y) || scrollMemory[key] || 0;
       window.scrollTo(0, restoring ? y : 0);
+      // A link to a section of a screen (e.g. About → #partners) lands on it
+      var target = !restoring && location.hash && document.getElementById(location.hash.slice(1));
+      if (target) { target.scrollIntoView({ block: 'start' }); target.focus({ preventScroll: true }); }
       restoring = false;
     });
   }
