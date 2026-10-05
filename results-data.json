@@ -1,6 +1,24 @@
 {
   "tournaments": [
     {
+      "id": "maccabee-pairs-2026",
+      "title": "2026 Maccabee Pairs",
+      "meta": "September 27 · Beverly Hills LBC",
+      "navLabel": "Maccabee Pairs",
+      "eventUrl": "/event?id=maccabee-pairs-2026",
+      "divisions": [
+        {
+          "label": null,
+          "columns": 2,
+          "places": [
+            { "rank": 1, "names": "Russ Kindorf & Bill Brault" },
+            { "rank": 2, "names": "Giulia Gallo & Mary Spease" },
+            { "rank": 3, "names": "Dean Warmington & Shane Hansanuwat" }
+          ]
+        }
+      ]
+    },
+    {
       "id": "mens-vet-novice-pairs-2026",
       "title": "2026 SWD Men's Vet-Novice Mix/Match Pairs",
       "meta": "September 26 · Laguna Beach LBC & MacKenzie Park LBC",
