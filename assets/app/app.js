@@ -737,12 +737,14 @@
     document.getElementById('hq').addEventListener('input', function () { openSearch(this.value); });
   }
   // Typing on Home moves to the full search screen, keeping the caret.
+  var searchFocus = false;
   function openSearch(q) {
-    go('/app/search' + (q ? '?q=' + encodeURIComponent(q) : ''));
-    setTimeout(function () {
+    searchFocus = true;
+    // Focus again once the screen has finished loading (go() focuses the page)
+    go('/app/search' + (q ? '?q=' + encodeURIComponent(q) : '')).then(function () {
       var sq = document.getElementById('sq');
       if (sq) { sq.focus(); var n = sq.value.length; try { sq.setSelectionRange(n, n); } catch (e) {} }
-    }, 60);
+    });
   }
 
   // SEARCH — events, clubs and results from the site's own data files
@@ -750,15 +752,17 @@
   function searchScreen(params) {
     setTitle('Search');
     var today = todayISO();
+    // The field appears at once (so typing carries on); results follow the data
+    view.innerHTML = '<div class="searchbar"><a class="iconbtn" href="/app" data-back data-close-search aria-label="Close search">' + icon('back') + '</a>' +
+      '<form class="search search--page" role="search">' + icon('search') + '<label class="sr-only" for="sq">Search events, clubs, results</label>' +
+      '<input id="sq" type="search" placeholder="Search events, clubs, results" value="' + esc(params.get('q') || '') + '" autocomplete="off" enterkeyhint="search"></form></div>' +
+      '<div id="s-out">' + loading() + '</div>';
+    if (searchFocus) { searchFocus = false; var f0 = document.getElementById('sq'); f0.focus(); var n0 = f0.value.length; try { f0.setSelectionRange(n0, n0); } catch (e) {} }
     return Promise.all([loadEvents(), getJSON('/clubs-data.json').catch(function () { return { clubs: [] }; }), loadResults().catch(function () { return []; })]).then(function (all) {
       var EV = all[0].map(function (x) { return { x: x, t: fold([x.e.title, x.e.subtitle, x.club, x.clubLabel, x.e.format, x.e.date, x.cat].join(' ')) }; });
       var CL = (all[1].clubs || []).map(function (c) { return { c: c, t: fold([c.name, c.city, c.summary].join(' ')) }; });
       var RS = all[2].map(function (r) { return { r: r, t: fold([r.t.title, r.t.meta, r.names].join(' ')) }; });
       var expand = params.get('all') || '';
-      view.innerHTML = '<div class="searchbar"><a class="iconbtn" href="/app" data-back data-close-search aria-label="Close search">' + icon('back') + '</a>' +
-        '<form class="search search--page" role="search">' + icon('search') + '<label class="sr-only" for="sq">Search events, clubs, results</label>' +
-        '<input id="sq" type="search" placeholder="Search events, clubs, results" value="' + esc(params.get('q') || '') + '" autocomplete="off" enterkeyhint="search"></form></div>' +
-        '<div id="s-out"></div>';
       var input = document.getElementById('sq');
       function group(key, title, items, row) {
         if (!items.length) return '';
@@ -1769,7 +1773,7 @@
     var depth = (history.state && history.state.depth) || 0;
     if (replace) history.replaceState({ depth: depth }, '', href);
     else history.pushState({ depth: depth + 1, from: cur }, '', href);
-    render().then(function () { view.focus({ preventScroll: true }); });
+    return render().then(function () { view.focus({ preventScroll: true }); });
   }
 
   window.addEventListener('popstate', function () { closeDialog(); restoring = true; render(); });
