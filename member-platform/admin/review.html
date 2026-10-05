@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Roster review · Southwest Bowls admin</title>
+<meta name="color-scheme" content="light dark">
+<script>
+  (function () {
+    var pref = 'system';
+    try { pref = JSON.parse(localStorage.getItem('swd:theme')) || 'system'; } catch (e) {}
+    var dark = pref === 'dark' || (pref !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  })();
+</script>
+<link rel="stylesheet" href="/assets/app/app.css">
+<link rel="stylesheet" href="/admin/review.css">
+</head>
+<body class="admin">
+<a class="skip" href="#view">Skip to content</a>
+<main id="view" class="view view--admin" tabindex="-1">
+  <header class="phead">
+    <div class="phead__text"><h1>Roster review</h1><p class="phead__label" id="batch-label">Admin · loading…</p></div>
+    <span class="logo-plate logo-plate--sm"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="38" height="44"></span>
+  </header>
+  <p class="privacy" role="note"><b>Private and local.</b> This screen runs only on this computer. Nothing here merges records, creates members or accounts, or sends invitations — it records review decisions.</p>
+  <section aria-labelledby="h-sum"><h2 class="sr-only" id="h-sum">Import summary</h2><div class="stats" id="stats"></div></section>
+  <div class="segmented" role="tablist" aria-label="Review queue" id="tabs"></div>
+  <div class="toolbar">
+    <div class="choices" role="radiogroup" aria-label="Show">
+      <button type="button" role="radio" data-status="open" aria-checked="true" tabindex="0">Open</button>
+      <button type="button" role="radio" data-status="" aria-checked="false" tabindex="-1">All</button>
+    </div>
+  </div>
+  <div id="list" aria-live="polite"></div>
+</main>
+<div class="sr-only" id="announce" role="status" aria-live="polite"></div>
+<script src="/admin/review.js" defer></script>
+</body>
+</html>

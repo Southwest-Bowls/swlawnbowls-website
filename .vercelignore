@@ -6,6 +6,8 @@ docs/
 scripts/
 tests/
 .claude/
-# Private member data must never be deployed (next phase: roster staging)
+# Private member data must never be deployed
 private/
 *.roster.*
+# Member platform: local admin tools and database (not part of the public site)
+member-platform/

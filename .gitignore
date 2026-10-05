@@ -26,3 +26,9 @@ logs
 coverage/
 dist/
 .env*
+
+# Member platform: private roster data and the local database never enter Git
+member-platform/.data/
+member-platform/node_modules/
+private/
+*.roster.*
