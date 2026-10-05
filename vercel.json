@@ -483,12 +483,8 @@
       "destination": "/page?id=get-the-app"
     },
     {
-      "source": "/app",
-      "destination": "/app.html"
-    },
-    {
       "source": "/app/:path*",
-      "destination": "/app.html"
+      "destination": "/app"
     }
   ],
   "headers": [
