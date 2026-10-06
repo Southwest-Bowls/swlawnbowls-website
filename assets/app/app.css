@@ -1007,7 +1007,8 @@ html[data-text="xlarge"] .media--compact { flex-direction: column; align-items: 
 .idcard__clubname { font-weight: 700; overflow-wrap: anywhere; }
 .idcard__club { flex: none; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: #fff; border: 2px solid #fff; align-self: flex-start; }
 .idcard__club img { width: 100%; height: 100%; object-fit: cover; }
-.idcard__club--logo img { object-fit: contain; padding: 4px; }
+.idcard__club--logo { width: 68px; height: 68px; border-radius: 14px; }
+.idcard__club--logo img { object-fit: contain; padding: 3px; }
 .idcard__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s4); }
 .idchip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--r-pill); font-size: .75rem; font-weight: 700; background: rgba(255, 255, 255, .14); color: #fff; }
 .idchip--ok .i { color: #6fdc8c; }
@@ -1020,6 +1021,7 @@ html[data-text="xlarge"] .media--compact { flex-direction: column; align-items: 
   .idcard { padding: var(--s3); }
   .idcard__photo { width: 72px; height: 90px; }
   .idcard__club { width: 46px; height: 46px; }
+  .idcard__club--logo { width: 56px; height: 56px; }
   .idcard__name { font-size: 1.1875rem; }
 }
 html[data-text="xlarge"] .idcard__body { flex-wrap: wrap; }
