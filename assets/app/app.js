@@ -1854,17 +1854,66 @@
     return '<li class="mfact"><span class="mfact__label">' + esc(label) + '</span><span class="mfact__value' + (good ? ' mfact__value--ok' : '') + '">' +
       (good ? icon('check', 'i--sm') : '') + esc(value) + '</span></li>';
   }
-  function memberCardHtml(m) {
+  // The digital membership card. The photo is chosen by the member and kept
+  // on this phone only (never uploaded). The club mark is the club's real
+  // logo when clubs-data.json has one ("logo"), otherwise its real green
+  // photo — logos are never redrawn or invented.
+  function memberPhoto(id) { return store('memberPhoto:' + id); }
+  function idCardHtml(m, club) {
+    var today = todayISO();
+    var photo = memberPhoto(m.id);
+    var mark = club && safeUrl(club.logo) ? { src: club.logo, cls: 'idcard__club--logo' }
+      : club && club.image && !club.imageNeedsReview ? { src: club.image, cls: 'idcard__club--photo' } : null;
+    var novice = m.noviceUntil && m.noviceUntil >= today;
+    return '<figure class="idcard" aria-label="Southwest Bowls membership card for ' + esc(m.name) + '">' +
+      '<div class="idcard__top"><span class="idcard__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="64" height="75"></span>' +
+        '<span class="idcard__org"><b>Southwest Bowls</b><span>Division membership</span></span>' +
+        '<span class="idcard__season">' + esc(m.season) + '</span></div>' +
+      '<div class="idcard__body">' +
+        '<button class="idcard__photo" type="button" data-photo aria-label="' + (photo ? 'Change your card photo' : 'Add a photo to your card') + '">' +
+          (photo ? '<img src="' + esc(photo) + '" alt="">' : icon('person') + '<span>Add photo</span>') + '</button>' +
+        '<div class="idcard__who"><p class="idcard__label">Member</p><p class="idcard__name">' + esc(m.name) + '</p>' +
+          '<p class="idcard__label">Home club</p><p class="idcard__clubname">' + esc(m.club ? m.club.name : 'Not on record') + '</p></div>' +
+        (mark ? '<span class="idcard__club ' + mark.cls + '"><img src="' + esc(mark.src) + '" alt="' + esc((m.club && m.club.name) || '') + '" loading="lazy" data-hide-on-error></span>' : '') +
+      '</div>' +
+      '<div class="idcard__chips">' +
+        (m.swDuesPaid ? '<span class="idchip idchip--ok">' + icon('check', 'i--sm') + 'SW dues ' + esc(m.season) + '</span>' : '<span class="idchip">SW dues not on record</span>') +
+        (m.usaDuesPaid ? '<span class="idchip idchip--ok">' + icon('check', 'i--sm') + 'Bowls USA ' + esc(m.season) + '</span>' : '') +
+        (novice ? '<span class="idchip idchip--novice">Novice until ' + esc(fmt(m.noviceUntil, { month: 'short', year: 'numeric' })) + '</span>' : '') +
+      '</div>' +
+      '<p class="idcard__foot">Valid for the ' + esc(m.season) + ' season · swlawnbowls.org</p>' +
+      '</figure>' +
+      '<input type="file" accept="image/*" id="m-photo" hidden>' +
+      '<p class="muted idcard__note">' + (photo ? 'Your photo is kept on this phone only. <button class="linkbtn" type="button" data-photo-remove>Remove photo</button>' : 'Tap the photo square to add your picture. It stays on this phone only.') + '</p>';
+  }
+  // A picked photo is cropped to a portrait and shrunk on the phone before saving
+  function savePhoto(file, id) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onerror = reject;
+      r.onload = function () {
+        var img = new Image();
+        img.onerror = reject;
+        img.onload = function () {
+          // Portrait 4:5 like an ID photo, centred, 320×400
+          var W = 320, H = 400, sw = Math.min(img.width, img.height * W / H), sh = sw * H / W;
+          var c = document.createElement('canvas'); c.width = W; c.height = H;
+          c.getContext('2d').drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, 0, 0, W, H);
+          var data = c.toDataURL('image/jpeg', 0.82);
+          try { localStorage.setItem('swd:memberPhoto:' + id, JSON.stringify(data)); resolve(); } catch (e) { reject(e); }
+        };
+        img.src = r.result;
+      };
+      r.readAsDataURL(file);
+    });
+  }
+  function memberCardHtml(m, club) {
     var today = todayISO();
     var novice = !m.noviceUntil ? 'Start date not on record — ask the Division'
       : m.noviceUntil >= today ? 'Novice until ' + longDate(m.noviceUntil)
       : 'Not a novice (novice period ended ' + longDate(m.noviceUntil) + ')';
-    return '<section class="mcard tint tint--blue" aria-labelledby="h-mname">' +
-        '<p class="mcard__kicker">' + icon('people') + 'Southwest Bowls member · ' + esc(m.season) + '</p>' +
-        '<h2 class="mcard__name" id="h-mname">' + esc(m.name) + '</h2>' +
-        (m.club ? '<a class="mcard__club" href="/app/more/clubs/' + encodeURIComponent(m.club.id) + '">' + icon('pin', 'i--sm') + esc(m.club.name) + '</a>'
-                : '<p class="mcard__club">' + icon('pin', 'i--sm') + 'Home club not on record</p>') +
-      '</section>' +
+    return idCardHtml(m, club) +
+      (m.club ? '<a class="mcard__club" href="/app/more/clubs/' + encodeURIComponent(m.club.id) + '">' + icon('pin', 'i--sm') + esc(m.club.name) + ' club page' + CHEV + '</a>' : '') +
       '<ul class="mfacts">' +
         factRow(m.season + ' Southwest dues', m.swDuesPaid ? 'Paid' : 'Not on record', m.swDuesPaid) +
         factRow(m.season + ' Bowls USA dues', m.usaDuesPaid ? 'Paid' : 'Not on record', m.usaDuesPaid) +
@@ -1973,7 +2022,21 @@
     }
     var foot = '<div class="actions"><button class="btn btn--ghost" type="button" data-signout>Sign out</button></div>';
     function draw(res) {
-      if (res.state === 'linked') { box.innerHTML = memberCardHtml(res.member) + foot; wireChange(); return; }
+      if (res.state === 'linked') {
+        return getJSON('/clubs-data.json').catch(function () { return { clubs: [] }; }).then(function (cd) {
+          var m = res.member, club = m.club && (cd.clubs || []).filter(function (c) { return c.id === m.club.id; })[0];
+          box.innerHTML = memberCardHtml(m, club) + foot; wireChange();
+          box.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.parentNode.hidden = true; }); });
+          var input = box.querySelector('#m-photo');
+          box.querySelector('[data-photo]').addEventListener('click', function () { input.click(); });
+          input.addEventListener('change', function () {
+            if (!input.files[0]) return;
+            savePhoto(input.files[0], m.id).then(function () { draw(res); toast('Photo added to your card'); }, function () { toast('That photo couldn’t be used. Try another.'); });
+          });
+          var rm = box.querySelector('[data-photo-remove]');
+          if (rm) rm.addEventListener('click', function () { try { localStorage.removeItem('swd:memberPhoto:' + m.id); } catch (e) {} draw(res); toast('Photo removed'); });
+        });
+      }
       if (res.state === 'not_open') { box.innerHTML = state('empty', 'Not open yet', 'Member sign-in is being tested and will open soon.') + foot; return; }
       if (res.state === 'not_found') { box.innerHTML = state('empty', 'We couldn’t find your membership', 'This email isn’t on the 2026 roster.') + memberHelpHtml(true) + foot; return; }
       if (res.state === 'pending') { box.innerHTML = state('empty', 'Waiting for the Division', 'You asked to link this sign-in to ' + (res.name || 'a member') + '. Because this email is shared, the Division confirms it first. Your membership shows here once it’s done.') + memberHelpHtml(false) + foot; return; }

@@ -3,6 +3,7 @@
   "clubs": [
     {
       "id": "beverly-hills",
+      "logo": "/photos/clubs/logos/beverly-hills.png",
       "name": "Beverly Hills",
       "city": "Beverly Hills",
       "status": "open",
@@ -17,6 +18,7 @@
     },
     {
       "id": "cambria",
+      "logo": "/photos/clubs/logos/cambria.png",
       "name": "Cambria",
       "city": "Cambria",
       "status": "open",
@@ -43,6 +45,7 @@
     },
     {
       "id": "coronado",
+      "logo": "/photos/pages/coronado90/01-clbc-logo.jpg",
       "name": "Coronado",
       "city": "Coronado",
       "status": "open",
@@ -109,6 +112,7 @@
     },
     {
       "id": "laguna-beach",
+      "logo": "/photos/clubs/logos/laguna-beach.png",
       "name": "Laguna Beach",
       "city": "Laguna Beach",
       "status": "open",
@@ -135,6 +139,7 @@
     },
     {
       "id": "long-beach",
+      "logo": "/photos/clubs/logos/long-beach.png",
       "name": "Long Beach",
       "city": "Long Beach",
       "status": "open",
@@ -161,6 +166,7 @@
     },
     {
       "id": "newport-harbor",
+      "logo": "/photos/clubs/logos/newport-harbor.png",
       "name": "Newport Harbor",
       "city": "Corona del Mar",
       "status": "open",
@@ -174,6 +180,7 @@
     },
     {
       "id": "oaks-north",
+      "logo": "/photos/clubs/logos/oaks-north.png",
       "name": "Oaks North",
       "city": "San Diego",
       "status": "private",
@@ -257,6 +264,7 @@
     },
     {
       "id": "san-diego",
+      "logo": "/photos/clubs/logos/san-diego.png",
       "name": "San Diego",
       "city": "San Diego",
       "status": "open",
@@ -299,6 +307,7 @@
     },
     {
       "id": "santa-barbara",
+      "logo": "/photos/clubs/logos/santa-barbara.png",
       "name": "Santa Barbara",
       "city": "Santa Barbara",
       "status": "open",
@@ -312,6 +321,7 @@
     },
     {
       "id": "santa-monica",
+      "logo": "/photos/clubs/logos/santa-monica.png",
       "name": "Santa Monica",
       "city": "Santa Monica",
       "status": "open",
@@ -338,6 +348,7 @@
     },
     {
       "id": "the-groves",
+      "logo": "/photos/clubs/logos/the-groves.png",
       "name": "The Groves",
       "city": "Irvine",
       "status": "private",
