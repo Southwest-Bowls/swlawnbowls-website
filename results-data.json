@@ -1,6 +1,66 @@
 {
   "tournaments": [
     {
+      "id": "oaks-north-mixed-triples-2026",
+      "title": "2026 Oaks North Mixed Triples",
+      "meta": "October 10 · Oaks North LBC",
+      "navLabel": "Oaks North Mixed Triples",
+      "eventUrl": "/event?id=oaks-north-mixed-triples-2026",
+      "divisions": [
+        {
+          "label": null,
+          "columns": 2,
+          "places": [
+            {
+              "rank": 1,
+              "names": "Phil Salt, Brian Judelson, Joan Robbins",
+              "photo": "/photos/oaks-north-mixed-triples-2026/1th-salt-judelson-robbins.jpg"
+            },
+            {
+              "rank": 2,
+              "names": "Javier Gomez, Angel Gomez, Manya Urane",
+              "photo": "/photos/oaks-north-mixed-triples-2026/2th-gomez-gomez-urane.jpg"
+            },
+            {
+              "rank": 3,
+              "names": "Bill Buchanan, Julie Buchanan, Steve Uribe",
+              "photo": "/photos/oaks-north-mixed-triples-2026/3th-buchanan-buchanan-uribe.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ralph-ecton-triples-2026",
+      "title": "2026 Ralph Ecton Triples",
+      "meta": "October 4 · Oxnard LBC",
+      "navLabel": "Ralph Ecton Triples",
+      "eventUrl": "/event?id=ralph-ecton-triples-2026",
+      "divisions": [
+        {
+          "label": null,
+          "columns": 2,
+          "places": [
+            {
+              "rank": 1,
+              "names": "Lou Cohen, Darrell De Castro, Angel Rocha",
+              "photo": "/photos/ralph-ecton-triples-2026/1th-cohen-decastro-rocha.jpg"
+            },
+            {
+              "rank": 2,
+              "names": "Brent Boone, Angie Irwin, Ron Irwin",
+              "photo": "/photos/ralph-ecton-triples-2026/2th-boone-irwin-irwin.jpg"
+            },
+            {
+              "rank": 3,
+              "names": "Becky Rinaldi, Mark Hreha, Berry Hand",
+              "photo": "/photos/ralph-ecton-triples-2026/3th-rinaldi-hreha-hand.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "maccabee-pairs-2026",
       "title": "2026 Maccabee Pairs",
       "meta": "September 27 · Beverly Hills LBC",
