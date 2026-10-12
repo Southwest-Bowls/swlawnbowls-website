@@ -1,6 +1,33 @@
 {
   "tournaments": [
     {
+      "id": "bill-hiscock-mixed-triples-2026",
+      "title": "2026 Bill Hiscock Mixed Triples",
+      "meta": "October 11 · Coronado LBC",
+      "navLabel": "Bill Hiscock Mixed Triples",
+      "eventUrl": "/event?id=bill-hiscock-mixed-triples-2026",
+      "divisions": [
+        {
+          "label": null,
+          "columns": 2,
+          "places": [
+            {
+              "rank": 1,
+              "names": "Russ Kindorf, Terry Mar, Janice Bell"
+            },
+            {
+              "rank": 2,
+              "names": "Howard Harris, Tony Santos, Nancy Santos"
+            },
+            {
+              "rank": 3,
+              "names": "Angel Gomez, Javier Gomez, Manya Urane"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "oaks-north-mixed-triples-2026",
       "title": "2026 Oaks North Mixed Triples",
       "meta": "October 10 · Oaks North LBC",
