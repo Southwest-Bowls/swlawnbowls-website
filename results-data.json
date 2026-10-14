@@ -101,9 +101,9 @@
           "label": null,
           "columns": 2,
           "places": [
-            { "rank": 1, "names": "Russ Kindorf & Bill Brault" },
-            { "rank": 2, "names": "Giulia Gallo & Mary Spease" },
-            { "rank": 3, "names": "Dean Warmington & Shane Hansanuwat" }
+            { "rank": 1, "names": "Russ Kindorf & Bill Brault", "photo": "/photos/maccabee-pairs-2026/1th-kindorf-brault.jpg" },
+            { "rank": 2, "names": "Giulia Gallo & Mary Spease", "photo": "/photos/maccabee-pairs-2026/2th-gallo-spease.jpg" },
+            { "rank": 3, "names": "Dean Warmington & Shane Hansanuwat", "photo": "/photos/maccabee-pairs-2026/3th-warmington-hansanuwat.jpg" }
           ]
         }
       ]
