@@ -2820,6 +2820,77 @@
       }
     },
     {
+      "id": "santa-ana-mixed-triples-2026",
+      "title": "2026 Santiago Park Mixed Triples",
+      "subtitle": "Santa Ana Lawn Bowling Club · Mixed Triples",
+      "date": "Saturday, November 7, 2026",
+      "time": "8:00 AM check-in · 9:00 AM start",
+      "schedule": [
+        "8:00 AM — Registration",
+        "8:00–8:30 AM — Practice (opposite direction of the playing rinks)",
+        "8:35 AM — Announcements",
+        "8:45 AM — Trial ends",
+        "9:00 AM sharp — Games start",
+        "Two 10-end games, lunch, then two 10-end games"
+      ],
+      "format": "triples",
+      "formatDetails": "Mixed Triples · 3 bowls · 4 games of 10 ends",
+      "club": {
+        "name": "Santa Ana Lawn Bowling Club",
+        "address": "Santiago Park, 510 Memory Lane, Santa Ana, CA 92706",
+        "phone": "",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=510+Memory+Lane+Santa+Ana+CA+92706"
+      },
+      "fee": "$45 per team",
+      "deadline": "Entries must be received by Friday, October 30, 2026",
+      "rules": [
+        "Teams must be mixed",
+        "16 teams maximum · players form their own teams",
+        "Four 10-end, 3-bowl triples games",
+        "Maximum 10 plus points per game",
+        "Winner determined by most wins; ties broken by head-to-head result, then plus/minus points (maximum ten per game), then fewest opponent points allowed, then a one-end roll-off",
+        "Trial ends will be played in the first games only",
+        "Practice allowed from 8:00 to 8:30 AM, in the opposite direction of the playing rinks",
+        "Bowls must be delivered in a rolling manner, released no more than 6–8 inches from the surface — no dropping or lobbing",
+        "The Tournament Director may add time limits or rules to speed up a slow game",
+        "Prizes based on the number of entries",
+        "Dress code: matching tops",
+        "Hospitality: salads, snacks, desserts and water provided — bring your own lunch and drinks",
+        "Reserve your spot by email to SALBCsantiagopark@gmail.com — name all players and include the skip’s name, email and phone number",
+        "Entry fee $45 per team — make checks payable to “Santa Ana Lawn Bowling Club” and mail the fee with the entry form to: Frank Stevens, 12362 Ranchwood Road, Santa Ana, CA 92705",
+        "The entry fee and form must be received to confirm your emailed reservation; confirmation of receipt will be emailed from SALBCsantiagopark@gmail.com"
+      ],
+      "noviceDefinition": "",
+      "livestreamNotice": "",
+      "contact": {
+        "name": "Frank Stevens",
+        "phone": "",
+        "email": "SALBCsantiagopark@gmail.com",
+        "mailTo": "Frank Stevens, 12362 Ranchwood Road, Santa Ana, CA 92705 (checks payable to “Santa Ana Lawn Bowling Club”)"
+      },
+      "flyer": {
+        "externalUrl": "",
+        "localPath": "/pdfs/santa-ana-mixed-triples-2026/flyer.pdf",
+        "type": "pdf"
+      },
+      "cops": {
+        "externalUrl": "",
+        "localPath": ""
+      },
+      "paypal": {
+        "system": "none"
+      },
+      "entries": {
+        "pubUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZChmJ8STi5IZT-x9OGD3n2btgIk_AEt7Kj-kIln0EtiNmuMlaEXCFCHesRF0zYm04jqPlu89_1wHm/pubhtml?widget=true&headers=false",
+        "height": 400
+      },
+      "liveScoring": {
+        "pubUrl": "",
+        "height": 400,
+        "width": "100%"
+      }
+    },
+    {
       "id": "paypal-test-coronado",
       "title": "PayPal Test — Coronado Account",
       "subtitle": "Internal test page · REST client-id from Apps & Credentials · delete after use",
