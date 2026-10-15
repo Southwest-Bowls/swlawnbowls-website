@@ -1855,7 +1855,7 @@
       if (safeUrl(c.website) && maps) facts.push(menuRow(c.website, 'globe', 'Website'));
       view.innerHTML = backLink('/app/more/clubs', 'Clubs') +
         '<div class="chero">' + (photo ? '<img class="chero__img" src="' + esc(photo) + '" alt="' + esc(c.name) + ' lawn bowling club" loading="lazy" data-hide-on-error>' : '<div class="chero__img chero__img--none">' + icon('pin') + '</div>') +
-        '<span class="chero__tag">' + esc(c.status === 'private' ? 'Private club' : 'Open to visitors') + '</span></div>' +
+        (c.status === 'private' ? '<span class="chero__tag">Private club</span>' : '') + '</div>' +
         '<h1 class="detail-title chero__title">' + esc(c.name) + '</h1>' +
         '<p class="chero__where">' + icon('pin', 'i--sm') + esc(c.city) + '</p>' +
         (c.summary ? '<p class="club__summary">' + esc(c.summary) + '</p>' : '') +
