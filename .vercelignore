@@ -12,3 +12,7 @@ private/
 # Member platform: local admin tools and database (not part of the public site)
 member-platform/
 /supabase/
+
+# Entry and payment backend: practice mode only, not deployed until it is wired to the app and reviewed for launch
+# (also keeps the deployment under the 12-function limit of the Hobby plan)
+/api/entries/
