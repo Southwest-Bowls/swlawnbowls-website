@@ -2218,3 +2218,8 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
   .hbar__logo { width: 40px; height: 40px; margin-right: 0; } .hbar__logo img { width: 24px; }
   .hbar .circbtn { width: 40px; height: 40px; }
 }
+/* Greeting grows to as many lines as it needs; nothing overlaps the row below */
+.hbar__hello { display: block; -webkit-line-clamp: unset; -webkit-box-orient: unset; overflow: visible; overflow-wrap: anywhere; }
+.hbar { align-items: flex-start; }
+.hbar__text { padding-top: 2px; }
+.hbar__club { margin-top: 0; }
