@@ -311,7 +311,7 @@
   }
   function decorateEvent(e) {
     var club = (e.club && e.club.name) || '';
-    var x = { e: e, id: e.id, dates: parseDates(e.date), cat: categoryOf(e.title + ' ' + (e.subtitle || '')),
+    var x = { e: e, id: e.id, dates: parseDates(e.date), cat: e.category || categoryOf(e.title + ' ' + (e.subtitle || '')),
       club: club, clubId: club ? clubKey(club) : '', clubLabel: club ? clubLabel(club) : '', short: shortTitle(e.title) };
     x.deadline = deadlineDate(x);
     x.clubIds = Logic.clubIdsForVenue(club, CLUB_ALIASES);
@@ -1090,8 +1090,10 @@
       // Photo header: the host club's own photo, when we have one
       var hostClub = (all[2].clubs || []).filter(function (c) { return (x.clubIds || []).indexOf(c.id) >= 0; })[0];
       var hostPhoto = hostClub && hostClub.image && /^\/photos\//.test(hostClub.image) && !hostClub.imageNeedsReview ? hostClub.image : '';
-      var entryOpen = phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled';
-      var primaryBar = entryOpen ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">Enter this tournament</a>'
+      var method = entryMethod(e);
+      var entryOpen = phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && method !== 'none';
+      var primaryBar = entryOpen ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">' + (method === 'online' ? 'Enter online' : method === 'paypal' ? 'Enter and pay' : 'How to enter') + '</a>'
+        : phase !== 'past' && method === 'none' && flyer ? '<a class="btn btn--wide" href="' + esc(flyer) + '" target="_blank" rel="noopener">See the flyer</a>'
         : phase === 'past' && result ? '<a class="btn btn--wide" href="?tab=results" data-goto-tab="results">See the results</a>'
         : phase !== 'past' && st && st.kind === 'closed' ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">Entry details</a>' : '';
       var onNow = isSaved(x.id);
@@ -1200,23 +1202,49 @@
   }
   // The real entry process, as published. Email or postal entry stays
   // email or postal entry — it is never turned into an online sign-up.
-  function entryPanel(x, flyer, cops) {
-    var e = x.e, how = [];
-    if (safeUrl(e.registrationUrl)) {
-      how.push('<p>Enter online using the official form.</p><a class="btn btn--split btn--block" href="' + esc(e.registrationUrl) + '" target="_blank" rel="noopener">' + esc(e.registrationLabel || 'Register') + icon('ext') + '</a>');
-    }
-    if (e.registrationInstructions) how.push('<p>' + esc(e.registrationInstructions) + '</p>');
-    if (e.paypal && e.paypal.system && e.paypal.system !== 'none') {
-      how.push('<p>The entry fee can be paid online on the event’s page on the website.</p>' +
-        '<a class="btn btn--ghost btn--block" href="/event?id=' + encodeURIComponent(x.id) + '#pay" target="_blank" rel="noopener">' + icon('ext') + 'Pay entry fee on the website</a>');
-    }
+  // How an event is entered, decided once from the data: online form, organizer's own instructions,
+  // PayPal on the Division website, contact (email, phone or a mailing address), or nothing published.
+  function entryMethod(e) {
     var c = e.contact || {};
-    if (c.mailTo && !e.registrationInstructions) how.push('<p><b>Mail entries to:</b> ' + esc(c.mailTo) + '</p>');
-    if (e.deadline) how.push('<p><b>Deadline:</b> ' + esc(String(e.deadline).replace(/^(entry\s+)?deadline:?\s*/i, '')) + '</p>');
-    if (e.fee) how.push('<p><b>Entry fee:</b> ' + esc(e.fee) + '</p>');
-    if (how.length <= 2 && !safeUrl(e.registrationUrl) && !e.registrationInstructions && (c.name || c.email || c.phone)) how.push('<p>Contact the tournament organizer below to enter.</p>');
-    if (!how.length) how.push('<p>Entry details haven’t been published yet. Check back, or see the flyer if there is one.</p>');
-    var h = '<section class="block" style="margin-top:8px"><h2>How to enter</h2>' + how.join('') + '</section>';
+    if (safeUrl(e.registrationUrl)) return 'online';
+    if (e.registrationInstructions) return 'instructions';
+    if (e.paypal && e.paypal.system && e.paypal.system !== 'none') return 'paypal';
+    if (c.email || c.phone || c.mailTo) return 'contact';
+    return 'none';
+  }
+  function entryPanel(x, flyer, cops) {
+    var e = x.e, c = e.contact || {}, method = entryMethod(e), today = todayISO(), st = entryStatus(x, today);
+    var deadline = x.deadline ? fmt(x.deadline, { weekday: 'long', month: 'long', day: 'numeric' }) : (e.deadline ? String(e.deadline).replace(/^(entry\s+)?deadline:?\s*/i, '') : '');
+    var h = '';
+    if (st && st.kind === 'cancelled') return '<div class="note" role="note"><b>This event is cancelled</b>' + esc(e.alert || '') + '</div>' + docsBlock(e, flyer, cops);
+    if (st && st.kind === 'closed') h += '<div class="note" role="note"><b>Entries are closed</b>' + (c.email || c.phone ? 'Contact the organizer below to ask about a late entry.' : 'Check the flyer for details.') + '</div>';
+    // Summary strip
+    var facts = [];
+    if (e.fee) facts.push(['Entry fee', e.fee]);
+    if (deadline) facts.push(['Deadline', deadline]);
+    if (st) facts.push(['Status', st.label]);
+    if (facts.length) h += '<dl class="facts facts--entry">' + facts.map(function (f) { return '<div class="wide"><dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd></div>'; }).join('') + '</dl>';
+    // Steps
+    var steps = [];
+    function step(title, body) { steps.push('<li class="step"><span class="step__n" aria-hidden="true"></span><div class="step__body"><b>' + esc(title) + '</b>' + body + '</div></li>'); }
+    var open = !(st && st.kind === 'closed');
+    if (method === 'none') {
+      h += '<section class="block" style="margin-top:8px"><h2>How to enter</h2><p>Entry details haven’t been published yet. Check back, or see the flyer if there is one.</p></section>';
+    } else {
+      step('Check the details', '<p>' + (flyer ? 'Read the flyer and conditions of play below, then ' : '') + 'make sure your team and the dates suit you.</p>');
+      if (method === 'online') step('Fill in the official entry form', '<p>The organizer collects entries on their own form.</p><a class="btn btn--wide" href="' + esc(e.registrationUrl) + '" target="_blank" rel="noopener">' + esc(e.registrationLabel || 'Open the entry form') + icon('ext') + '</a>');
+      if (method === 'instructions') step('Follow the organizer’s instructions', '<p>' + esc(e.registrationInstructions) + '</p>');
+      if (method === 'paypal') step('Enter and pay on the Division website', '<p>Name your team and pay the entry fee by PayPal on the event’s page. It opens in your browser.</p><a class="btn btn--wide" href="/event?id=' + encodeURIComponent(x.id) + '" target="_blank" rel="noopener">' + icon('ext') + 'Enter and pay</a>');
+      if (method === 'contact' || (method === 'paypal' && c.mailTo)) {
+        var ways = [];
+        if (c.email) ways.push('<a class="btn btn--ghost" href="mailto:' + esc(c.email) + '">' + icon('mail') + 'Email ' + esc(c.name || 'the organizer') + '</a>');
+        if (c.phone) ways.push('<a class="btn btn--ghost" href="' + esc(tel(c.phone)) + '">' + icon('phone') + 'Call ' + esc(c.phone) + '</a>');
+        if (method === 'contact') step('Send your entry', '<p>Tell the organizer the names of everyone on your team' + (e.format ? ' (' + esc(e.format) + ')' : '') + '.</p>' + (ways.length ? '<div class="actions">' + ways.join('') + '</div>' : ''));
+        if (c.mailTo) step(method === 'paypal' ? 'Or mail your entry' : 'Mail your payment', '<p>' + esc(c.mailTo) + '</p>');
+      }
+      if (e.livestreamNotice) step('Good to know', '<p>' + esc(e.livestreamNotice) + '</p>');
+      h += '<section class="block" style="margin-top:8px"><h2>How to enter</h2><ol class="steps">' + steps.join('') + '</ol></section>';
+    }
     h += docsBlock(e, flyer, cops);
     if (c.name || c.email || c.phone) {
       h += '<section class="block"><h2>Contact</h2><ul class="rows">' +
@@ -2286,7 +2314,7 @@
       var mine = myResults(list, prof0.name), el = view.querySelector('#my-res'); if (!el) return;
       var gold = mine.filter(function (m) { return +m.rank === 1; }).length, pod = mine.filter(function (m) { return +m.rank >= 1 && +m.rank <= 3; }).length;
       el.innerHTML = '<section class="section mysec" aria-labelledby="h-myres"><div class="section__head"><h2 class="section__title" id="h-myres">My results</h2></div>' +
-        (mine.length ? '<div class="hub__stats mystats">' + '<span class="hub__stat"><b>' + mine.length + '</b><span>Events</span></span><span class="hub__stat"><b>' + pod + '</b><span>Podiums</span></span><span class="hub__stat"><b>' + gold + '</b><span>Wins</span></span></div>' +
+        (mine.length ? '<div class="hub__stats mystats">' + '<span class="hub__stat"><b>' + new Set(mine.map(function (m) { return m.r.id; })).size + '</b><span>Tournaments</span></span><span class="hub__stat"><b>' + pod + '</b><span>Podiums</span></span><span class="hub__stat"><b>' + gold + '</b><span>Wins</span></span></div>' +
           '<ul class="list list--plain">' + mine.slice(0, 5).map(function (m) {
             return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(m.r.id) + '">' + resultBlock(m.r) + '<span class="rcard__body"><span class="rcard__title">' + esc(shortTitle(m.r.t.title)) + '</span>' +
               '<span class="rcard__meta">' + esc([placeWord(m.rank) || m.rankLabel, m.div, m.partners.length ? 'with ' + m.partners.join(', ') : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>';

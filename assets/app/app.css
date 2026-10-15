@@ -1282,3 +1282,14 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 
 .mystats { margin: var(--s3) 0 var(--s4); padding: var(--s3) 0; border-top: 0; border-bottom: 1px solid var(--line); }
 #my-res .footnote { margin-bottom: var(--s4); }
+
+/* Entry steps */
+.steps { list-style: none; counter-reset: st; margin: 0; padding: 0; display: grid; gap: var(--s4); }
+.step { display: grid; grid-template-columns: 36px 1fr; gap: var(--s3); counter-increment: st; }
+.step__n { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--tint-blue); color: var(--heading); font-weight: 800; }
+.step__n::before { content: counter(st); }
+.step__body b { display: block; margin: 6px 0 4px; font-size: 1.05rem; color: var(--heading); }
+.step__body p { margin: 0 0 var(--s2); }
+.step__body .actions { margin-top: var(--s2); }
+.facts--entry { margin: var(--s2) 0 var(--s3); }
+.block .steps { padding-left: 0; }

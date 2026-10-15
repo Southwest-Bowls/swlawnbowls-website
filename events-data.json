@@ -40,12 +40,12 @@
       },
       "flyer": {
         "externalUrl": "https://static1.squarespace.com/static/5e427c8312285d4ecccc6853/t/69b39115f49bac709afa4420/1773375765540/2026+Vet+Novice+Mix+Match+Triples+%28SA%29.pdf",
-        "localPath": "",
+        "localPath": "/pdfs/vet-novice-mix-match-triples-2026/flyer.pdf",
         "type": "pdf"
       },
       "cops": {
         "externalUrl": "https://static1.squarespace.com/static/5e427c8312285d4ecccc6853/t/69b3913a20ca0327cc59b6ba/1773375802998/2026+Vet-Novice+Mix+Match+Triples+C+of+P.pdf",
-        "localPath": ""
+        "localPath": "/pdfs/vet-novice-mix-match-triples-2026/conditions-of-play.pdf"
       },
       "paypal": {
         "system": "modern",
@@ -106,7 +106,7 @@
       },
       "flyer": {
         "externalUrl": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/4230b2cd-09d3-4412-8b21-062167dd4e68/2026+SWD+Women%27s+Novice+Singles+-+Google+Docs.png?format=2500w",
-        "localPath": "",
+        "localPath": "/pdfs/womens-novice-singles-2026/flyer.jpg",
         "type": "image"
       },
       "cops": {
@@ -372,7 +372,7 @@
       "format": "triples",
       "formatDetails": "2-Bowl Mixed Triples",
       "club": {
-        "name": "",
+        "name": "Hermosa Beach Lawn Bowling Club",
         "address": "",
         "mapUrl": ""
       },
@@ -426,7 +426,7 @@
       "contact": {},
       "flyer": {
         "externalUrl": "https://images.squarespace-cdn.com/content/v1/5e427c8312285d4ecccc6853/f199f64c-e3e3-4279-95e7-05cfa1f5f644/Truvic+seniors+flyer+2026.png",
-        "localPath": "",
+        "localPath": "/pdfs/truvic-seniors-3-bowls-pairs-2026/flyer.png",
         "type": "image"
       },
       "cops": {
@@ -2044,7 +2044,8 @@
         "pubUrl": "",
         "height": 400,
         "width": "100%"
-      }
+      },
+      "category": "Mixed"
     },
     {
       "id": "pat-gonzales-mixed-aussie-pairs-2026",
@@ -2475,7 +2476,8 @@
         "pubUrl": "",
         "height": 400,
         "width": "100%"
-      }
+      },
+      "category": "Open"
     },
     {
       "id": "newport-911-mixed-rinks-2026",
