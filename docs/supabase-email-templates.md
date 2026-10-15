@@ -52,3 +52,19 @@ Notes
 - The logo loads from the live site, so it shows once the app is published.
 - Check it by sending yourself a code and opening the email on your phone and on a computer. Some mail apps hide images until you allow them; the code and button still work.
 - Sender name and address come from Supabase's email settings. The built-in sender is limited in volume and looks generic. For real use, set up your own sender (SMTP, for example Resend or Zoho) under Authentication, SMTP settings, with a "from" name of "Southwest Bowls".
+
+## Dashboard links (project `azbluidsfrjtoeeesqwa`, account webmaster@swlawnbowls.org)
+
+- Templates (paste the HTML above into **Magic Link** and **Confirm signup**): https://supabase.com/dashboard/project/azbluidsfrjtoeeesqwa/auth/templates
+- Users (look up a person who got no code): https://supabase.com/dashboard/project/azbluidsfrjtoeeesqwa/auth/users
+- URL Configuration (Site URL and redirect URLs): https://supabase.com/dashboard/project/azbluidsfrjtoeeesqwa/auth/url-configuration
+- SMTP settings (custom sender, needed before launch): https://supabase.com/dashboard/project/azbluidsfrjtoeeesqwa/auth/smtp
+- Rate limits: https://supabase.com/dashboard/project/azbluidsfrjtoeeesqwa/auth/rate-limits
+- Table Editor (roster): https://supabase.com/dashboard/project/azbluidsfrjtoeeesqwa/editor
+
+## Why someone may get no code
+
+1. The template was never pasted, so the email has a link but no 6-digit code.
+2. Sign-ups are closed (`SIGNUP_OPEN = false` in `assets/app/app.js`): an email that is not already a user gets nothing, by design (the app never reveals who is a member).
+3. Custom SMTP is off, so Supabase's built-in sender is used. It is heavily rate-limited and often lands in spam. Set up a transactional sender on swlawnbowls.org (SPF and DKIM records) before launch.
+4. Check spam, and look the address up under Authentication, Users.
