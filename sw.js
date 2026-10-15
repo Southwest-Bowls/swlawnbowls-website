@@ -15,7 +15,8 @@
 
    To force every phone to drop its saved copies, bump VERSION.
    ============================================================ */
-const VERSION = 'swd-v52';
+const VERSION = 'swd-v53';
+const NETWORK_TIMEOUT_MS = 4000;
 const PAGES = VERSION + '-pages';
 const MEDIA = VERSION + '-media';
 const MAX_MEDIA = 150;            // photos are big; keep the newest 150
@@ -30,12 +31,19 @@ const PRECACHE = [
   '/assets/app/fonts/PlusJakartaSans-var.woff2',
   '/assets/app/art/saved-empty.png',
   '/assets/app/swd-logo.png',
+];
+
+// Icons are served cache-first from MEDIA, so they are precached there.
+const PRECACHE_MEDIA = [
   '/assets/icons/icon-192.png',
   '/assets/icons/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(PAGES).then((c) => c.addAll(PRECACHE)));
+  event.waitUntil(Promise.all([
+    caches.open(PAGES).then((c) => c.addAll(PRECACHE)),
+    caches.open(MEDIA).then((c) => c.addAll(PRECACHE_MEDIA)),
+  ]));
   self.skipWaiting();
 });
 
@@ -62,7 +70,15 @@ async function trim(cacheName, max) {
 async function networkFirst(request) {
   const cache = await caches.open(PAGES);
   try {
-    const response = await fetch(request);
+    // On a weak signal fetch can stall for ages: after 4s, use the saved copy.
+    const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), NETWORK_TIMEOUT_MS) : 0;
+    let response;
+    try {
+      response = await fetch(request, ctrl ? { signal: ctrl.signal } : undefined);
+    } finally {
+      clearTimeout(timer);
+    }
     if (response.ok) cache.put(request, response.clone());
     return response;
   } catch (err) {

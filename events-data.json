@@ -20,7 +20,7 @@
         "mapUrl": "https://www.google.com/maps/search/?api=1&query=405+S+Santa+Anita+Ave+Arcadia+CA+91007"
       },
       "fee": "$45/team",
-      "deadline": "Entry deadline: Friday, April 11, 2026 (no refunds after)",
+      "deadline": "Entry deadline: Saturday, April 11, 2026 (no refunds after)",
       "rules": [
         "Teams to consist of 3 players, including at least 1 woman and 1 novice",
         "All players must be Bowls USA members",
@@ -751,7 +751,7 @@
         "8:45 AM — Announcements and trial ends"
       ],
       "format": "triples",
-      "formatDetails": "Mix/Match Vet Novice Triples · Skip / Vice / Lead · 3 bowls · three 12-end games",
+      "formatDetails": "Mix/Match · Skip / Vice / Lead · 3 bowls · three 12-end games",
       "club": {
         "name": "Long Beach Lawn Bowling Club",
         "address": "1109 Federation Dr, Long Beach, CA 90804",
@@ -1008,7 +1008,7 @@
         "8:45 AM — Announcements",
         "9:00 AM — Start (sharp)"
       ],
-      "format": "",
+      "format": "triples",
       "formatDetails": "Triples · 3 bowls · four 10-end games",
       "club": {
         "name": "Laguna Woods Lawn Bowling Club",
@@ -1768,8 +1768,6 @@
       "date": "Sat-Sun March 14-15, 2026",
       "time": "",
       "schedule": [
-        "8:30 AM — ",
-        "8:45 AM — ",
         "9:00 AM — Sharp"
       ],
       "format": "fours",
@@ -1782,9 +1780,7 @@
       "fee": "$120",
       "deadline": "Sunday March 8, 2026, 8PM",
       "rules": [
-        "Team Southwest Point Criteria Event",
-        "$120.00",
-        "SW Division Bowls USA"
+        "Team Southwest Point Criteria Event"
       ],
       "noviceDefinition": "",
       "livestreamNotice": "There may be livestreaming at this event. By entering, you are consenting to be livestreamed.",
@@ -1827,8 +1823,6 @@
       "date": "Saturday March 28, 2026",
       "time": "",
       "schedule": [
-        "8:30 AM — ",
-        "8:45 AM — ",
         "9:00 AM — Sharp"
       ],
       "format": "pairs",
@@ -1841,8 +1835,7 @@
       "fee": "$60",
       "deadline": "Saturday March 21, 2026",
       "rules": [
-        "A Green $60       B Green $60",
-        "SW Division Bowls USA"
+        "A Green: $60 · B Green: $60"
       ],
       "noviceDefinition": "",
       "livestreamNotice": "There may be livestreaming at this event. By entering, you are consenting to be livestreamed.",
@@ -1885,12 +1878,10 @@
       "date": "Saturday April 11 – Sunday April 12, 2026",
       "time": "",
       "schedule": [
-        "8:00 AM — ",
-        "8:30 AM — ",
         "9:00 AM — Sharp (Trial ends at 8:45 AM)"
       ],
       "format": "singles",
-      "formatDetails": "1 18 point games until the finals; 21 points for 1st & 2nd in both the Murray and Allison flights",
+      "formatDetails": "Games to 18 points through to the finals · Finals to 21 points (Murray and Allison flights)",
       "club": {
         "name": "Riverside LBC",
         "address": "Fairmount Park, 4020 Bowling Green Drive, Riverside, CA 92501",
@@ -1901,8 +1892,7 @@
       "rules": [
         "Team Southwest Point Criteria Event",
         "$30.00 per person per event",
-        "Must belong to Bowls USA or WB Member National Authority",
-        "SW Division Bowls USA"
+        "Must belong to Bowls USA or WB Member National Authority"
       ],
       "noviceDefinition": "",
       "livestreamNotice": "There may be livestreaming at this event. By entering, you are consenting to be livestreamed.",
@@ -1945,8 +1935,6 @@
       "date": "Saturday April 25, 2026 – Thursday April 30, 2026",
       "time": "",
       "schedule": [
-        "8:00 AM — ",
-        "8:30 AM — ",
         "9:00 AM — Sharp (Trial ends at 8:45 AM)"
       ],
       "format": "fours",
@@ -1960,9 +1948,7 @@
       "deadline": "Friday April 17, 2026, 9PM",
       "rules": [
         "Team Southwest Point Criteria Event",
-        "teams) (32 Return)",
-        "$30.00 per person per event",
-        "SW Division Bowls USA"
+        "$30.00 per person per event"
       ],
       "noviceDefinition": "",
       "livestreamNotice": "There may be livestreaming at this event. By entering, you are consenting to be livestreamed.",
