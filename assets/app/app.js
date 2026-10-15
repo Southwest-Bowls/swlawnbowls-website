@@ -109,6 +109,8 @@
     star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" />',
     medal: '<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15" /> <path d="M11 12 5.12 2.2" /> <path d="m13 12 5.88-9.8" /> <path d="M8 7h8" /> <circle cx="12" cy="17" r="5" /> <path d="M12 18v-2h-.5" />',
     archive: '<rect width="20" height="5" x="2" y="3" rx="1" /> <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /> <path d="M10 12h4" />',
+    sq: '<rect x="5" y="5" width="14" height="14" rx="4"/>',
+    rows: '<path d="M4 7h16M4 12h16M4 17h16"/>',
     home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />',
     more: '<circle cx="12" cy="12" r="1" /> <circle cx="19" cy="12" r="1" /> <circle cx="5" cy="12" r="1" />',
   };
@@ -910,6 +912,11 @@
     });
   }
 
+  function upHtml(list, mode, d, today) {
+    return mode === 'list'
+      ? '<ul class="list list--cards">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>'
+      : '<ul class="vcards">' + list.map(function (x) { return '<li>' + photoCard(x, d.clubs, today, { big: true }) + '</li>'; }).join('') + '</ul>';
+  }
   function drawHome(d) {
     var today = d.today;
     var live = d.events.filter(function (x) { var p = eventPhase(x, today); return p === 'upcoming' || p === 'now'; });
@@ -925,9 +932,13 @@
     var html = (hbgEv ? '<div class="hbg" aria-hidden="true" style="--ph:url(\'' + esc(hbgEv) + '\')"></div>' : '') + '<header class="hbar"><span class="hbar__logo" aria-hidden="true"><img src="/assets/app/swd-logo.png" alt="" width="30" height="35"></span><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'short' }) + ', ' + fmt(today, { month: 'short' })) + ' <b class="rollnum" data-roll="' + (+today.slice(8)) + '" data-roll-key="home-day-' + today + '">' + (+today.slice(8)) + '</b></span>' +
       '<h1 class="hbar__hello">' + (function () { var h = new Date().getHours(); return h < 5 ? 'Hello' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; })() + (first ? ', ' + esc(first) : '') + '</h1>' +
 '</div>' +
-      '<a class="circbtn" id="hq" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
       '<a class="circbtn" href="/app/more/settings" aria-label="App settings">' + icon('gear') + '</a></header>' +
+      '<a class="hsearch" id="hq" href="/app/search" aria-label="Search tournaments, clubs or players">' + icon('search') + '<span>Search tournaments, clubs, players</span></a>' +
+      '<div class="hchips" role="group" aria-label="Quick filters">' +
+        '<a class="hchip" href="/app/search?s=open">' + icon('hourglass', 'i--sm') + 'Entries open</a><a class="hchip" href="/app/search?s=weekend">' + icon('cal', 'i--sm') + 'This weekend</a>' +
+        '<a class="hchip" href="/app/events?cat=' + encodeURIComponent("Women's") + '"><i class="chip__dot cat--w" aria-hidden="true"></i>Women’s</a><a class="hchip" href="/app/events?cat=' + encodeURIComponent("Men's") + '"><i class="chip__dot cat--m" aria-hidden="true"></i>Men’s</a>' +
+        '<a class="hchip" href="/app/events?cat=Mixed"><i class="chip__dot cat--x" aria-hidden="true"></i>Mixed</a></div>' +
       (function () { var fol = followed(), fe = live.filter(function (x) { return (x.clubIds || []).some(function (id) { return fol.indexOf(id) >= 0; }); })[0];
         return fe ? '<a class="hbar__club" href="/app/events/' + encodeURIComponent(fe.id) + '">' + icon('star', 'i--sm') + '<span>' + esc(fe.clubLabel) + ' hosts ' + esc(fe.short) + ' · ' + esc(dateRangeLabel(fe.dates, true)) + '</span></a>' : ''; })();
 
@@ -994,9 +1005,11 @@
     var champFirst = wantsTopic('results') && !wantsTopic('tournaments');
     if (champFirst) html += '<div id="home-champ"></div>';
     if (more.length) {
-      html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head"><h2 class="section__title" id="h-up">Coming up</h2>' +
-        '<a class="section__more" href="/app/events">See all' + icon('chev', 'i--sm') + '</a></div><ul class="hscroll">' +
-        more.map(function (x) { return '<li>' + photoCard(x, d.clubs, today) + '</li>'; }).join('') + '</ul></section>';
+      var hview = store('homeView') === 'list' ? 'list' : 'cards';
+      var totalMore = live.filter(function (x) { return !shownIds[x.id]; }).length;
+      html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head section__head--count"><div class="hcount"><h2 class="section__title" id="h-up">Coming up</h2><span class="hcount__n">' + totalMore + ' tournament' + (totalMore === 1 ? '' : 's') + '</span></div>' +
+        '<div class="vtoggle" role="group" aria-label="Show as"><button type="button" data-hview="cards" aria-pressed="' + (hview === 'cards') + '" aria-label="Cards">' + icon('sq') + '</button><button type="button" data-hview="list" aria-pressed="' + (hview === 'list') + '" aria-label="List">' + icon('rows') + '</button></div></div>' +
+        '<div id="home-up">' + upHtml(more, hview, d, today) + '</div><a class="btn btn--ghost btn--wide hmore" href="/app/events">See all tournaments' + icon('chev', 'i--sm') + '</a></section>';
     }
 
     if (!champFirst) html += '<div id="home-champ"></div>';
@@ -1005,6 +1018,14 @@
 
     view.innerHTML = html;
     var hv = view;
+    hv.querySelectorAll('[data-hview]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var mode = b.getAttribute('data-hview'), box = hv.querySelector('#home-up'); if (!box) return;
+        store('homeView', mode); haptic();
+        hv.querySelectorAll('[data-hview]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+        box.innerHTML = upHtml(more, mode, d, today); blurUp(box);
+      });
+    });
     view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) {
       img.addEventListener('error', function () { img.hidden = true; });
     });
@@ -1048,7 +1069,7 @@
       var RS = all[2].map(function (r) { return { r: r, t: fold([r.t.title, r.t.meta, r.names].join(' ')) }; });
       var expand = params.get('all') || '';
       var input = document.getElementById('sq');
-      var clubsAll = all[1].clubs || [], special = '';
+      var clubsAll = all[1].clubs || [], special = ['weekend', 'open'].indexOf(params.get('s')) >= 0 ? params.get('s') : '';
       function clubMini(c) {
         var id = c.id || slugify(c.name), ph = clubPhotoOf(c);
         return '<li><a class="smini" href="/app/more/clubs/' + encodeURIComponent(id) + '"><span class="smini__ph"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '></span><span class="smini__t"><b>' + esc(c.name) + '</b><small>' + esc(c.city) + '</small></span><span class="smini__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a></li>';

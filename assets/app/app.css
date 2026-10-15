@@ -2298,3 +2298,16 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .actionbar--club .btn--follow[aria-pressed="true"] .i { fill: #f2a43a; stroke: #f2a43a; }
 .actionbar--club .btn--follow { flex: 0 0 52px !important; width: 52px !important; max-width: 52px !important; }
 .actionbar--club .btn--wide { flex: 1 1 auto !important; min-width: 0; width: auto !important; }
+
+/* Home: search bar, quick filters, count + card/list toggle */
+.hsearch { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 20px; margin: 0 0 12px; border-radius: 999px; text-decoration: none; color: var(--text-2); background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 1px 2px rgba(35,17,32,.08), 0 6px 16px rgba(35,17,32,.05); border: 1px solid var(--line); }
+.hsearch .i { flex: none; } .hsearch span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hchips { display: flex; gap: 8px; overflow-x: auto; margin: 0 calc(-1 * var(--gutter)) var(--s3); padding: 2px var(--gutter) 6px; scrollbar-width: none; }
+.hchips::-webkit-scrollbar { display: none; }
+.hchip { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--heading); text-decoration: none; font-weight: 560; font-size: var(--fs-sm); }
+.section__head--count { align-items: center; } .hcount { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; } .hcount__n { color: var(--text-2); font-size: var(--fs-sm); }
+.vtoggle { flex: none; display: inline-flex; padding: 4px; gap: 2px; border-radius: 16px; background: color-mix(in srgb, var(--heading) 7%, transparent); }
+.vtoggle button { width: 44px; height: 40px; border: 0; border-radius: 12px; background: none; color: var(--text-2); display: grid; place-items: center; cursor: pointer; }
+.vtoggle button[aria-pressed="true"] { background: var(--surface); color: var(--heading); box-shadow: 0 1px 3px rgba(35,17,32,.15); }
+.vcards { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 14px; } .vcards .pcard { width: 100%; min-height: 260px; }
+.hmore { margin-top: 14px; } #home-up .list { margin-top: 12px; }
