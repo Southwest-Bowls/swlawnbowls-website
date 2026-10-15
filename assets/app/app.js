@@ -3226,7 +3226,7 @@
     document.querySelectorAll('.tabbar a').forEach(function (a) {
       if (a.getAttribute('data-tab') === route[2]) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
-    var token = ++renderToken;
+    var token = ++renderToken, cameVia = navDir;
     var fresh = view.cloneNode(false);           // drop listeners left by the last screen
     view.parentNode.replaceChild(fresh, view); view = fresh;
     view.innerHTML = loading();
@@ -3256,6 +3256,15 @@
       var target = !restoring && location.hash && document.getElementById(location.hash.slice(1));
       if (target) { target.scrollIntoView({ block: 'start' }); target.focus({ preventScroll: true }); }
       restoring = false;
+      // Arrived from another screen (Search, My SWD, ...) and this screen has no back link of its own: add one
+      (function () {
+        var from = history.state && history.state.from;
+        if (!from || cameVia === 'tab' || cameVia === 'back' || restoring || view.querySelector('.back, .searchbar, .signin, .welcome, .auth, .dhead')) return;
+        var fp = from.split('?')[0];
+        if (fp === location.pathname || fp === '/app') return;
+        var hit = BACK_NAMES.filter(function (b) { return b[0].test(fp); })[0];
+        if (hit) view.insertAdjacentHTML('afterbegin', backLink(location.pathname, hit[1]));
+      })();
       setupNavTitle(); blurUp(view);
     });
   }
