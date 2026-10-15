@@ -2587,7 +2587,7 @@
      SIGNUP_OPEN stays false until sign-ups are opened in Supabase; until
      then only addresses already on the roster receive a code.
      --------------------------------------------------------------- */
-  var SIGNUP_OPEN = false;
+  var SIGNUP_OPEN = true;   // safe: Supabase decides. Until sign-ups are switched on there, and while the roster gate (member-platform/supabase/0006) is active, only roster emails can create an account
   function signInScreen(params) {
     setTitle('Sign in');
     var email = '', timer = null, root = view;
