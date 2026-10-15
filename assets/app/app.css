@@ -2311,3 +2311,11 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .vtoggle button[aria-pressed="true"] { background: var(--surface); color: var(--heading); box-shadow: 0 1px 3px rgba(35,17,32,.15); }
 .vcards { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 14px; } .vcards .pcard { width: 100%; min-height: 260px; }
 .hmore { margin-top: 14px; } #home-up .list { margin-top: 12px; }
+
+/* For you */
+.fy { margin: 0 0 var(--s4); }
+.fy__next { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 24px; text-decoration: none; color: #231120; background: var(--cat-solid, var(--surface)); margin-bottom: 10px; }
+.fy__next small { opacity: .75; text-transform: uppercase; letter-spacing: .06em; font-size: .7rem; } .fy__next b { font-family: var(--font-display); font-size: 1.1rem; } .fy__next span { font-size: var(--fs-sm); opacity: .85; }
+.fy__row { display: flex; flex-wrap: wrap; gap: 8px; }
+.fy__i { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--heading); text-decoration: none; font-weight: 560; font-size: var(--fs-sm); }
+.fy__ic { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--subtle); } .fy__ic .i { width: 16px; height: 16px; }

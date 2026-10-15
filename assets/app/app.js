@@ -831,20 +831,24 @@
       '<h3 class="ichips__h">Your profile card</h3>' + lookForm(look(), (store('profile') || {}).name) +
       '<div class="actions"><button class="btn btn--wide btn--dark" type="button" data-int-save>Save</button></div>');
     var box = document.getElementById('dlg-body'); wireLook(box);
-    box.querySelector('[data-int-save]').addEventListener('click', function () { store('interests', readInterests(box)); store('look', readLook(box)); closeDialog(); toast('Saved. Your app is now more yours.'); if (after) after(); });
+    box.querySelector('[data-int-save]').addEventListener('click', function () { store('interests', readInterests(box)); store('look', readLook(box)); closeDialog(); toast('Saved', 'Home now has a “For you” section, and your picks come first.'); if (after) after(); });
   }
   document.addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-itopic], [data-icat]'); if (!b) return;
     b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); haptic();
   });
   // Five steps to a set-up app; each links to where it is done
+  function hasAnyPhoto() {
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('swd:memberPhoto:') === 0 && localStorage.getItem(k)) return true; } } catch (e) {}
+    return false;
+  }
   function setupSteps() {
     var p = store('profile') || {};
     return [
       { k: 'signin', label: 'Sign in', done: !!memberSession(), href: '/app/signin' },
       { k: 'profile', label: 'Profile', done: !!(p.name && p.division), href: '/app/my/profile' },
       { k: 'club', label: 'Club', done: !!(p.club || followed().length), href: '/app/more/clubs' },
-      { k: 'photo', label: 'Photo', done: !!store('memberPhoto:self'), href: '/app/my/profile' },
+      { k: 'photo', label: 'Photo', done: hasAnyPhoto(), href: '/app/my/profile' },
       { k: 'interests', label: 'Interests', done: !!interests(), href: '' }
     ];
   }
@@ -957,6 +961,17 @@
     var sameDay = nextStart ? future.filter(function (x) { return x.dates && x.dates.start === nextStart; }) : [];
     var heroEvs = underway.concat(sameDay).slice(0, 4);
     var shownIds = {}; heroEvs.forEach(function (x) { shownIds[x.id] = true; });
+    // For you: shows what you picked, so choosing interests visibly does something
+    (function () {
+      var iv = interests(); if (!iv || !((iv.topics || []).length || (iv.cats || []).length)) return;
+      var links = [], T = { tournaments: ['/app/events', 'cal', 'Tournaments'], results: ['/app/results', 'trophy', 'Latest results'], standings: ['/app/standings', 'medal', 'Standings'], clubs: ['/app/more/clubs', 'pin', 'Clubs'], watch: ['/app/watch', 'tv', 'Southwest TV'], news: ['/app/more/news', 'news', 'News'] };
+      (iv.topics || []).forEach(function (t) { if (T[t]) links.push('<a class="fy__i" href="' + T[t][0] + '"><span class="fy__ic" aria-hidden="true">' + icon(T[t][1]) + '</span><span>' + T[t][2] + '</span></a>'); });
+      (iv.cats || []).forEach(function (c) { links.push('<a class="fy__i" href="/app/events?cat=' + encodeURIComponent(c) + '"><span class="fy__ic" aria-hidden="true"><i class="chip__dot ' + CAT_DOT[c] + '"></i></span><span>' + esc(c) + '</span></a>'); });
+      var nextFor = live.filter(function (x) { return !(iv.cats || []).length || (iv.cats || []).indexOf(x.cat || 'Open') >= 0; })[0];
+      html += '<section class="fy" aria-labelledby="h-fy"><div class="section__head"><h2 class="section__title" id="h-fy">For you</h2><button class="section__more" type="button" data-open-interests>Edit' + icon('chev', 'i--sm') + '</button></div>' +
+        (nextFor ? '<a class="fy__next ' + catClass(nextFor) + '" href="/app/events/' + encodeURIComponent(nextFor.id) + '"><small>Next for you</small><b>' + esc(nextFor.short) + '</b><span>' + esc(dateRangeLabel(nextFor.dates, true)) + ' · ' + esc(nextFor.clubLabel) + '</span></a>' : '') +
+        '<div class="fy__row">' + links.join('') + '</div></section>';
+    })();
     // Live pulse: what is on right now, or a countdown to the next event with a nudge for closing entries
     (function () {
       var pc = '';
@@ -1018,6 +1033,7 @@
 
     view.innerHTML = html;
     var hv = view;
+    hv.querySelectorAll('[data-open-interests]').forEach(function (b) { b.addEventListener('click', function () { openInterests(function () { render(); }); }); });
     hv.querySelectorAll('[data-hview]').forEach(function (b) {
       b.addEventListener('click', function () {
         var mode = b.getAttribute('data-hview'), box = hv.querySelector('#home-up'); if (!box) return;
@@ -3234,7 +3250,7 @@
     var preview = !!store('memberPreview') || !!memberSession();
     var today = todayISO();
 
-    var pf = store('profile') || {}, pphoto = store('memberPhoto:self'), nSaved = saved().length, nFol = followed().length;
+    var pf = store('profile') || {}, pphoto = store('memberPhoto:self') || (function () { try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('swd:memberPhoto:') === 0) return JSON.parse(localStorage.getItem(k)); } } catch (e) {} return null; })(), nSaved = saved().length, nFol = followed().length;
     function prow(href, ic, title, meta) { return '<a class="prow" href="' + href + '"><span class="prow__ic" aria-hidden="true">' + icon(ic) + '</span><span class="prow__t"><b>' + esc(title) + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a>'; }
     view.innerHTML = '<header class="phero' + (store('look') ? ' phero--card' : '') + '"' + (store('look') ? ' data-pal="' + look().palette + '" data-sty="' + look().style + '"' : '') + '><span class="phero__brand"><img src="/assets/app/swd-logo.png" alt="" width="22" height="26">Southwest Bowls Division</span><a class="phero__av" href="/app/my/profile" aria-label="Open my profile">' + (pphoto ? '<img src="' + esc(pphoto) + '" alt="">' : (initials(pf.name) ? esc(initials(pf.name)) : icon('person'))) + '</a>' +
         '<h1 class="phero__name">' + (pf.name ? esc(pf.name) : 'Welcome') + '</h1>' +
