@@ -738,6 +738,7 @@
       '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Southwest Bowls') + '</h1></div>' +
       '<a class="circbtn" id="hq" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
+      '<a class="circbtn" href="/app/more/settings" aria-label="App settings">' + icon('sliders') + '</a>' +
       '<a class="circbtn circbtn--me" href="/app/my" aria-label="My SWD">' + (initials(prof.name) ? esc(initials(prof.name)) : icon('person')) + '</a></header>';
 
     // Urgent: a change to a saved event
@@ -1096,7 +1097,7 @@
       var onNow = isSaved(x.id);
       var html = backLink('/app/events', 'Events') +
         (hostPhoto ? '<div class="chero"><img class="chero__img chero__img--wide" src="' + esc(hostPhoto) + '" alt="" loading="lazy" data-hide-on-error>' + (st ? '<span class="chero__tag ' + catClass(x) + '">' + esc(st.label) + '</span>' : '') + '</div>' : '') +
-        '<div class="eband ' + catClass(x) + '"><p class="eyebrow">' + esc(x.cat || 'Open') + ' · ' + esc(e.subtitle || season) + '</p>' +
+        '<div class="eband ' + catClass(x) + '"><p class="eyebrow">' + esc(String(e.subtitle || '').toLowerCase().indexOf(String(x.cat || '').toLowerCase().replace(/'s$/, '')) === 0 ? e.subtitle : (x.cat || 'Open') + ' · ' + (e.subtitle || season)) + '</p>' +
         '<h1 class="detail-title">' + esc(e.title) + '</h1>' +
         (x.club ? '<p>' + esc(x.club) + '</p>' : '') + '</div>' +
         '<div class="detail-date">' + dateBlock(x, true) + '<div><b>' + esc(e.date || 'Date to be announced') + '</b>' + statusLine(st) + '</div></div>';
@@ -1743,6 +1744,7 @@
           mrow('/app/watch', 'tv', 'Southwest TV', 'Livestreams and replays', 'blue'),
           mrow('/app/more/resources', 'doc', 'Resources', '', 'blue')]) +
         group('About', [
+          mrow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline copies', 'blush'),
           mrow('/app/page/about-us', 'info', 'About Southwest', '', 'blush'),
           mrow('/app/page/contact-us', 'mail', 'Help and contact', '', 'blush'),
           mrow('/', 'globe', 'Southwest website', 'swlawnbowls.org', 'blush'),

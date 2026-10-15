@@ -1275,3 +1275,7 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .eband .detail-title { margin: 0 0 4px; }
 .eband p { margin: 0; }
 .segmented--cat [role="tab"][aria-selected="true"] { background: var(--cat-solid); color: #231120; }
+
+.hbar { gap: 6px; }
+.hbar .circbtn { width: 44px; height: 44px; }
+.hbar__hello { font-size: clamp(1.25rem, 5.5vw, 1.6rem); }
