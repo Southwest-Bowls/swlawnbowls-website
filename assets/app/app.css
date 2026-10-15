@@ -1820,3 +1820,12 @@ h1, h2, .pcard__title, .ehero__title, .kcard__name, .ticket__v, .hub__stat > b, 
 .prow__ic { flex: none; display: grid; place-items: center; width: 40px; height: 40px; }
 .prow__t { flex: 1; min-width: 0; display: flex; flex-direction: column; } .prow__t small { color: var(--text-2); font-size: var(--fs-xs); }
 .prow__go { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--subtle); }
+
+/* My entries: tidy stacked card */
+.mysec .rcard--col { flex-direction: column; align-items: stretch; gap: 10px; padding: 16px 18px; border-radius: 24px; box-shadow: 0 1px 2px rgba(35,17,32,.06), 0 8px 20px rgba(35,17,32,.06); }
+.mysec .rcard--col .rcard__title { font-family: var(--font-display); font-size: 1.15rem; line-height: 1.2; }
+.mysec .rcard--col .rcard__title a { color: var(--heading); text-decoration: none; }
+.mysec .rcard--col .rcard__meta { margin-top: 4px; }
+.mysec .rcard--col .schip { align-self: flex-start; font-size: var(--fs-xs); padding: 6px 12px; border-radius: 999px; }
+.mysec .rcard--col .btn { margin-top: 0; border-radius: 999px; }
+.mysec .footnote { margin-top: 12px; }
