@@ -1081,3 +1081,35 @@ html[data-text="xlarge"] .idcard__body { flex-wrap: wrap; }
 .mini__title { font-weight: 800; font-size: 1.05rem; line-height: 1.25; color: var(--heading); }
 .mini__meta { color: var(--text-2); font-size: var(--fs-s, .95rem); }
 @media (prefers-reduced-motion: no-preference) { .herocard, .mini, .shortcut__dot, .circbtn { transition: transform 140ms ease; } .herocard:active, .mini:active { transform: scale(.985); } .shortcut:active .shortcut__dot, .circbtn:active { transform: scale(.94); } }
+
+/* Calendar view: month grid, event days filled, today ringed */
+.cal { margin: var(--s3) 0 var(--s4); }
+.cal__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); margin-bottom: var(--s3); }
+.cal__title { flex: 1; text-align: center; font-size: 1.15rem; }
+.cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px 0; justify-items: center; padding: var(--s3) var(--s2); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); }
+.cal__dow { font-size: var(--fs-xs); font-weight: 800; color: var(--text-2); padding-bottom: 4px; }
+.cal__day { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: inherit; font-weight: 600; color: var(--text); background: transparent; border: 2px solid transparent; }
+button.cal__day { cursor: pointer; background: var(--accent); color: var(--accent-ink); font-weight: 800; }
+.cal__day--today { border-color: var(--heading); }
+button.cal__day--sel { background: var(--heading); color: var(--surface); }
+#cal-day-list { outline: none; }
+@media (max-width: 360px) { .cal__day { width: 36px; height: 36px; } }
+
+/* Sign-in and profile fields: icon inside a rounded box; one big primary button */
+.signin__title { font-size: 1.4rem; margin-bottom: 4px; }
+.signin__sub { color: var(--text-2); margin-bottom: var(--s3); }
+.mfield--icon .mfield__box { position: relative; display: block; }
+.mfield--icon .mfield__box > .i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; color: var(--text-2); pointer-events: none; }
+.mfield--icon input { padding-left: 46px; }
+.mfield--icon span:first-child:not(.mfield__box) { display: block; }
+.btn--wide { width: 100%; min-height: 56px; font-size: 1.05rem; border-radius: var(--r-pill); }
+/* Home: Coming-up cards tinted so they read as separate things; champions as a feature card */
+.mini--0 { background: var(--tint-blue); border-color: transparent; }
+.mini--1 { background: var(--tint-orange); border-color: transparent; }
+.mini--2 { background: var(--tint-blush); border-color: transparent; }
+.gcard--feature { background: var(--heading); color: var(--surface); padding: var(--s4); border-radius: var(--r-card); gap: var(--s4); }
+.gcard--feature .gcard__img { width: 96px; height: 96px; border-radius: 16px; order: 2; }
+.gcard--feature .gcard__body { flex: 1; order: 1; }
+.gcard--feature .gcard__title { font-size: 1.2rem; color: inherit; }
+.gcard--feature .gcard__meta { color: inherit; opacity: .8; }
+.gcard--feature .textlink { color: var(--accent); }

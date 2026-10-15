@@ -488,6 +488,41 @@
     return '<span class="' + cls + '" aria-hidden="true"><small>' +
       fmt(x.dates.start, { month: 'short' }) + '</small><b>' + fmt(x.dates.start, { day: 'numeric' }) + '</b></span>';
   }
+  // Calendar view: a month grid with tournament days marked; tap a day to see what is on.
+  function addMonths(ym, n) {
+    var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + n;
+    y += Math.floor(m / 12); m = ((m % 12) + 12) % 12;
+    return y + '-' + String(m + 1).padStart(2, '0');
+  }
+  function calendarHtml(list, ym, selDay, today) {
+    var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1;
+    var first = ym + '-01', lead = dateFromISO(first).getUTCDay();
+    var n = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    function on(iso) { return list.filter(function (x) { return x.dates && x.dates.start <= iso && iso <= x.dates.end; }); }
+    var anyThisMonth = false, firstDay = '', nextDay = '';
+    var cells = '';
+    for (var i = 0; i < lead; i++) cells += '<span class="cal__blank"></span>';
+    for (var d = 1; d <= n; d++) {
+      var iso = ym + '-' + String(d).padStart(2, '0'), ev = on(iso);
+      if (ev.length) { anyThisMonth = true; if (!firstDay) firstDay = iso; if (!nextDay && iso >= today) nextDay = iso; }
+      cells += ev.length
+        ? '<button type="button" class="cal__day cal__day--has' + (iso === today ? ' cal__day--today' : '') + (iso === selDay ? ' cal__day--sel' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === selDay) +
+          '" aria-label="' + esc(fmt(iso, { weekday: 'long', month: 'long', day: 'numeric' }) + ', ' + ev.length + (ev.length === 1 ? ' event' : ' events')) + '">' + d + '</button>'
+        : '<span class="cal__day' + (iso === today ? ' cal__day--today' : '') + '">' + d + '</span>';
+    }
+    // Default to the selected day, else today if it is in this month, else the month's first event day
+    var showDay = selDay && selDay.slice(0, 7) === ym ? selDay : (nextDay || firstDay);
+    var dayEv = showDay ? on(showDay) : [];
+    var html = '<div class="cal"><div class="cal__head"><button class="circbtn" type="button" data-cal-nav="-1" aria-label="Previous month">' + icon('back') + '</button>' +
+      '<h2 class="cal__title" aria-live="polite">' + esc(fmt(first, { month: 'long', year: 'numeric' })) + '</h2>' +
+      '<button class="circbtn" type="button" data-cal-nav="1" aria-label="Next month">' + icon('chev') + '</button></div>' +
+      '<div class="cal__grid" role="group" aria-label="Days with events"><span class="cal__dow" aria-hidden="true">Sun</span><span class="cal__dow" aria-hidden="true">Mon</span><span class="cal__dow" aria-hidden="true">Tue</span><span class="cal__dow" aria-hidden="true">Wed</span><span class="cal__dow" aria-hidden="true">Thu</span><span class="cal__dow" aria-hidden="true">Fri</span><span class="cal__dow" aria-hidden="true">Sat</span>' + cells + '</div></div>';
+    html = html.replace('data-cal-day="' + showDay + '" aria-pressed="false"', 'data-cal-day="' + showDay + '" aria-pressed="true"').replace('cal__day cal__day--has' + (showDay === today ? ' cal__day--today' : '') + '"', 'cal__day cal__day--has' + (showDay === today ? ' cal__day--today' : '') + ' cal__day--sel"');
+    html += '<div id="cal-day-list" tabindex="-1">' + (!anyThisMonth ? state('empty', 'No events this month', 'Use the arrows to look at another month.')
+      : '<h2 class="section__title list-title">' + esc(fmt(showDay, { weekday: 'long', month: 'long', day: 'numeric' })) + '</h2>' +
+        (dayEv.length ? '<ul class="list list--cards">' + dayEv.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '<p class="muted">Nothing scheduled this day.</p>')) + '</div>';
+    return html;
+  }
   function eventRow(x, today) {
     var e = x.e, phase = eventPhase(x, today);
     var meta = [x.clubLabel, e.format && cap(e.format)].filter(Boolean).join(' · ');
@@ -707,7 +742,7 @@
 
     // 3. Four quick links as round shortcuts
     html += '<nav class="shortcuts" aria-label="Sections">' + [
-      ['/app/events', 'cal', 'Events', 'blue'], ['/app/results', 'trophy', 'Results', 'orange'],
+      ['/app/events?show=calendar', 'cal', 'Calendar', 'blue'], ['/app/results', 'trophy', 'Results', 'orange'],
       ['/app/more/clubs', 'pin', 'Clubs', 'blush'], ['/app/watch', 'tv', 'Watch', 'ink']
     ].map(function (t) {
       return '<a class="shortcut shortcut--' + t[3] + '" href="' + t[0] + '"><span class="shortcut__dot">' + icon(t[1]) + '</span><span class="shortcut__label">' + t[2] + '</span></a>';
@@ -718,9 +753,9 @@
     if (more.length) {
       html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head"><h2 class="section__title" id="h-up">Coming up</h2>' +
         '<a class="section__more" href="/app/events">See all' + icon('chev', 'i--sm') + '</a></div><ul class="hscroll">' +
-        more.map(function (x) {
+        more.map(function (x, i) {
           var st = entryStatus(x, today);
-          return '<li><a class="mini" href="/app/events/' + encodeURIComponent(x.id) + '"><span class="mini__date">' + esc(dateRangeLabel(x.dates, true)) + '</span>' +
+          return '<li><a class="mini mini--' + (i % 3) + '" href="/app/events/' + encodeURIComponent(x.id) + '"><span class="mini__date">' + esc(dateRangeLabel(x.dates, true)) + '</span>' +
             '<span class="mini__title">' + esc(x.short) + '</span><span class="mini__meta">' + esc(x.clubLabel || '') + '</span>' + (st ? statusLine(st) : '') + '</a></li>';
         }).join('') + '</ul></section>';
     }
@@ -731,7 +766,7 @@
       var ph = sto.photo || {};
       html += '<section class="hsec" aria-labelledby="h-greens"><div class="section__head"><h2 class="section__title" id="h-greens">Around the greens</h2>' +
         '<a class="section__more" href="/app/more/news">News' + icon('chev', 'i--sm') + '</a></div>' +
-        '<div class="gcard">' + (safeUrl(ph.src) ? '<img class="gcard__img" src="' + esc(ph.src) + '" alt="' + esc(ph.alt || '') + '" width="72" height="72" loading="lazy" data-hide-on-error>' : '') +
+        '<div class="gcard gcard--feature">' + (safeUrl(ph.src) ? '<img class="gcard__img" src="' + esc(ph.src) + '" alt="' + esc(ph.alt || '') + '" width="72" height="72" loading="lazy" data-hide-on-error>' : '') +
         '<div class="gcard__body"><p class="gcard__title">' + esc(sto.cardTitle || sto.headline) + '</p>' +
         (sto.cardLine ? '<p class="gcard__meta">' + esc(sto.cardLine) + '</p>' : '') +
         (sto.champions && sto.champions.length
@@ -867,7 +902,8 @@
       });
       var f = { q: params.get('q') || '', month: params.get('month') || '', cat: params.get('cat') || '', club: clubKey(params.get('club') || '') };
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
-      var segs = [['upcoming', 'Upcoming'], ['saved', 'Saved']].concat(hasPast ? [['past', 'Completed']] : []);
+      var segs = [['upcoming', 'Upcoming'], ['calendar', 'Calendar'], ['saved', 'Saved']].concat(hasPast ? [['past', 'Completed']] : []);
+      var calMonth = (f.month || today.slice(0, 7)), calDay = '';
       var nSet = (f.cat ? 1 : 0) + (f.club ? 1 : 0);
       view.innerHTML = pageHead('Find your next game.', 'Events', 'logo') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search events or clubs</span>' +
@@ -900,7 +936,7 @@
           if (show === 'upcoming' && !(p === 'upcoming' || p === 'now')) return false;
           if (show === 'past' && p !== 'past') return false;
           if (show === 'saved' && sv.indexOf(x.id) < 0) return false;
-          if (month && !(x.dates && x.dates.start.slice(0, 7) === month)) return false;
+          if (month && show !== 'calendar' && !(x.dates && x.dates.start.slice(0, 7) === month)) return false;
           if (cat && x.cat !== cat) return false;
           if (club === 'followed') { var fol = followed(); if (!x.clubIds.some(function (c) { return fol.indexOf(c) >= 0; })) return false; }
           else if (club && x.clubId !== club) return false;
@@ -910,6 +946,14 @@
         if (show === 'past') list = list.slice().reverse();
         var filtered = q || month || cat || club;
         var out = document.getElementById('ev-results');
+        var mb = view.querySelector('.monthbar__month'); if (mb) mb.hidden = show === 'calendar';
+        if (show === 'calendar') {
+          out.innerHTML = calendarHtml(list, calMonth, calDay, today);
+          var cu = new URLSearchParams(); cu.set('show', 'calendar');
+          if (q) cu.set('q', qRaw); if (cat) cu.set('cat', cat); if (club) cu.set('club', club);
+          history.replaceState(history.state, '', '/app/events?' + cu.toString());
+          return;
+        }
         if (!list.length) {
           var onlyFollowed = club === 'followed' && !q && !month && !cat;
           out.innerHTML = club === 'followed' && !followed().length
@@ -947,6 +991,10 @@
       document.getElementById('q').addEventListener('input', function () { clearTimeout(t); t = setTimeout(apply, 150); });
       ['f-month', 'f-cat', 'f-club'].forEach(function (id) { document.getElementById(id).addEventListener('change', apply); });
       view.addEventListener('click', function (ev) {
+        var cn = ev.target.closest('[data-cal-nav]');
+        if (cn) { calMonth = addMonths(calMonth, +cn.getAttribute('data-cal-nav')); calDay = ''; apply(); return; }
+        var cd = ev.target.closest('[data-cal-day]');
+        if (cd) { calDay = cd.getAttribute('data-cal-day'); apply(); var dl = document.getElementById('cal-day-list'); if (dl) dl.focus({ preventScroll: true }); return; }
         var b = ev.target.closest('[data-show]');
         if (b) {
           show = b.getAttribute('data-show');
@@ -1963,10 +2011,10 @@
       openDialog('Your details',
         '<p class="muted">Optional, and kept on this phone only. You never need to be an SWD member to use the app or to enter an event.</p>' +
         '<form class="mform" id="g-form" novalidate>' +
-          '<label class="mfield"><span>Your name</span><input id="g-name" type="text" autocomplete="name" value="' + esc(p.name || '') + '"></label>' +
-          '<label class="mfield"><span>Home division or country</span><input id="g-div" type="text" list="g-div-list" value="' + esc(p.division || '') + '">' +
+          '<label class="mfield mfield--icon"><span>Your name</span><span class="mfield__box">' + icon('person') + '<input id="g-name" type="text" autocomplete="name" value="' + esc(p.name || '') + '"></span></label>' +
+          '<label class="mfield mfield--icon"><span>Home division or country</span><span class="mfield__box">' + icon('pin') + '<input id="g-div" type="text" list="g-div-list" value="' + esc(p.division || '') + '"></span>' +
             '<datalist id="g-div-list">' + DIVISION_HINTS.map(function (d) { return '<option value="' + esc(d) + '">'; }).join('') + '</datalist></label>' +
-          '<label class="mfield"><span>Home club</span><input id="g-club" type="text" value="' + esc(p.club || '') + '"></label>' +
+          '<label class="mfield mfield--icon"><span>Home club</span><span class="mfield__box">' + icon('people') + '<input id="g-club" type="text" value="' + esc(p.club || '') + '"></span></label>' +
           '<div class="actions"><button class="btn" type="submit">Save</button></div></form>');
       document.getElementById('g-form').addEventListener('submit', function (ev) {
         ev.preventDefault();
@@ -2024,12 +2072,12 @@
 
     function signInForm(msg) {
       box.innerHTML =
-        '<p>Sign in with the email the Division has for you. We’ll email you a sign-in link — no password needed.</p>' +
+        '<h3 class="signin__title">Sign in</h3><p class="signin__sub">We’ll email you a link. No password needed.</p>' +
         (msg ? '<div class="note" role="alert"><b>Sign-in didn’t work</b>' + esc(msg) + '</div>' : '') +
         '<form class="mform" id="m-signin" novalidate>' +
-          '<label class="mfield"><span>Email</span><input id="m-email" type="email" autocomplete="email" inputmode="email" required></label>' +
+          '<label class="mfield mfield--icon"><span>Email</span><span class="mfield__box">' + icon('mail') + '<input id="m-email" type="email" autocomplete="email" inputmode="email" required></span></label>' +
           '<p class="mform__err" id="m-err" role="alert"></p>' +
-          '<div class="actions"><button class="btn" type="submit">Email me a sign-in link</button></div>' +
+          '<div class="actions"><button class="btn btn--wide" type="submit">Email me a sign-in link</button></div>' +
         '</form>' + memberHelpHtml(false) +
         '<p class="footnote">Your details are only shown to you. Only Division administrators can see the full roster.</p>';
       box.querySelector('#m-signin').addEventListener('submit', function (ev) {
