@@ -799,7 +799,8 @@
     var prof = store('profile') || {}, first = String(prof.name || '').trim().split(/\s+/)[0];
     currentNotices = live.filter(function (x) { return x.e.alert; });
     var unread = unreadCount(currentNotices);
-    var html = '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'short', month: 'short', day: 'numeric' })) + '</span>' +
+    var hbgEv = (function () { var u0 = live.filter(function (x) { return eventPhase(x, today) === 'now'; }).concat(live.filter(function (x) { return eventPhase(x, today) !== 'now'; }))[0]; return u0 ? eventPhoto(u0, d.clubs) : ''; })();
+    var html = (hbgEv ? '<div class="hbg" aria-hidden="true" style="--ph:url(\'' + esc(hbgEv) + '\')"></div>' : '') + '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'short', month: 'short', day: 'numeric' })) + '</span>' +
       '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Hi, Guest') + '</h1></div>' +
       '<a class="circbtn" id="hq" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
@@ -1142,18 +1143,19 @@
         : phase === 'past' && result ? '<a class="btn btn--wide" href="?tab=results" data-goto-tab="results">See the results</a>'
         : '';
       var onNow = isSaved(x.id);
-      var html = backLink('/app/events', 'Events') +
+      var html = (hostPhoto ? '<div class="escene__bg" aria-hidden="true" style="--ph:url(\'' + esc(hostPhoto) + '\')"></div>' : '') + backLink('/app/events', 'Events') +
         '<header class="ehero ' + catClass(x) + '"' + (hostPhoto ? ' style="--ph:url(\'' + esc(hostPhoto) + '\')"' : '') + '>' +
           '<span class="ehero__cat">' + esc(x.cat || 'Open') + '</span>' + saveBtn(x.id, x.short) +
+          '<button class="iconbtn ehero__share" type="button" data-share="/app/events/' + esc(x.id) + '" data-share-title="' + esc(x.e.title) + '" aria-label="Share ' + esc(x.short) + '">' + icon('share') + '</button>' +
           '<div class="ehero__body"><p class="ehero__sub">' + esc(String(e.subtitle || '').toLowerCase().indexOf(String(x.cat || '').toLowerCase().replace(/'s$/, '')) === 0 ? e.subtitle : (e.subtitle || season)) + '</p>' +
           '<h1 class="ehero__title">' + esc(e.title) + '</h1>' +
           (x.club ? '<p class="ehero__club">' + icon('pin', 'i--sm') + esc(x.club) + '</p>' : '') + '</div></header>' +
         '<div class="detail-date detail-date--plain"><div><b>' + esc(e.date || 'Date to be announced') + '</b>' + statusLine(st) + '</div></div>';
       if (e.alert) html += '<div class="note" role="note"><b>' + esc(e.alertLabel || 'Update') + '</b>' + esc(e.alert) + '</div>';
 
-      html += '<div class="segmented segmented--cat ' + catClass(x) + '" role="tablist" aria-label="Event sections">' + tabs.map(function (t) {
+      html += '<div class="esheet"><div class="esheet__grab" aria-hidden="true"></div><div class="segmented segmented--cat ' + catClass(x) + '" role="tablist" aria-label="Event sections">' + tabs.map(function (t) {
         return '<button type="button" role="tab" id="tab-' + t[0] + '" aria-controls="panel" aria-selected="' + (t[0] === tab) + '" tabindex="' + (t[0] === tab ? 0 : -1) + '" data-tab="' + t[0] + '">' + t[1] + '</button>';
-      }).join('') + '</div><div id="panel" role="tabpanel" tabindex="-1"></div>' +
+      }).join('') + '</div><div id="panel" role="tabpanel" tabindex="-1"></div></div>' +
         (primaryBar ? '<div class="actionbar" id="abar">' + primaryBar + '</div>' : '');
       view.innerHTML = html;
       view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.parentNode.hidden = true; }); });
@@ -1203,14 +1205,25 @@
     var e = x.e, h = '';
     // Date, venue, format, deadline, fee and schedule first
     if (st && st.kind === 'closed') h += '<div class="note" role="note"><b>Entries are closed</b>' + ((e.contact && (e.contact.email || e.contact.phone)) ? 'Contact the organizer to ask about a late entry.' : 'See the flyer for details.') + '</div>';
+    // Ticket: event day(s) on the left, entry deadline (or end day) on the right, small round badges below
+    if (x.dates) {
+      var multi = x.dates.start !== x.dates.end, st0 = startTime(e.time);
+      var right = multi ? ['Ends', fmt(x.dates.end, { weekday: 'short', month: 'short', day: 'numeric' }), ''] : (x.deadline && phase !== 'past' ? ['Entries close', fmt(x.deadline, { weekday: 'short', month: 'short', day: 'numeric' }), ''] : null);
+      var badges = [];
+      if (e.format) badges.push(['people', cap(e.format)]);
+      if (e.fee) badges.push(['$', String(e.fee)]);
+      if ((e.rules || []).concat(e.formatDetails || [], e.notes || []).some(function (r) { return /\bA or B green\b|designate A or B/i.test(String(r)); })) badges.push(['A/B', 'A or B green']);
+      h += '<div class="ticket"><div class="ticket__row"><div class="ticket__side"><span class="ticket__k">' + (multi ? 'Starts' : 'Event day') + '</span><b class="ticket__v">' + esc(fmt(x.dates.start, { weekday: 'short', month: 'short', day: 'numeric' })) + '</b>' + (st0 ? '<span class="ticket__s">' + esc(st0) + '</span>' : '') + '</div>' +
+        (right ? '<span class="ticket__arrow" aria-hidden="true">' + icon('chev') + '</span><div class="ticket__side ticket__side--r"><span class="ticket__k">' + right[0] + '</span><b class="ticket__v">' + esc(right[1]) + '</b></div>' : '') + '</div>' +
+        (badges.length ? '<ul class="ticket__badges">' + badges.map(function (b) { return '<li><span class="ticket__ic" aria-hidden="true">' + (PATHS[b[0]] ? icon(b[0]) : esc(b[0])) + '</span><span>' + esc(b[1]) + '</span></li>'; }).join('') + '</ul>' : '') +
+        (e.formatDetails ? '<p class="ticket__fd">' + esc(e.formatDetails) + '</p>' : '') +
+        (e.club && e.club.address ? (safeUrl(e.club.mapUrl) ? '<a class="ticket__venue" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener"><span class="ticket__ic" aria-hidden="true">' + icon('pin') + '</span><span><b>' + esc(e.club.name || 'Venue') + '</b><small>' + esc(e.club.address) + ' · opens in Maps</small></span></a>' : '<div class="ticket__venue"><span class="ticket__ic" aria-hidden="true">' + icon('pin') + '</span><span><b>' + esc(e.club.name || 'Venue') + '</b><small>' + esc(e.club.address) + '</small></span></div>') : '') + '</div>';
+    }
     var facts = [];
-    if (e.format) facts.push(['Format', cap(e.format), false]);
-    if (x.deadline && phase !== 'past') facts.push(['Entry deadline', fmt(x.deadline, { month: 'long', day: 'numeric', year: 'numeric' }), false]);
-    else if (e.deadline && phase !== 'past') facts.push(['Entry', e.deadline, true]);
-    if (e.fee) facts.push(['Entry fee', e.fee, String(e.fee).length > 28]);
-    if (e.time) facts.push(['Schedule', e.time, true]);
-    if (e.club && e.club.address) facts.push(['Venue', e.club.address, true]);
-    if (e.formatDetails) facts.push(['Format details', e.formatDetails, true]);
+    if (!x.dates && e.format) facts.push(['Format', cap(e.format), false]);
+    if (e.deadline && !x.deadline && phase !== 'past') facts.push(['Entry', e.deadline, true]);
+    if (!x.dates && e.club && e.club.address) facts.push(['Venue', e.club.address, true]);
+    if (!x.dates && e.formatDetails) facts.push(['Format details', e.formatDetails, true]);
     if (facts.length) {
       h += '<dl class="facts">' + facts.map(function (f) {
         return '<div' + (f[2] ? ' class="wide"' : '') + '><dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd></div>';
@@ -1219,33 +1232,31 @@
 
     // Actions: one primary, the rest quiet
     var acts = [];
-    if (e.club && safeUrl(e.club.mapUrl)) acts.push('<a class="btn btn--ghost" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>');
     if (x.dates && phase !== 'past') acts.push('<a class="btn btn--ghost" href="' + icsHref(x) + '" download="' + esc(x.id) + '.ics" data-ics>' + icon('cal') + 'Add to calendar</a>');
-    var on = isSaved(x.id);
-    acts.push('<button class="btn btn--ghost" type="button" data-save="' + esc(x.id) + '" data-title="' + esc(x.short) + '" data-on="' + on + '" aria-label="' + esc(saveLabel(on, x.short)) + '">' + icon('bookmark') +
-      '<span aria-hidden="true">' + (on ? 'Saved' : 'Save') + '</span></button>');
-    acts.push(shareBtn(x.e.title, '/app/events/' + x.id));
     h += '<div class="actions">' + acts.join('') + '</div>';
-    h += '<p class="note">Saving an event keeps it in your list. It does not register your team.</p>';
 
-    if (e.schedule && e.schedule.length) h += '<section class="block"><h2>Schedule</h2><ul>' + e.schedule.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></section>';
+    if (e.schedule && e.schedule.length) h += '<section class="block"><h2>Schedule</h2><ol class="tline">' + e.schedule.filter(function (z) { return !(e.formatDetails && /bowls/i.test(z) && /\bgames?\b/i.test(z) && !/\d\s*[AP]M/i.test(z)); }).map(function (s) {
+      var m = /^(\d{1,2}(?::\d{2})?\s*[AP]M)\s*[—–-]\s*(.+)$/i.exec(s), t = m ? m[2] : s, note = '';
+      var pm = /^(.*?)\s*\((.+)\)\s*$/.exec(t); if (pm) { t = pm[1]; note = pm[2]; }
+      return '<li class="' + (m ? '' : 'tline__plain') + '">' + (m ? '<b class="tline__t">' + esc(m[1].toUpperCase()) + '</b>' : '') + '<span class="tline__x">' + esc(t) + (note ? '<small>' + esc(note) + '</small>' : '') + '</span></li>';
+    }).join('') + '</ol></section>';
     if (phase === 'past' || (st && st.kind === 'closed')) h += docsBlock(e, flyer, cops);
-    if (e.rules && e.rules.length) {
-      var rl = '<ul>' + e.rules.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>';
-      h += '<section class="block"><h2>Rules</h2>' + (e.rules.length > 5
-        ? '<details class="fold"><summary><span>Read all ' + e.rules.length + ' rules</span>' + CHEV + '</summary><div style="padding-bottom:16px">' + rl + '</div></details>'
-        : rl) + '</section>';
+    if (e.noviceDefinition) {
+      var nd = String(e.noviceDefinition), dm = /^(.{2,40}?)\s[—–]\s(.+)$/.exec(nd), term = dm ? dm[1] : 'Novice', rest = dm ? dm[2] : nd;
+      var sents = rest.match(/[^.!?]+[.!?]+(\s|$)/g) || [rest], lead = sents[0].trim(), more = sents.slice(1).map(function (z) { return z.trim(); });
+      h += '<div class="nov"><span class="nov__ic" aria-hidden="true">' + icon('star') + '</span><div class="nov__b"><small>Who counts as a novice</small><b>' + esc(term) + '</b><p>' + esc(lead) + '</p>' +
+        (more.length ? '<details class="nov__more"><summary>Cut-off and eligibility</summary>' + more.map(function (z) { return '<p>' + esc(z) + '</p>'; }).join('') + '</details>' : '') + '</div></div>';
     }
-    if (e.noviceDefinition) h += '<section class="block"><h2>Who counts as a novice</h2><p>' + esc(e.noviceDefinition) + '</p></section>';
     if (e.livestreamNotice) h += '<section class="block"><h2>Livestreaming</h2><p>' + esc(e.livestreamNotice) + '</p></section>';
     h += '<ul class="rows" style="margin-top:24px">' + linkRow('/event?id=' + encodeURIComponent(x.id), 'globe', 'This event on the website', '', { ext: true }) + '</ul>';
     return h;
   }
   function docsBlock(e, flyer, cops) {
     var docs = [];
-    if (flyer) docs.push(docRow(flyer, 'Tournament flyer', e.flyer.type));
-    if (cops) docs.push(docRow(cops, 'Conditions of play', 'pdf'));
-    return docs.length ? '<section class="block"><h2>Flyer & conditions of play</h2><ul class="rows">' + docs.join('') + '</ul></section>' : '';
+    function tile(url, ic, label, kind) { return '<a class="dtile" href="' + esc(url) + '" target="_blank" rel="noopener"><span class="dtile__ic" aria-hidden="true">' + icon(ic) + '</span><b>' + label + '</b><small>' + kind + ' · new window</small></a>'; }
+    if (flyer) docs.push(tile(flyer, 'doc', 'Flyer', e.flyer && e.flyer.type === 'image' ? 'Image' : 'PDF'));
+    if (cops) docs.push(tile(cops, 'trophy', 'Conditions', 'PDF'));
+    return docs.length ? '<div class="dtiles">' + docs.join('') + '</div>' : '';
   }
   // The real entry process, as published. Email or postal entry stays
   // email or postal entry — it is never turned into an online sign-up.
@@ -1308,14 +1319,15 @@
   }
   function embedCard(title, why, url, height, kind) {
     var key = 'emb-' + Math.random().toString(36).slice(2, 8);
-    return '<div class="card embed-card"><b>' + esc(title) + '</b><p>' + esc(why) + '</p>' +
-      '<div class="actions"><button class="btn" type="button" data-embed="' + key + '" data-url="' + esc(url) + '" data-h="' + (parseInt(height, 10) || 650) + '" data-title="' + esc(title) + '">Show ' + esc(kind) + '</button>' +
-      '<a class="btn btn--ghost" href="' + esc(url.replace(/([?&])widget=true&?/, '$1').replace(/[?&]$/, '')) + '" target="_blank" rel="noopener">' + icon('ext') + 'Open full screen</a></div>' +
+    var ic = kind === 'list' ? 'people' : kind === 'draw' ? 'trophy' : 'doc';
+    return '<div class="ecard"><div class="ecard__row"><span class="ecard__ic" aria-hidden="true">' + icon(ic) + '</span><b class="ecard__t">' + esc(title) + '</b>' +
+      '<button class="btn btn--dark btn--sm" type="button" data-embed="' + key + '" data-url="' + esc(url) + '" data-h="' + (parseInt(height, 10) || 650) + '" data-title="' + esc(title) + '">View</button>' +
+      '<a class="circbtn ecard__ext" href="' + esc(url.replace(/([?&])widget=true&?/, '$1').replace(/[?&]$/, '')) + '" target="_blank" rel="noopener" aria-label="Open ' + esc(title) + ' full screen">' + icon('ext') + '</a></div>' +
       '<div id="' + key + '"></div></div>';
   }
   function entriesPanel(e) {
-    return '<section class="block" style="margin-top:8px"><h2>Entries</h2>' +
-      embedCard('Entry list', 'Teams entered so far, from the tournament’s Google Sheet. It’s updated by the organizer and needs a connection.', e.entries.pubUrl, e.entries.height, 'entries') +
+    return '<section class="block" style="margin-top:8px">' +
+      embedCard('Teams entered', '', e.entries.pubUrl, e.entries.height, 'list') +
       '</section>';
   }
   function drawPanel(e) {
@@ -1981,15 +1993,21 @@
       var clubs = d.clubs || [];
       var q0 = params.get('q') || '', cview = params.get('view') === 'list' ? 'list' : params.get('view') === 'map' ? 'map' : 'cards', selId = '';
       var map = null, markers = [];
-      view.innerHTML = backLink('/app/more', 'More') + pageHead('Clubs', clubs.length + ' clubs, Cambria to Coronado') +
-        '<div class="segmented" role="group" aria-label="Show clubs as">' + [['cards', 'Cards'], ['map', 'Map'], ['list', 'List']].map(function (k) {
-          return '<button type="button" data-cview="' + k[0] + '" aria-pressed="' + (k[0] === cview) + '">' + k[1] + '</button>'; }).join('') + '</div>' +
-        '<label class="search search--list">' + icon('search') + '<span class="sr-only">Search clubs</span>' +
+      var cchip = 'all';
+      view.innerHTML = backLink('/app/more', 'More') + '<div class="chead"><h1 class="chead__t">Find a <b>club</b></h1><p class="chead__s">' + clubs.length + ' clubs, Cambria to Coronado</p></div>' +
+        '<div class="csearch"><label class="search search--list">' + icon('search') + '<span class="sr-only">Search clubs</span>' +
         '<input type="search" id="q" placeholder="Search by club or city" value="' + esc(q0) + '" autocomplete="off"></label>' +
+        '<button class="circbtn" type="button" data-cview="' + (cview === 'map' ? 'cards' : 'map') + '" id="c-toggle" aria-label="' + (cview === 'map' ? 'Show club cards' : 'Show map') + '">' + icon(cview === 'map' ? 'doc' : 'map') + '</button></div>' +
+        '<div class="cchips" role="group" aria-label="Filter clubs">' + [['all', 'All'], ['open', 'Open'], ['private', 'Private'], ['following', 'Following']].map(function (k) {
+          return '<button type="button" class="cchip" data-cchip="' + k[0] + '" aria-pressed="' + (k[0] === 'all') + '">' + k[1] + '</button>'; }).join('') + '</div>' +
         '<div id="c-map"></div><div id="c-list"></div>';
       function shownClubs() {
         var q = fold(document.getElementById('q').value.trim());
-        return clubs.filter(function (c) { return !q || fold(c.name + ' ' + c.city + ' ' + (c.summary || '')).indexOf(q) >= 0; });
+        return clubs.filter(function (c) {
+          if (cchip === 'open' && c.status === 'private') return false;
+          if (cchip === 'private' && c.status !== 'private') return false;
+          if (cchip === 'following' && !isFollowing(c.id || slugify(c.name))) return false;
+          return !q || fold(c.name + ' ' + c.city + ' ' + (c.summary || '')).indexOf(q) >= 0; });
       }
       function clubOf(id) { return clubs.filter(function (c) { return (c.id || slugify(c.name)) === id; })[0]; }
       function sheet(c) {
@@ -2050,26 +2068,16 @@
       }
       // Cards: one big club at a time, swipe left or right. Photo on top in the phone's own shape, details below.
       function drawDeck(box, list) {
-        if (!list.length) { box.innerHTML = state('empty', 'No clubs match', 'Try another name or city.'); return; }
-        box.innerHTML = '<div class="cdeck" role="group" aria-roledescription="carousel" aria-label="Clubs, swipe left or right">' +
-          '<div class="cdeck__bar"><span class="cdeck__count" id="c-count" aria-live="polite">1 of ' + list.length + '</span><span class="cdeck__arrows"><button class="circbtn" type="button" data-searchtoggle aria-label="Search clubs">' + icon('search') + '</button><button class="circbtn" type="button" data-deck="-1" aria-label="Previous club">' + icon('back') + '</button><button class="circbtn" type="button" data-deck="1" aria-label="Next club">' + icon('chev') + '</button></span></div>' +
-          '<ul class="cdeck__track" id="c-track" tabindex="0" aria-label="Club cards">' + list.map(function (c, i) {
-            var id = c.id || slugify(c.name), ph = clubPhotoOf(c), maps = c.lat && c.lng ? 'https://www.google.com/maps/search/?api=1&query=' + c.lat + ',' + c.lng : '';
-            return '<li class="cdeck__slide" role="group" aria-roledescription="slide" aria-label="' + (i + 1) + ' of ' + list.length + '">' +
-              '<article class="kcard"><div class="kcard__photo"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '>' +
-                (c.status === 'private' ? '<span class="kcard__chip">Private club</span>' : '') +
-                (c.logo && safeUrl(c.logo) ? '<span class="kcard__logo"><img src="' + esc(c.logo) + '" alt="" loading="lazy"></span>' : '') + '</div>' +
-              '<div class="kcard__body"><h2 class="kcard__name">' + esc(c.name) + '</h2><p class="kcard__city">' + icon('pin', 'i--sm') + esc(c.city) + '</p>' +
-                (c.summary ? '<p class="kcard__sum">' + esc(c.summary) + '</p>' : '') +
-                '<div class="kcard__actions">' + (maps ? '<a class="btn" href="' + maps + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>' : '') + followBtn(id, c.name) + '</div>' +
-                '<a class="kcard__more" href="/app/more/clubs/' + encodeURIComponent(id) + '">Contact and details' + icon('chev', 'i--sm') + '</a></div></article></li>';
-          }).join('') + '</ul></div>';
-        var tr = document.getElementById('c-track'), cn = document.getElementById('c-count');
-        function cur() { var sl = tr.querySelector('.cdeck__slide'); var w = sl ? sl.getBoundingClientRect().width + 14 : 1; return Math.max(0, Math.min(list.length - 1, Math.round(tr.scrollLeft / w))); }
-        tr.addEventListener('scroll', function () { cn.textContent = (cur() + 1) + ' of ' + list.length; }, { passive: true });
-        tr.addEventListener('keydown', function (ev) { if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') { ev.preventDefault(); step(ev.key === 'ArrowRight' ? 1 : -1); } });
-        function step(d) { var sl = tr.querySelector('.cdeck__slide'); var w = sl.getBoundingClientRect().width + 14; tr.scrollTo({ left: (cur() + d) * w, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
-        box.querySelectorAll('[data-deck]').forEach(function (b) { b.addEventListener('click', function () { step(+b.getAttribute('data-deck')); }); });
+        if (!list.length) { box.innerHTML = state('empty', 'No clubs match', cchip === 'following' ? 'Follow a club and it shows up here.' : 'Try another name or city.'); return; }
+        box.innerHTML = '<ul class="cfeed">' + list.map(function (c) {
+          var id = c.id || slugify(c.name), ph = clubPhotoOf(c), on = isFollowing(id);
+          return '<li class="fcard"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '>' +
+            '<a class="fcard__link" href="/app/more/clubs/' + encodeURIComponent(id) + '" aria-label="' + esc(c.name + ', ' + c.city) + '"></a>' +
+            '<button class="iconbtn gbtn fcard__fav" type="button" data-follow="' + esc(id) + '" data-name="' + esc(c.name) + '" aria-pressed="' + on + '" aria-label="Follow ' + esc(c.name) + '">' + icon('star') + '</button>' +
+            (c.status === 'private' ? '<span class="fcard__tag">Private club</span>' : '') +
+            '<div class="fcard__bar"><div class="fcard__txt"><span class="fcard__city">' + icon('pin', 'i--sm') + esc(c.city) + '</span><b class="fcard__name">' + esc(c.name) + '</b>' +
+            (c.summary ? '<span class="fcard__sum">' + esc(c.summary) + '</span>' : '') + '</div><span class="fcard__go" aria-hidden="true">' + icon('chev') + '</span></div></li>';
+        }).join('') + '</ul>';
       }
       function syncUrl() {
         var u = new URLSearchParams(), qv = document.getElementById('q').value.trim();
@@ -2081,7 +2089,6 @@
         var box = document.getElementById('c-list');
         if (cview === 'map') { box.innerHTML = ''; return; }
         var list = shownClubs();
-        var sl0 = view.querySelector('.search--list'); if (sl0) sl0.hidden = cview === 'cards' && !document.getElementById('q').value && !sl0.dataset.open;
         if (cview === 'cards') { drawDeck(box, list); return; }
         box.innerHTML = list.length ? '<p class="count">' + list.length + ' club' + (list.length === 1 ? '' : 's') + '</p><ul class="ccovers">' + list.map(function (c) {
           var id = c.id || slugify(c.name), on = isFollowing(id), ph = clubPhotoOf(c);
@@ -2096,9 +2103,11 @@
       });
       view.addEventListener('click', function (ev) {
         if (ev.target.closest('[data-searchtoggle]')) { var sl1 = view.querySelector('.search--list'); sl1.hidden = !sl1.hidden; sl1.dataset.open = sl1.hidden ? '' : '1'; if (!sl1.hidden) document.getElementById('q').focus(); return; }
+        var ch = ev.target.closest('[data-cchip]');
+        if (ch) { cchip = ch.getAttribute('data-cchip'); view.querySelectorAll('[data-cchip]').forEach(function (b) { b.setAttribute('aria-pressed', b === ch); }); apply(); if (cview === 'map' && map && window.maplibregl) drawMarkers(window.maplibregl); return; }
         var go = ev.target.closest('[data-cview-go]');
         var cv = ev.target.closest('[data-cview]') || (go && { getAttribute: function () { return go.getAttribute('data-cview-go'); } });
-        if (cv) { cview = cv.getAttribute('data-cview') || cv.getAttribute('data-cview-go'); view.querySelectorAll('[data-cview]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-cview') === cview); }); drawMap(); apply(); }
+        if (cv) { cview = cv.getAttribute('data-cview') || cv.getAttribute('data-cview-go'); var tg = document.getElementById('c-toggle'); if (tg) { tg.setAttribute('data-cview', cview === 'map' ? 'cards' : 'map'); tg.setAttribute('aria-label', cview === 'map' ? 'Show club cards' : 'Show map'); tg.innerHTML = icon(cview === 'map' ? 'doc' : 'map'); } drawMap(); apply(); }
       });
       apply(); drawMap();
     });
@@ -2114,22 +2123,29 @@
       // Only a local, unflagged photo is shown (never a hotlink, never a doubtful one)
       var photo = c.image && /^\/photos\//.test(c.image) && !c.imageNeedsReview ? c.image : '';
       // One primary action pinned at the bottom (Directions, else the website), Follow beside it
-      var primary = maps ? '<a class="btn btn--wide" href="' + maps + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>'
+      var primary = maps ? '<a class="btn btn--wide btn--dark" href="' + maps + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>'
         : safeUrl(c.website) ? '<a class="btn btn--wide" href="' + esc(c.website) + '" target="_blank" rel="noopener">' + icon('globe') + 'Website</a>' : '';
       var facts = [];
       if (c.phone) facts.push(menuRow(tel(c.phone), 'phone', 'Call ' + c.phone));
       if (c.email) facts.push(menuRow('mailto:' + c.email, 'mail', c.email));
       if (safeUrl(c.website) && maps) facts.push(menuRow(c.website, 'globe', 'Website'));
-      view.innerHTML = backLink('/app/more/clubs', 'Clubs') +
-        '<div class="chero">' + (photo ? '<img class="chero__img" src="' + esc(photo) + '" alt="' + esc(c.name) + ' lawn bowling club" loading="lazy" data-hide-on-error>' : '<div class="chero__img chero__img--none">' + icon('pin') + '</div>') +
-        (c.status === 'private' ? '<span class="chero__tag">Private club</span>' : '') + '</div>' +
-        '<h1 class="detail-title chero__title">' + esc(c.name) + '</h1>' +
-        '<p class="chero__where">' + icon('pin', 'i--sm') + esc(c.city) + '</p>' +
-        (c.summary ? '<p class="club__summary">' + esc(c.summary) + '</p>' : '') +
-        (facts.length ? '<ul class="rows rows--cards" style="margin-top:16px">' + facts.join('') + '</ul>' : '') +
-        (c.details ? '<details class="fold"><summary><span>About the club</span>' + CHEV + '</summary><p style="padding-bottom:16px">' + esc(c.details) + '</p></details>' : '') +
-        '<p class="muted" style="margin-top:8px">Following is saved on this phone and puts this club’s events first. It doesn’t turn on notifications.</p>' +
-        '<div class="actionbar">' + primary + followBtn(cid, c.name) + '</div>';
+      var fon = isFollowing(cid), tiles = [];
+      if (c.phone) tiles.push(['phone', 'Call', c.phone, tel(c.phone)]);
+      if (c.email) tiles.push(['mail', 'Email', c.email, 'mailto:' + c.email]);
+      if (safeUrl(c.website)) tiles.push(['globe', 'Website', c.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''), c.website]);
+      view.innerHTML = (photo ? '<div class="escene__bg" aria-hidden="true" style="--ph:url(\'' + esc(photo) + '\')"></div>' : '') +
+        '<div class="cphoto"' + (photo ? ' style="--ph:url(\'' + esc(photo) + '\')" role="img" aria-label="' + esc(c.name) + ' lawn bowling club"' : '') + '>' +
+          '<a class="iconbtn gbtn cphoto__back" href="/app/more/clubs" aria-label="Back to clubs">' + icon('chev') + '</a>' +
+          '<button class="iconbtn gbtn cphoto__fav" type="button" data-follow="' + esc(cid) + '" data-name="' + esc(c.name) + '" aria-pressed="' + fon + '" aria-label="Follow ' + esc(c.name) + '">' + icon('star') + '</button>' +
+          (photo ? '' : '<span class="cphoto__none">' + icon('pin') + '</span>') + '</div>' +
+        '<div class="esheet csheet2"><div class="esheet__grab" aria-hidden="true"></div>' +
+          '<div class="cname"><div><h1 class="cname__t">' + esc(c.name) + '</h1><p class="cname__c">' + icon('pin', 'i--sm') + esc(c.city) + '</p></div>' +
+          '<span class="cname__pill' + (c.status === 'private' ? '' : ' cname__pill--open') + '">' + (c.status === 'private' ? 'Private club' : 'Open club') + '</span></div>' +
+          (tiles.length ? '<div class="ctiles">' + tiles.map(function (t) { return '<a class="ctile" href="' + esc(t[3]) + '"' + (t[0] === 'globe' ? ' target="_blank" rel="noopener"' : '') + '><span class="ctile__ic" aria-hidden="true">' + icon(t[0]) + '</span><b>' + t[1] + '</b><small>' + esc(t[2]) + '</small></a>'; }).join('') + '</div>' : '') +
+          (c.summary ? '<p class="cinfo"><span class="cinfo__ic" aria-hidden="true">' + icon('star') + '</span><span>' + esc(c.summary) + '</span></p>' : '') +
+          (c.details ? '<details class="fold"><summary><span>About the club</span>' + CHEV + '</summary><p style="padding-bottom:16px">' + esc(c.details) + '</p></details>' : '') +
+        '</div>' +
+        (primary ? '<div class="actionbar">' + primary + '</div>' : '');
       view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
     });
   }
