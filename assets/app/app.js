@@ -3215,8 +3215,8 @@
           if (k && k.indexOf('swd:memberPhoto:') === 0) localStorage.removeItem(k);
         }
       } catch (e) {}
-      var sob = view.querySelector('.signout-bottom'); if (sob) sob.remove();
-      toast('Signed out'); signInForm();
+      store('memberPreview', false);
+      toast('Signed out'); render();   // redraw the whole page as signed out
     }
     var foot = '';
     // Sign out sits at the very bottom of the page, quietly, not inside the membership card
