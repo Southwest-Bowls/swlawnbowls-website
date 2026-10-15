@@ -2389,7 +2389,7 @@
         view.querySelector('#h-go').addEventListener('click', function () {
           var ref = 'PRACTICE-' + Math.random().toString(36).slice(2, 7).toUpperCase();
           var entry = { id: ref, eventId: id, title: x.short, date: e.date || '', players: data.players.map(function (p, i) { return { role: roles[i], name: p.name, club: p.club }; }), email: data.email, phone: data.phone, method: data.method,
-            status: 'pending_payment', created: todayISO() };
+            status: data.method === 'online' ? 'paid' : 'pending_payment', created: todayISO() };
           var list = hubEntries(); list.unshift(entry); hubSave(list);
           done(entry);
         });
@@ -2399,10 +2399,38 @@
           '<h1 class="signin__h">Practice entry saved</h1>' +
           '<p class="signin__sub">This is how it will look for <b>' + esc(en.title) + '</b>. No email was sent, nobody was told and nothing was charged.</p>' +
           '<ul class="rows rows--cards"><li><div class="row"><span class="row__main"><span class="row__title">Reference ' + esc(en.id) + '</span><span class="row__meta">With real entry, a confirmation would go to ' + esc(en.email) + '</span></span>' + statusChip(en.status) + '</div></li></ul>' +
-          '<div class="actions"><a class="btn btn--wide" href="/app/my">See my entries</a></div><p class="signin__foot"><a class="textlink" href="/app/events">Back to events</a></p></div>';
+          '<div class="actions"><a class="btn btn--wide" href="/app/receipt/' + encodeURIComponent(en.id) + '">View your receipt</a><a class="btn btn--ghost btn--wide" href="/app/my">See my entries</a></div><p class="signin__foot"><a class="textlink" href="/app/events">Back to events</a></p></div>';
         arrived();
       }
       stepTeam();
+    });
+  }
+  // Receipt: what the player sees after paying (or entering by check or cash). It stays on screen so it can be
+  // screenshotted or printed. PRACTICE: built from the entry saved on this phone.
+  function receiptScreen(params, ref) {
+    setTitle('Receipt');
+    if (!hubOn()) return go('/app', true);
+    var en = hubEntries().filter(function (x) { return x.id === ref; })[0];
+    if (!en) { view.innerHTML = backLink('/app/my', 'My SWD') + state('empty', 'We couldn’t find that receipt', '<a class="btn" href="/app/my">My SWD</a>'); return Promise.resolve(); }
+    return Promise.all([loadEvents(), getJSON('/clubs-data.json').catch(function () { return {}; })]).then(function (all) {
+      var x = all[0].filter(function (y) { return y.id === en.eventId; })[0], e = x ? x.e : {};
+      var club = e.club && e.club.name || '', addr = e.club && e.club.address || '';
+      var paid = en.status === 'paid' || en.status === 'checked_in';
+      var how = en.method === 'online' ? 'PayPal (card, Apple Pay or Google Pay)' : en.method === 'check' ? 'Check, mailed to the organizer' : 'Cash at the green';
+      var row = function (k, v) { return v ? '<div class="rcpt__row"><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>' : ''; };
+      view.innerHTML = backLink('/app/my', 'My SWD') + hubBanner() +
+        '<article class="rcpt" aria-label="Receipt">' +
+          '<header class="rcpt__head"><span class="logo-plate rcpt__logo"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75"></span>' +
+          '<div><b class="rcpt__org">Southwest Bowls Division</b><span class="rcpt__tag">Lawn Bowls: A Sport for Life!</span></div></header>' +
+          '<div class="rcpt__status rcpt__status--' + (paid ? 'ok' : 'wait') + '">' + (paid ? 'Payment received' : 'Entry received, payment pending') + '</div>' +
+          '<h1 class="rcpt__title">' + esc(en.title) + '</h1>' +
+          '<dl class="rcpt__list">' + row('Date', en.date) + row('Venue', [club, addr].filter(Boolean).join(', ')) + row('Entry fee', e.fee || '') + row('Paid with', how) +
+            row('Status', paid ? 'Paid' : 'Waiting for payment') + row('Receipt number', en.id) + row('Issued', en.created) + '</dl>' +
+          '<h2 class="rcpt__sub">Team</h2><ul class="rcpt__team">' + en.players.map(function (p) { return '<li><b>' + esc(p.role) + '</b> ' + esc(p.name) + (p.club ? ' <span class="muted">· ' + esc(p.club) + '</span>' : '') + '</li>'; }).join('') + '</ul>' +
+          (en.method !== 'online' ? '<p class="rcpt__note">' + (en.method === 'check' ? 'Mail your check to: ' + esc((e.contact && e.contact.mailTo) || 'the tournament organizer') + '. ' : 'Bring cash to the green. ') + 'Your place is held. You will show as paid once the organizer receives it.</p>' : '') +
+          '<p class="rcpt__foot">Keep this page for your records: take a screenshot or use Share. A confirmation would also be emailed to ' + esc(en.email) + '.</p></article>' +
+        '<div class="actions">' + (x ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '">View the tournament</a>' : '') + shareBtn(en.title + ' receipt ' + en.id, '/app/my') + '</div>';
+      window.scrollTo(0, 0);
     });
   }
   // My entries (on My SWD): what I entered, its status, and a withdrawal request
@@ -2410,7 +2438,7 @@
     var list = hubEntries(); if (!hubOn()) return '';
     return '<section class="section mysec" aria-labelledby="h-ent"><div class="section__head"><h2 class="section__title" id="h-ent">My entries</h2><span class="tag tag--preview">Preview</span></div>' +
       (list.length ? '<ul class="list list--plain">' + list.map(function (en) {
-        return '<li><div class="rcard rcard--col"><span class="rcard__body"><span class="rcard__title">' + esc(en.title) + '</span><span class="rcard__meta">' + esc(en.players.map(function (p) { return p.name; }).join(', ')) + '</span></span>' + statusChip(en.status) +
+        return '<li><div class="rcard rcard--col"><span class="rcard__body"><span class="rcard__title"><a href="/app/receipt/' + encodeURIComponent(en.id) + '">' + esc(en.title) + '</a></span><span class="rcard__meta">' + esc(en.players.map(function (p) { return p.name; }).join(', ')) + '</span></span>' + statusChip(en.status) +
           (en.status === 'paid' || en.status === 'pending_payment' ? '<button class="btn btn--ghost btn--sm" type="button" data-withdraw="' + esc(en.id) + '" aria-label="Request withdrawal from ' + esc(en.title) + '">Request withdrawal</button>' : '') + '</div></li>'; }).join('') + '</ul>'
         : '<p class="muted">No entries yet. Open an event and tap Enter.</p>') + '<p class="footnote">Preview only. Withdrawals are approved and refunded by the tournament organizer.</p></section>';
   }
@@ -2828,6 +2856,7 @@
     [/^\/app\/events\/([^/]+)\/?$/, eventDetail, 'events'],
     [/^\/app\/events\/([^/]+)\/enter\/?$/, enterScreen, 'events'],
     [/^\/app\/td\/?$/, tdScreen, 'more'],
+    [/^\/app\/receipt\/([A-Za-z0-9-]+)\/?$/, receiptScreen, 'my'],
     [/^\/app\/results\/?$/, resultsList, 'results'],
     [/^\/app\/standings\/?$/, standings, 'results'],
     [/^\/app\/page\/standings\/?$/, standings, 'results'],
