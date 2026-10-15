@@ -80,6 +80,8 @@
     cal: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18"/>',
     pin: '<path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    bowl: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/>',
+    ends: '<path d="M4 8h13l-3-3m3 3-3 3M20 16H7l3-3m-3 3 3 3"/>',
     people: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/>',
     alert: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>',
     bell: '<path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5Zm5 3h4"/>',
@@ -1147,7 +1149,7 @@
         '<header class="ehero ' + catClass(x) + '"' + (hostPhoto ? ' style="--ph:url(\'' + esc(hostPhoto) + '\')"' : '') + '>' +
           '<span class="ehero__cat">' + esc(x.cat || 'Open') + '</span>' + saveBtn(x.id, x.short) +
           '<button class="iconbtn ehero__share" type="button" data-share="/app/events/' + esc(x.id) + '" data-share-title="' + esc(x.e.title) + '" aria-label="Share ' + esc(x.short) + '">' + icon('share') + '</button>' +
-          '<div class="ehero__body"><p class="ehero__sub">' + esc(String(e.subtitle || '').toLowerCase().indexOf(String(x.cat || '').toLowerCase().replace(/'s$/, '')) === 0 ? e.subtitle : (e.subtitle || season)) + '</p>' +
+          '<div class="ehero__body"><p class="ehero__sub">' + esc(String(e.subtitle || '').toLowerCase().indexOf(String(x.cat || '').toLowerCase().replace(/'s$/, '')) === 0 ? e.subtitle : (e.subtitle || season)).split(' · ')[0] + '</p>' +
           '<h1 class="ehero__title">' + esc(e.title) + '</h1>' +
           (x.club ? '<p class="ehero__club">' + icon('pin', 'i--sm') + esc(x.club) + '</p>' : '') + '</div></header>' +
         '<div class="detail-date detail-date--plain"><div><b>' + esc(e.date || 'Date to be announced') + '</b>' + statusLine(st) + '</div></div>';
@@ -1209,14 +1211,20 @@
     if (x.dates) {
       var multi = x.dates.start !== x.dates.end, st0 = startTime(e.time);
       var right = multi ? ['Ends', fmt(x.dates.end, { weekday: 'short', month: 'short', day: 'numeric' }), ''] : (x.deadline && phase !== 'past' ? ['Entries close', fmt(x.deadline, { weekday: 'short', month: 'short', day: 'numeric' }), ''] : null);
-      var badges = [];
+      var badges = [], ttl = fold((x.e.title || '') + ' ' + (x.cat || '') + ' ' + (x.short || ''));
+      String(e.formatDetails || '').split(/\s*[·•|]\s*/).forEach(function (sg) {
+        sg = sg.trim(); if (!sg) return;
+        var words = fold(sg).split(/[^a-z0-9]+/).filter(function (w) { return w && !/^(tournament|event|the|and|of)$/.test(w); });
+        if (words.length && words.every(function (w) { return ttl.indexOf(w) >= 0; })) return;
+        badges.push([/bowls?\b/i.test(sg) ? 'bowl' : /\bends?\b|games?\b/i.test(sg) ? 'ends' : 'doc', cap(sg)]);
+      });
       if (e.format) badges.push(['people', cap(e.format)]);
       if (e.fee) badges.push(['$', String(e.fee)]);
       if ((e.rules || []).concat(e.formatDetails || [], e.notes || []).some(function (r) { return /\bA or B green\b|designate A or B/i.test(String(r)); })) badges.push(['A/B', 'A or B green']);
       h += '<div class="ticket"><div class="ticket__row"><div class="ticket__side"><span class="ticket__k">' + (multi ? 'Starts' : 'Event day') + '</span><b class="ticket__v">' + esc(fmt(x.dates.start, { weekday: 'short', month: 'short', day: 'numeric' })) + '</b>' + (st0 ? '<span class="ticket__s">' + esc(st0) + '</span>' : '') + '</div>' +
         (right ? '<span class="ticket__arrow" aria-hidden="true">' + icon('chev') + '</span><div class="ticket__side ticket__side--r"><span class="ticket__k">' + right[0] + '</span><b class="ticket__v">' + esc(right[1]) + '</b></div>' : '') + '</div>' +
         (badges.length ? '<ul class="ticket__badges">' + badges.map(function (b) { return '<li><span class="ticket__ic" aria-hidden="true">' + (PATHS[b[0]] ? icon(b[0]) : esc(b[0])) + '</span><span>' + esc(b[1]) + '</span></li>'; }).join('') + '</ul>' : '') +
-        (e.formatDetails ? '<p class="ticket__fd">' + esc(e.formatDetails) + '</p>' : '') +
+        '' +
         (e.club && e.club.address ? (safeUrl(e.club.mapUrl) ? '<a class="ticket__venue" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener"><span class="ticket__ic" aria-hidden="true">' + icon('pin') + '</span><span><b>' + esc(e.club.name || 'Venue') + '</b><small>' + esc(e.club.address) + ' · opens in Maps</small></span></a>' : '<div class="ticket__venue"><span class="ticket__ic" aria-hidden="true">' + icon('pin') + '</span><span><b>' + esc(e.club.name || 'Venue') + '</b><small>' + esc(e.club.address) + '</small></span></div>') : '') + '</div>';
     }
     var facts = [];
