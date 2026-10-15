@@ -1383,9 +1383,12 @@
       view.innerHTML = backLink('/app/results', 'Results') +
         (r.t.meta ? '<p class="eyebrow">' + esc(r.t.meta) + '</p>' : '') +
         '<h1 class="detail-title">' + esc(r.t.title) + '</h1>' +
-        divisionsHtml(r.t) +
+        (r.t.divisions && r.t.divisions.length > 1 ? '<p class="muted divhint">' + r.t.divisions.length + ' events in this tournament. Tap one to see its results.</p>' : '') +
+        divisionsHtml(r.t, params.get('division') || '') +
         '<div class="actions" style="margin-top:24px">' + shareBtn(r.t.title + ' — results', '/app/results/' + r.id) + '</div>' +
         (r.eventId ? '<ul class="rows" style="margin-top:16px">' + linkRow('/app/events/' + encodeURIComponent(r.eventId), 'cal', 'Event details') + '</ul>' : '');
+      var want = params.get('division') && document.getElementById('div-' + params.get('division'));
+      if (want) setTimeout(function () { want.scrollIntoView({ block: 'start' }); }, 60);
     });
   }
   // ---- Season standings ------------------------------------------------
@@ -1523,7 +1526,8 @@
   }
   function byRank(list) { return list.slice().sort(function (a, b) { return (+a.rank || 99) - (+b.rank || 99); }); }
   // Verified winners first; the complete published standings underneath.
-  function divisionsHtml(t) {
+  function divSlug(dv) { return dv.slug || slugify(dv.label || 'results'); }
+  function divisionsHtml(t, openSlug) {
     var divs = t.divisions || [];
     // One division: its winners are the event's champions. Several (venues,
     // greens, genders): each has its own winners, labelled as such.
@@ -1536,7 +1540,11 @@
       if (!podium.length) podium = first.slice(0, 3);
       var total = groups.reduce(function (n, g) { return n + g.places.length; }, 0);
       var item = function (p) { return placeItem(p, winnerLabel); };
-      var html = '<section class="division"><h2 class="division__title">' + esc(dv.label || 'Results') + '</h2>' +
+      var multi = divs.length > 1, isOpen = multi && openSlug && divSlug(dv) === openSlug;
+      var lead = podium[0] && podium[0].names ? '1st: ' + podium[0].names : '';
+      var html = (multi ? '<details class="divcard" id="div-' + esc(divSlug(dv)) + '"' + (isOpen ? ' open' : '') + '><summary><span class="divcard__main"><span class="divcard__name">' + esc(dv.label || 'Results') + '</span>' +
+        (lead ? '<span class="divcard__lead">' + esc(lead) + '</span>' : '') + '</span>' + CHEV + '</summary>' : '') +
+        '<section class="division' + (multi ? ' division--in' : '') + '">' + (multi ? '' : '<h2 class="division__title">' + esc(dv.label || 'Results') + '</h2>') +
         (dv.venue ? '<p class="division__venue">' + esc(dv.venue) + '</p>' : '') +
         (groups.length > 1 && groups[0].label ? '<h3 class="flight">' + esc(groups[0].label) + '</h3>' : '') +
         '<ol class="places" aria-label="' + esc(dv.label || '') + ' top places">' + podium.map(item).join('') + '</ol>';
@@ -1549,7 +1557,7 @@
           }).join('') + '</details>';
       }
       if (dv.eventUrl) html += '<ul class="rows">' + linkRow(dv.eventUrl, '', 'Full breakdown on the website', '', { ext: true }) + '</ul>';
-      return html + '</section>';
+      return html + '</section>' + (multi ? '</details>' : '');
     }).join('') || state('empty', 'Results coming soon', 'They’ll appear here as soon as they’re published.');
   }
 
@@ -2236,7 +2244,7 @@
           g.places.forEach(function (pl) {
             if (splitNames(pl.names).indexOf(me) < 0) return;
             var partners = String(pl.names).split(/\s*(?:,|&|\/|\band\b)\s*/i).filter(function (n) { return fold(n).trim() !== me; });
-            out.push({ r: r, rank: pl.rank, rankLabel: pl.rankLabel || '', div: [dv.label, g.label].filter(Boolean).join(' · '), partners: partners });
+            out.push({ r: r, rank: pl.rank, rankLabel: pl.rankLabel || '', slug: (r.t.divisions || []).length > 1 ? divSlug(dv) : '', divLabel: dv.label || '', div: [dv.label, g.label].filter(Boolean).join(' · '), partners: partners });
           });
         });
       });
@@ -2250,8 +2258,8 @@
   }
   function myResultRow(m) {
     var d = resultDate(m.r);
-    return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(m.r.id) + '">' + placeChip(m) + '<span class="rcard__body"><span class="rcard__title">' + esc(shortTitle(m.r.t.title)) + '</span>' +
-      '<span class="rcard__meta">' + esc([d ? fmt(d, { month: 'short', day: 'numeric' }) : '', m.rankLabel && !+m.rank ? m.rankLabel : '', m.div, m.partners.length ? 'with ' + m.partners.join(', ') : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>';
+    return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(m.r.id) + (m.slug ? '?division=' + encodeURIComponent(m.slug) : '') + '">' + placeChip(m) + '<span class="rcard__body"><span class="rcard__title">' + esc(m.slug && m.divLabel ? shortTitle(m.r.t.title) + ': ' + m.divLabel : shortTitle(m.r.t.title)) + '</span>' +
+      '<span class="rcard__meta">' + esc([d ? fmt(d, { month: 'short', day: 'numeric' }) : '', m.rankLabel && !+m.rank ? m.rankLabel : '', m.slug ? m.div.replace(m.divLabel, '').replace(/^ · /, '') : m.div, m.partners.length ? 'with ' + m.partners.join(', ') : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>';
   }
   function placeWord(n) { n = +n; return n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : n ? n + 'th' : ''; }
   // Identity header: everyone can use the app without an account, including
