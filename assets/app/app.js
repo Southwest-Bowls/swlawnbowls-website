@@ -2351,7 +2351,8 @@
       if (c.phone) tiles.push(['phone', 'Call', tel(c.phone), false]);
       if (c.email) tiles.push(['mail', 'Email', 'mailto:' + c.email, false]);
       if (safeUrl(c.website)) tiles.push(['globe', 'Website', c.website, true]);
-      view.innerHTML = '<div class="dhead"><a class="circbtn" href="/app/more/clubs" aria-label="Back to clubs">' + icon('back') + '</a><span class="dhead__t">Club details</span>' + shareBtnIcon(c.name, '/app/more/clubs/' + cid) + '</div>' +
+      var cFrom = history.state && history.state.from, cBack = cFrom && cFrom.split('?')[0] !== location.pathname && /^\/app(\/|$|\?)/.test(cFrom) ? cFrom : '/app/more/clubs';
+      view.innerHTML = '<div class="dhead"><a class="circbtn" href="' + esc(cBack) + '" data-back aria-label="Back">' + icon('back') + '</a><span class="dhead__t">Club details</span>' + shareBtnIcon(c.name, '/app/more/clubs/' + cid) + '</div>' +
         '<div class="dframe"><div class="dframe__ph' + (photo ? '' : ' dframe__ph--none') + '"' + (photo ? ' style="--ph:url(\'' + esc(photo) + '\')" role="img" aria-label="' + esc(c.name) + ' lawn bowling club"' : '') + '>' + (photo ? '' : '<span class="ph__mark ph__mark--lg" aria-hidden="true">' + esc(String(c.name || '?').charAt(0).toUpperCase()) + '</span>') +
           '<button class="iconbtn gbtn dframe__fav" type="button" data-follow="' + esc(cid) + '" data-name="' + esc(c.name) + '" aria-pressed="' + fon + '" aria-label="Follow ' + esc(c.name) + '">' + icon('star') + '</button>' +
           '<span class="clcard__tag' + (c.status === 'private' ? '' : ' clcard__tag--open') + '">' + (c.status === 'private' ? 'Private club' : 'Open club') + '</span></div></div>' +
