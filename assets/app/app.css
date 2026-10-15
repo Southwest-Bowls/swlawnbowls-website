@@ -1337,3 +1337,11 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .divcard[open] > summary > .i { transform: rotate(90deg); }
 .division--in { padding: 0 var(--s4) var(--s4); }
 .divhint { margin: 0 0 var(--s3); }
+
+/* Podium badges: gold, silver, bronze, strong enough in both themes; other places stay plain */
+.place--1 .place__rank { background: #f5c93a; color: #231120; }
+.place--2 .place__rank { background: #cfcbd2; color: #231120; }
+.place--3 .place__rank { background: #e0a56b; color: #231120; }
+.place--1 .place__rank, .place--2 .place__rank, .place--3 .place__rank { box-shadow: inset 0 0 0 2px rgba(35, 17, 32, .18); }
+.plc--2 { background: #cfcbd2; box-shadow: inset 0 0 0 2px rgba(35, 17, 32, .18); }
+.plc--1, .plc--3 { box-shadow: inset 0 0 0 2px rgba(35, 17, 32, .18); }
