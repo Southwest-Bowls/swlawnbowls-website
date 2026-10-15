@@ -915,20 +915,21 @@
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
       var segs = [['upcoming', 'Upcoming'], ['calendar', 'Calendar'], ['saved', 'Saved']].concat(hasPast ? [['past', 'Completed']] : []);
       var calMonth = (f.month || today.slice(0, 7)), calDay = '';
-      var nSet = (f.cat ? 1 : 0) + (f.club ? 1 : 0);
+      var nSet = f.club ? 1 : 0;
       view.innerHTML = pageHead('Find your next game.', 'Events', 'logo') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search events or clubs</span>' +
         '<input type="search" id="q" placeholder="Search events" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
         '<div class="segmented" role="group" aria-label="Which events">' + segs.map(function (k) {
           return '<button type="button" data-show="' + k[0] + '" aria-pressed="' + (k[0] === show) + '">' + k[1] + '</button>';
         }).join('') + '</div>' +
+        '<div class="chips" role="group" aria-label="Filter by category">' + [['', 'All']].concat(CATS.map(function (c) { return [c, c]; })).map(function (c) {
+          return '<button type="button" class="chip" data-ecat="' + esc(c[0]) + '" aria-pressed="' + (c[0] === f.cat) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>' +
         '<div class="monthbar tint tint--blue">' + icon('cal') +
         '<label class="monthbar__month"><span class="sr-only">Month</span><select id="f-month">' + opt('', 'Any month', f.month) +
         Object.keys(months).sort().map(function (k) { return opt(k, months[k], f.month); }).join('') + '</select></label>' +
         '<button class="monthbar__filters" type="button" data-filters aria-expanded="' + (nSet > 0) + '" aria-controls="filters-panel">Filters<span class="monthbar__n" id="f-n">' + (nSet ? ' (' + nSet + ')' : '') + '</span></button></div>' +
         '<div class="filters" id="filters-panel"' + (nSet ? '' : ' hidden') + '>' +
-        '<label><span class="sr-only">Category</span><select id="f-cat">' + opt('', 'All categories', f.cat) +
-        CATS.map(function (c) { return opt(c, c, f.cat); }).join('') + '</select></label>' +
+        '<input type="hidden" id="f-cat" value="' + esc(f.cat) + '">' +
         '<label><span class="sr-only">Club</span><select id="f-club">' + opt('', 'All clubs', f.club) + opt('followed', 'Followed clubs', f.club) +
         Object.keys(clubs).sort(function (a, b) { return clubs[a] < clubs[b] ? -1 : 1; }).map(function (k) { return opt(k, clubs[k], f.club); }).join('') + '</select></label>' +
         '</div><div id="ev-results"></div><p class="footnote">Save a game. Find it on Home.</p>';
@@ -938,8 +939,9 @@
         var month = document.getElementById('f-month').value;
         var cat = document.getElementById('f-cat').value;
         var club = document.getElementById('f-club').value;
-        ['f-month', 'f-cat', 'f-club'].forEach(function (id) { var el = document.getElementById(id); el.classList.toggle('is-set', !!el.value); });
-        var nF = (cat ? 1 : 0) + (club ? 1 : 0);
+        ['f-month', 'f-club'].forEach(function (id) { var el = document.getElementById(id); el.classList.toggle('is-set', !!el.value); });
+        view.querySelectorAll('[data-ecat]').forEach(function (c) { c.setAttribute('aria-pressed', c.getAttribute('data-ecat') === cat); });
+        var nF = club ? 1 : 0;
         document.getElementById('f-n').textContent = nF ? ' (' + nF + ')' : '';
         var sv = saved();
         var list = events.filter(function (x) {
@@ -1000,8 +1002,10 @@
       }
       var t;
       document.getElementById('q').addEventListener('input', function () { clearTimeout(t); t = setTimeout(apply, 150); });
-      ['f-month', 'f-cat', 'f-club'].forEach(function (id) { document.getElementById(id).addEventListener('change', apply); });
+      ['f-month', 'f-club'].forEach(function (id) { document.getElementById(id).addEventListener('change', apply); });
       view.addEventListener('click', function (ev) {
+        var ec = ev.target.closest('[data-ecat]');
+        if (ec) { document.getElementById('f-cat').value = ec.getAttribute('data-ecat'); apply(); return; }
         var cn = ev.target.closest('[data-cal-nav]');
         if (cn) { calMonth = addMonths(calMonth, +cn.getAttribute('data-cal-nav')); calDay = ''; apply(); return; }
         var cd = ev.target.closest('[data-cal-day]');
@@ -1039,7 +1043,7 @@
   function eventDetail(params, id) {
     setTitle('Event');
     var today = todayISO();
-    return Promise.all([loadEvents(), loadResults().catch(function () { return []; })]).then(function (all) {
+    return Promise.all([loadEvents(), loadResults().catch(function () { return []; }), getJSON('/clubs-data.json').catch(function () { return {}; })]).then(function (all) {
       var x = all[0].filter(function (y) { return y.id === id; })[0];
       if (!x) {
         view.innerHTML = backLink('/app/events', 'Events') + state('empty', 'We couldn’t find that event', 'It may have been renamed or removed.',
@@ -1064,7 +1068,16 @@
       if (!tabs.some(function (t) { return t[0] === tab; })) tab = 'overview';
 
       var season = x.dates ? x.dates.start.slice(0, 4) + ' Southwest season' : '';
+      // Photo header: the host club's own photo, when we have one
+      var hostClub = (all[2].clubs || []).filter(function (c) { return (x.clubIds || []).indexOf(c.id) >= 0; })[0];
+      var hostPhoto = hostClub && hostClub.image && /^\/photos\//.test(hostClub.image) && !hostClub.imageNeedsReview ? hostClub.image : '';
+      var entryOpen = phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled';
+      var primaryBar = entryOpen ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">Enter this tournament</a>'
+        : phase === 'past' && result ? '<a class="btn btn--wide" href="?tab=results" data-goto-tab="results">See the results</a>'
+        : phase !== 'past' && st && st.kind === 'closed' ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">Entry details</a>' : '';
+      var onNow = isSaved(x.id);
       var html = backLink('/app/events', 'Events') +
+        (hostPhoto ? '<div class="chero"><img class="chero__img chero__img--wide" src="' + esc(hostPhoto) + '" alt="" loading="lazy" data-hide-on-error>' + (st ? '<span class="chero__tag">' + esc(st.label) + '</span>' : '') + '</div>' : '') +
         '<p class="eyebrow">' + esc(e.subtitle || season) + '</p>' +
         '<h1 class="detail-title">' + esc(e.title) + '</h1>' +
         (x.club ? '<p>' + esc(x.club) + '</p>' : '') +
@@ -1073,8 +1086,11 @@
 
       html += '<div class="segmented" role="tablist" aria-label="Event sections">' + tabs.map(function (t) {
         return '<button type="button" role="tab" id="tab-' + t[0] + '" aria-controls="panel" aria-selected="' + (t[0] === tab) + '" tabindex="' + (t[0] === tab ? 0 : -1) + '" data-tab="' + t[0] + '">' + t[1] + '</button>';
-      }).join('') + '</div><div id="panel" role="tabpanel" tabindex="-1"></div>';
+      }).join('') + '</div><div id="panel" role="tabpanel" tabindex="-1"></div>' +
+        '<div class="actionbar">' + primaryBar + '<button class="btn btn--ghost' + (primaryBar ? '' : ' btn--wide') + '" type="button" data-save="' + esc(x.id) + '" data-title="' + esc(x.short) + '" data-on="' + onNow + '" aria-label="' + esc(saveLabel(onNow, x.short)) + '">' + icon('bookmark') +
+        '<span aria-hidden="true">' + (onNow ? 'Saved' : 'Save') + '</span></button></div>';
       view.innerHTML = html;
+      view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.parentNode.hidden = true; }); });
 
       function show(name, focusPanel) {
         tab = name;
@@ -1135,8 +1151,6 @@
 
     // Actions: one primary, the rest quiet
     var acts = [];
-    if (phase !== 'past') acts.push('<a class="btn btn--split btn--primary-wide" href="?tab=entry" data-goto-tab="entry">Entry details' + icon('chev') + '</a>');
-    else if (hasResult) acts.push('<a class="btn btn--split btn--primary-wide" href="?tab=results" data-goto-tab="results">See the results' + icon('chev') + '</a>');
     if (e.club && safeUrl(e.club.mapUrl)) acts.push('<a class="btn btn--ghost" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>');
     if (x.dates && phase !== 'past') acts.push('<a class="btn btn--ghost" href="' + icsHref(x) + '" download="' + esc(x.id) + '.ics" data-ics>' + icon('cal') + 'Add to calendar</a>');
     var on = isSaved(x.id);
@@ -2080,8 +2094,7 @@
     }
     function emailStep(msg) {
       clearInterval(timer);
-      shell(1, '<span class="logo-plate signin__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="64" height="75"></span>' +
-        '<h1 class="signin__h">Log in or create an account</h1><p class="signin__sub">Enter your email and we’ll send you a code. No password to remember.</p>' +
+      shell(1, '<h1 class="signin__h">Log in or create an account</h1><p class="signin__sub">Enter your email and we’ll send you a code. No password to remember.</p>' +
         (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
         '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
         '<input id="s-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="' + esc(email) + '" required></span></label>' +

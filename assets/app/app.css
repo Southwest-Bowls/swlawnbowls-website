@@ -1178,3 +1178,11 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .otp__input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px; z-index: 2; }
 .otp__box { display: grid; place-items: center; height: 60px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 1.6rem; font-weight: 800; color: var(--heading); }
 .otp__box.is-on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--tint-blue); }
+
+.chero__img--wide { aspect-ratio: 16 / 9; }
+
+/* Sign-in backdrop: the Division logo, large, blurred and faint behind the form */
+.signin { position: relative; isolation: isolate; }
+.signin::before { content: ''; position: absolute; z-index: -1; left: 50%; top: 14%; width: 125%; aspect-ratio: 1 / 1; transform: translateX(-50%);
+  background: url('/assets/app/swd-logo.png') center / contain no-repeat; opacity: .13; filter: blur(2.5px) saturate(.8); pointer-events: none; }
+:root[data-theme="dark"] .signin::before { opacity: .16; }
