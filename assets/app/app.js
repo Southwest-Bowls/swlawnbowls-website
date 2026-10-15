@@ -1766,15 +1766,57 @@
     });
   }
 
+  // Southern California map. A simple drawn coastline (not survey-accurate) with a pin per club,
+  // placed from each club's own latitude and longitude. No map service, so it works offline.
+  var COAST = [[-121.40, 35.95], [-121.30, 35.74], [-121.28, 35.66], [-121.10, 35.56], [-120.86, 35.37], [-120.64, 35.14], [-120.64, 34.90], [-120.65, 34.58],
+    [-120.47, 34.45], [-120.00, 34.46], [-119.70, 34.40], [-119.29, 34.27], [-119.06, 34.09], [-118.68, 34.03], [-118.50, 34.01], [-118.41, 33.80], [-118.41, 33.74],
+    [-118.19, 33.75], [-117.90, 33.60], [-117.70, 33.46], [-117.38, 33.19], [-117.27, 32.85], [-117.24, 32.67], [-117.12, 32.53], [-114.72, 32.72], [-114.50, 35.95]];
+  var MAP_CITIES = [['Cambria', -121.08, 35.56, 8, 5, 'start'], ['Santa Barbara', -119.72, 34.62, 0, 0, 'middle'], ['Los Angeles', -118.15, 34.78, 0, 0, 'middle'], ['San Diego', -117.30, 32.58, 0, 0, 'end']];
+  function clubMapHtml(clubs, selId) {
+    var pts = clubs.filter(function (c) { return c.lat && c.lng; });
+    var lo0 = -121.55, lo1 = -116.55, la0 = 32.45, la1 = 35.85, k = Math.cos(34 * Math.PI / 180);
+    var W = (lo1 - lo0) * k * 100, H = (la1 - la0) * 100;
+    function X(lo) { return (lo - lo0) * k * 100; }
+    function Y(la) { return (la1 - la) * 100; }
+    var poly = COAST.map(function (c) { return X(c[0]).toFixed(1) + ',' + Y(c[1]).toFixed(1); }).join(' ');
+    var svg = '<svg class="cmap__svg" viewBox="0 0 ' + W.toFixed(0) + ' ' + H.toFixed(0) + '" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">' +
+      '<rect width="100%" height="100%" class="cmap__sea"/><polygon points="' + poly + '" class="cmap__land"/>' +
+      MAP_CITIES.map(function (c) { return '<text x="' + (X(c[1]) + c[3]).toFixed(1) + '" y="' + (Y(c[2]) + c[4]).toFixed(1) + '" text-anchor="' + c[5] + '" class="cmap__label">' + esc(c[0]) + '</text>'; }).join('') + '</svg>';
+    return '<div class="cmap" role="group" aria-label="Map of clubs">' + svg + pts.map(function (c) {
+      var id = c.id || slugify(c.name), on = isFollowing(id);
+      return '<button type="button" class="cmap__pin' + (on ? ' cmap__pin--on' : '') + (id === selId ? ' cmap__pin--sel' : '') + '" data-pin="' + esc(id) + '" style="left:' +
+        (X(+c.lng) / W * 100).toFixed(2) + '%;top:' + (Y(+c.lat) / H * 100).toFixed(2) + '%" aria-label="' + esc(c.name + ', ' + c.city) + '"><span></span></button>';
+    }).join('') + '</div>';
+  }
+  function clubCard(c) {
+    if (!c) return '<p class="cmap__hint">Tap a pin to see the club.</p>';
+    var id = c.id || slugify(c.name);
+    var photo = c.image && /^\/photos\//.test(c.image) && !c.imageNeedsReview ? c.image : '';
+    return '<a class="ccard" href="/app/more/clubs/' + encodeURIComponent(id) + '">' + (photo ? '<img class="ccard__img" src="' + esc(photo) + '" alt="" width="72" height="72" loading="lazy" data-hide-on-error>' : '') +
+      '<span class="ccard__body"><span class="ccard__title">' + esc(c.name) + '</span><span class="ccard__meta">' + esc(c.city + (c.status === 'private' ? ' · Private club' : '')) + '</span></span>' + CHEV + '</a>';
+  }
   function clubsList(params) {
     setTitle('Clubs');
     return getJSON('/clubs-data.json').then(function (d) {
       var clubs = d.clubs || [];
-      var q0 = params.get('q') || '';
+      var q0 = params.get('q') || '', cview = params.get('view') === 'list' ? 'list' : 'map', selId = '';
       view.innerHTML = backLink('/app/more', 'More') + pageHead('Find your club.', 'Clubs · Cambria to Coronado', 'logo') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search clubs</span>' +
-        '<input type="search" id="q" placeholder="Search by club or city" value="' + esc(q0) + '" autocomplete="off"></label><div id="c-list"></div>';
+        '<input type="search" id="q" placeholder="Search by club or city" value="' + esc(q0) + '" autocomplete="off"></label>' +
+        '<div class="segmented" role="group" aria-label="Show clubs as">' + [['map', 'Map'], ['list', 'List']].map(function (k) {
+          return '<button type="button" data-cview="' + k[0] + '" aria-pressed="' + (k[0] === cview) + '">' + k[1] + '</button>'; }).join('') + '</div>' +
+        '<div id="c-map"></div><div id="c-list"></div>';
+      function drawMap() {
+        var box = document.getElementById('c-map');
+        if (cview !== 'map') { box.innerHTML = ''; return; }
+        var q = fold(document.getElementById('q').value.trim());
+        var shown = clubs.filter(function (c) { return !q || fold(c.name + ' ' + c.city + ' ' + (c.summary || '')).indexOf(q) >= 0; });
+        var sel = shown.filter(function (c) { return (c.id || slugify(c.name)) === selId; })[0];
+        box.innerHTML = clubMapHtml(shown, sel ? selId : '') + '<div id="c-card" aria-live="polite">' + clubCard(sel) + '</div>';
+        box.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
+      }
       function apply() {
+        if (cview === 'map') { document.getElementById('c-list').innerHTML = ''; return; }
         var q = fold(document.getElementById('q').value.trim());
         var list = clubs.filter(function (c) { return !q || fold(c.name + ' ' + c.city + ' ' + (c.summary || '')).indexOf(q) >= 0; });
         document.getElementById('c-list').innerHTML = list.length ? '<p class="count">' + list.length + ' club' + (list.length === 1 ? '' : 's') + '</p><ul class="list list--plain">' + list.map(function (c) {
@@ -1784,8 +1826,14 @@
         }).join('') + '</ul>' : state('empty', 'No clubs match', 'Try another name or city.');
         history.replaceState(history.state, '', '/app/more/clubs' + (q ? '?q=' + encodeURIComponent(document.getElementById('q').value.trim()) : ''));
       }
-      document.getElementById('q').addEventListener('input', apply);
-      apply();
+      document.getElementById('q').addEventListener('input', function () { apply(); drawMap(); });
+      view.addEventListener('click', function (ev) {
+        var pin = ev.target.closest('[data-pin]');
+        if (pin) { selId = pin.getAttribute('data-pin'); drawMap(); var ca = document.getElementById('c-card'); if (ca) ca.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); return; }
+        var cv = ev.target.closest('[data-cview]');
+        if (cv) { cview = cv.getAttribute('data-cview'); view.querySelectorAll('[data-cview]').forEach(function (b) { b.setAttribute('aria-pressed', b === cv); }); drawMap(); apply(); }
+      });
+      apply(); drawMap();
     });
   }
   function clubDetail(params, slug) {
@@ -1798,21 +1846,23 @@
       var maps = c.lat && c.lng ? 'https://www.google.com/maps/search/?api=1&query=' + c.lat + ',' + c.lng : '';
       // Only a local, unflagged photo is shown (never a hotlink, never a doubtful one)
       var photo = c.image && /^\/photos\//.test(c.image) && !c.imageNeedsReview ? c.image : '';
-      var acts = [followBtn(cid, c.name)];
-      if (maps) acts.push('<a class="btn btn--ghost" href="' + maps + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>');
-      if (c.phone) acts.push('<a class="btn btn--ghost" href="' + esc(tel(c.phone)) + '">' + icon('phone') + 'Call</a>');
-      if (c.email) acts.push('<a class="btn btn--ghost" href="mailto:' + esc(c.email) + '">' + icon('mail') + 'Email</a>');
-      if (safeUrl(c.website)) acts.push('<a class="btn btn--ghost" href="' + esc(c.website) + '" target="_blank" rel="noopener">' + icon('globe') + 'Website</a>');
+      // One primary action pinned at the bottom (Directions, else the website), Follow beside it
+      var primary = maps ? '<a class="btn btn--wide" href="' + maps + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>'
+        : safeUrl(c.website) ? '<a class="btn btn--wide" href="' + esc(c.website) + '" target="_blank" rel="noopener">' + icon('globe') + 'Website</a>' : '';
+      var facts = [];
+      if (c.phone) facts.push(menuRow(tel(c.phone), 'phone', 'Call ' + c.phone));
+      if (c.email) facts.push(menuRow('mailto:' + c.email, 'mail', c.email));
+      if (safeUrl(c.website) && maps) facts.push(menuRow(c.website, 'globe', 'Website'));
       view.innerHTML = backLink('/app/more/clubs', 'Clubs') +
-        (photo ? '<img class="club__img" src="' + esc(photo) + '" alt="' + esc(c.name) + ' lawn bowling club" loading="lazy" data-hide-on-error>' : '') +
-        '<p class="eyebrow">' + esc(c.city) + (c.status === 'private' ? ' · Private club' : '') + '</p>' +
-        '<h1 class="detail-title">' + esc(c.name) + '</h1>' +
+        '<div class="chero">' + (photo ? '<img class="chero__img" src="' + esc(photo) + '" alt="' + esc(c.name) + ' lawn bowling club" loading="lazy" data-hide-on-error>' : '<div class="chero__img chero__img--none">' + icon('pin') + '</div>') +
+        '<span class="chero__tag">' + esc(c.status === 'private' ? 'Private club' : 'Open to visitors') + '</span></div>' +
+        '<h1 class="detail-title chero__title">' + esc(c.name) + '</h1>' +
+        '<p class="chero__where">' + icon('pin', 'i--sm') + esc(c.city) + '</p>' +
         (c.summary ? '<p class="club__summary">' + esc(c.summary) + '</p>' : '') +
-        '<div class="actions">' + acts.join('') + '</div>' +
+        (facts.length ? '<ul class="rows rows--cards" style="margin-top:16px">' + facts.join('') + '</ul>' : '') +
+        (c.details ? '<details class="fold"><summary><span>About the club</span>' + CHEV + '</summary><p style="padding-bottom:16px">' + esc(c.details) + '</p></details>' : '') +
         '<p class="muted" style="margin-top:8px">Following is saved on this phone and puts this club’s events first. It doesn’t turn on notifications.</p>' +
-        ((c.phone || c.email) ? '<section class="block"><h2>Contact</h2><ul class="rows rows--menu">' +
-          (c.phone ? menuRow(tel(c.phone), 'phone', c.phone) : '') + (c.email ? menuRow('mailto:' + c.email, 'mail', c.email) : '') + '</ul></section>' : '') +
-        (c.details ? '<details class="fold"><summary><span>About the club</span>' + CHEV + '</summary><p style="padding-bottom:16px">' + esc(c.details) + '</p></details>' : '');
+        '<div class="actionbar">' + primary + followBtn(cid, c.name) + '</div>';
       view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
     });
   }

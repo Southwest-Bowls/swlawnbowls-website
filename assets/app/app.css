@@ -1133,3 +1133,31 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .rcard__meta { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .rcard__title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .mini__date .i { width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; }
+
+/* Find a club: drawn map with pins, tap a pin for the club */
+.cmap { position: relative; margin: var(--s3) 0; border-radius: var(--r-card); overflow: hidden; background: var(--tint-blue); }
+.cmap__svg { display: block; width: 100%; height: auto; }
+.cmap__sea { fill: var(--tint-blue); }
+.cmap__land { fill: var(--surface); stroke: var(--line); stroke-width: 2; }
+.cmap__label { fill: var(--text-2); font: 700 17px system-ui, sans-serif; letter-spacing: .02em; }
+.cmap__pin { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; padding: 0; border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; }
+.cmap__pin span { width: 16px; height: 16px; border-radius: 50%; background: var(--brand-red); border: 3px solid var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,.35); transition: transform .15s ease; }
+.cmap__pin--on span { background: #d98c00; }
+.cmap__pin--sel span { transform: scale(1.7); background: var(--heading); border-color: var(--accent); }
+.cmap__hint { color: var(--text-2); text-align: center; margin: 0 0 var(--s3); }
+.ccard { display: flex; align-items: center; gap: var(--s3); padding: var(--s3); border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--line); color: var(--text); text-decoration: none; margin-bottom: var(--s4); }
+.ccard__img { flex: none; width: 72px; height: 72px; border-radius: 14px; object-fit: cover; }
+.ccard__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ccard__title { font-weight: 800; font-size: 1.1rem; color: var(--heading); }
+.ccard__meta { color: var(--text-2); }
+
+/* Club page: big photo, key facts, one action pinned above the tab bar */
+.chero { position: relative; margin: var(--s2) 0 var(--s4); }
+.chero__img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--r-card); background: var(--subtle); }
+.chero__img--none { display: grid; place-items: center; color: var(--text-2); }
+.chero__img--none .i { width: 48px; height: 48px; }
+.chero__tag { position: absolute; left: 12px; bottom: 12px; padding: 5px 12px; border-radius: var(--r-pill); background: var(--accent); color: var(--accent-ink); font-size: var(--fs-xs); font-weight: 800; }
+.chero__title { margin-bottom: 4px; }
+.chero__where { display: flex; align-items: center; gap: 6px; color: var(--text-2); margin-bottom: var(--s3); }
+.actionbar { position: sticky; bottom: calc(var(--tabbar-h) + var(--safe-b) + 10px); display: flex; gap: var(--s3); align-items: center; margin-top: var(--s5); padding: var(--s3); border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--line); box-shadow: 0 6px 24px rgba(0,0,0,.18); z-index: 5; }
+.actionbar .btn--wide { flex: 1; width: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
