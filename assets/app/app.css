@@ -1996,3 +1996,13 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 .signin__tagline { align-self: center; width: 140px; height: auto; margin-top: var(--s5); opacity: .9; }
 .signin__top { position: absolute; top: calc(var(--safe-t) + 20px); left: calc(var(--gutter) + 10px); z-index: 2; margin: 0; }
 .signin { padding-top: calc(var(--safe-t) + var(--s2)); }
+
+/* Sign-in steps share the landing look: full-bleed photo fading to the page */
+.signin { margin: 0 calc(-1 * var(--gutter)); padding-top: 0; }
+.signin > :not(.sbrand):not(.signin__top) { margin-left: var(--gutter); margin-right: var(--gutter); }
+.sbrand { margin: 0 0 46px; }
+.sbrand__photo { height: 46dvh; max-height: 360px; border-radius: 0; -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent); mask-image: linear-gradient(180deg, #000 62%, transparent); }
+.sbrand__logo { bottom: -44px; }
+.signin__top { top: calc(var(--safe-t) + 14px); left: var(--gutter); }
+.signin__h { font-size: 1.75rem; }
+.sbrand__photo { height: 32dvh; max-height: 260px; }
