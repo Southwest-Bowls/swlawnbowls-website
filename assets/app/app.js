@@ -676,62 +676,54 @@
     var mine = d.events.filter(function (x) { return ids.indexOf(x.id) >= 0; });
     var mineNext = mine.filter(function (x) { return live.indexOf(x) >= 0; });   // already in date order
 
-    // 1. Identity: logo on its white plate, one heading, one line
-    var html = '<header class="hhead"><span class="logo-plate"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="64" height="75"></span>' +
-      '<div class="hhead__text"><h1>Your Southwest.</h1>' +
-      '<span class="art-plate hhead__mark"><img src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls — A Sport for Life!" width="341" height="160" decoding="async"></span></div>' +
-      '<button class="iconbtn hhead__theme" type="button" data-theme-open aria-haspopup="dialog" aria-label="Appearance: light, dark or system">' + icon('sun') + '</button>' +
-      '<p class="hhead__tag">26 Clubs · One Sport · One Community.</p></header>';
-
-    // 2. Real search (events, clubs, results)
-    html += '<form class="search search--home" role="search" action="/app/search" data-home-search>' + icon('search') +
-      '<label class="sr-only" for="hq">Search events, clubs, results</label>' +
-      '<input id="hq" type="search" name="q" placeholder="Search events, clubs, results" autocomplete="off" enterkeyhint="search"></form>';
-
-    // 3. Four section tiles
-    html += '<nav class="tiles" aria-label="Sections">' + [
-      ['/app/events', 'cal', 'Events', 'Find your next game', 'blue'],
-      ['/app/results', 'trophy', 'Results', 'See who won', 'orange'],
-      ['/app/more/clubs', 'pin', 'Clubs', 'Find your people', 'blush'],
-      ['/app/watch', 'tv', 'Watch', 'Southwest TV', 'ink']
-    ].map(function (t) {
-      return '<a class="tile tile--' + t[4] + '" href="' + t[0] + '">' + icon(t[1]) + '<span class="tile__label">' + t[2] + '</span><span class="tile__sub">' + t[3] + '</span></a>';
-    }).join('') + '</nav>';
-
-    // Urgent: a change to a saved event, or unread tournament updates — one strip each
-    var myAlerts = mineNext.filter(isCritical);
+    // 1. Greeting bar: date and hello on the left; search, updates and profile as small round buttons
+    var prof = store('profile') || {}, first = String(prof.name || '').trim().split(/\s+/)[0];
     currentNotices = live.filter(function (x) { return x.e.alert; });
     var unread = unreadCount(currentNotices);
+    var html = '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'long', month: 'long', day: 'numeric' })) + '</span>' +
+      '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Your Southwest') + '</h1></div>' +
+      '<a class="circbtn" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
+      '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
+      '<a class="circbtn circbtn--me" href="/app/my" aria-label="My SWD">' + (initials(prof.name) ? esc(initials(prof.name)) : icon('person')) + '</a></header>';
+
+    // Urgent: a change to a saved event
+    var myAlerts = mineNext.filter(isCritical);
     html += myAlerts.map(function (x) {
       return '<a class="alert" href="/app/events/' + encodeURIComponent(x.id) + '">' + icon('alert') +
         '<span><b>' + esc(x.e.alertLabel || 'Update') + ' · ' + esc(x.short) + '</b><span class="alert__text">' + esc(x.e.alert) + '</span></span></a>';
     }).join('');
-    if (unread) {
-      html += '<button class="strip" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
-        '<span data-upd-label>' + updatesLabel(currentNotices) + '</span>' + CHEV + '</button>';
+
+    // 2. Hero card: your next saved event, otherwise the next event anywhere. Saving never enters anyone.
+    var heroEv = mineNext[0] || live[0];
+    if (heroEv) {
+      var hst = entryStatus(heroEv, today);
+      html += '<section aria-labelledby="h-next"><h2 class="sr-only" id="h-next" tabindex="-1">' + (mineNext[0] ? 'Your next saved event' : 'Next event') + '</h2>' +
+        '<a class="herocard" href="/app/events/' + encodeURIComponent(heroEv.id) + '">' + dateBlock(heroEv, false, true) +
+        '<span class="herocard__main"><span class="herocard__kicker">' + (mineNext[0] ? 'Your next event' : 'Next event') + '</span>' +
+        '<span class="herocard__title">' + esc(heroEv.short) + '</span>' +
+        '<span class="herocard__meta">' + esc([dateRangeLabel(heroEv.dates), heroEv.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
+        (hst ? statusLine(hst) : '') + '</span>' + CHEV + '</a></section>';
     }
 
-    // 4. Next saved event — the nearest upcoming bookmark. Saving never enters
-    //    anyone; when entries exist, a real entry takes this place first.
-    html += '<section class="hsec" aria-labelledby="h-next"><div class="section__head"><h2 class="section__title" id="h-next" tabindex="-1">Next saved event</h2>' +
-      '<a class="section__more" href="/app/events?show=saved">' + (mine.length ? 'All saved (' + mine.length + ')' : 'Saved') + icon('chev', 'i--sm') + '</a></div>';
-    if (mineNext.length) {
-      var x = mineNext[0], st = entryStatus(x, today);
-      html += '<div class="nextcard tint tint--blue">' + dateBlock(x, false, true) +
-        '<a class="nextcard__main" href="/app/events/' + encodeURIComponent(x.id) + '"><span class="nextcard__title">' + esc(x.short) + '</span>' +
-        '<span class="nextcard__meta">' + esc([dateRangeLabel(x.dates), x.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
-        (st ? statusLine(st) : '') + '<span class="nextcard__note">Saved, not entered</span></a>' + saveBtn(x.id, x.short) + '</div>';
-    } else {
-      var fol = followed();
-      var fromClub = fol.length ? live.filter(function (y) { return y.clubIds.some(function (c) { return fol.indexOf(c) >= 0; }); })[0] : null;
-      html += '<div class="nextcard nextcard--empty tint tint--blue"><div class="nextcard__main">' +
-        '<span class="nextcard__title">' + (mine.length ? 'No upcoming saved events.' : 'Make this space yours.') + '</span>' +
-        '<span class="nextcard__meta">' + (mine.length ? 'Your saved events have all been played.' : 'Save an event to see it here.') + '</span>' +
-        (fromClub ? '<a class="nextcard__club" href="/app/events/' + encodeURIComponent(fromClub.id) + '">Next from a club you follow: ' + esc(fromClub.short) + ' · ' + esc(dateRangeLabel(fromClub.dates)) + '</a>' : '') +
-        '<a class="textlink" href="' + (mine.length ? '/app/events?show=saved' : '/app/events') + '">' + (mine.length ? 'View saved events' : 'Browse events') + icon('chev', 'i--sm') + '</a></div>' +
-        '<img class="nextcard__art" src="/assets/app/art/saved-empty.png" alt="" aria-hidden="true" width="64" height="64" decoding="async"></div>';
+    // 3. Four quick links as round shortcuts
+    html += '<nav class="shortcuts" aria-label="Sections">' + [
+      ['/app/events', 'cal', 'Events', 'blue'], ['/app/results', 'trophy', 'Results', 'orange'],
+      ['/app/more/clubs', 'pin', 'Clubs', 'blush'], ['/app/watch', 'tv', 'Watch', 'ink']
+    ].map(function (t) {
+      return '<a class="shortcut shortcut--' + t[3] + '" href="' + t[0] + '"><span class="shortcut__dot">' + icon(t[1]) + '</span><span class="shortcut__label">' + t[2] + '</span></a>';
+    }).join('') + '</nav>';
+
+    // 4. Upcoming events: a row of cards you swipe sideways
+    var more = live.filter(function (x) { return x !== heroEv; }).slice(0, 8);
+    if (more.length) {
+      html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head"><h2 class="section__title" id="h-up">Coming up</h2>' +
+        '<a class="section__more" href="/app/events">See all' + icon('chev', 'i--sm') + '</a></div><ul class="hscroll">' +
+        more.map(function (x) {
+          var st = entryStatus(x, today);
+          return '<li><a class="mini" href="/app/events/' + encodeURIComponent(x.id) + '"><span class="mini__date">' + esc(dateRangeLabel(x.dates, true)) + '</span>' +
+            '<span class="mini__title">' + esc(x.short) + '</span><span class="mini__meta">' + esc(x.clubLabel || '') + '</span>' + (st ? statusLine(st) : '') + '</a></li>';
+        }).join('') + '</ul></section>';
     }
-    html += '</section>';
 
     // 5. Around the greens — one real community story; the full feed is News
     var sto = d.story;
@@ -756,9 +748,6 @@
     });
     var sb = view.querySelector('[data-story]');
     if (sb) sb.addEventListener('click', function () { storyDialog(d.story); });
-    var hs = view.querySelector('[data-home-search]');
-    hs.addEventListener('submit', function (ev) { ev.preventDefault(); openSearch(document.getElementById('hq').value); });
-    document.getElementById('hq').addEventListener('input', function () { openSearch(this.value); });
   }
   // Typing on Home moves to the full search screen, keeping the caret.
   var searchFocus = false;
@@ -1964,7 +1953,7 @@
     return '<button class="idhead" type="button" data-edit-profile aria-label="Edit your details">' +
       '<span class="idhead__avatar" aria-hidden="true">' + (initials(p.name) ? esc(initials(p.name)) : icon('person')) + '</span>' +
       '<span class="idhead__text"><span class="idhead__name">' + (first ? 'Hi, ' + esc(first) : 'Welcome to Southwest Bowls') + '</span>' +
-      (chips ? '<span class="idhead__chips">' + chips + '</span>' : '<span class="idhead__meta">Guest · Add your details (optional)</span>') + '</span>' +
+      (chips ? '<span class="idhead__chips">' + chips + '</span>' : '<span class="idhead__meta">Guest · Tap to add details</span>') + '</span>' +
       icon('chev', 'i--sm') + '</button>';
   }
   function wireProfile() {

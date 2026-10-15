@@ -1049,3 +1049,35 @@ html[data-text="xlarge"] .idcard__body { flex-wrap: wrap; }
 .idhead__chip { padding: 3px 10px; border-radius: var(--r-pill); background: var(--tint-blue); color: var(--text); font-size: var(--fs-xs); font-weight: 700; }
 .idhead > .i { flex: none; color: var(--text-2); }
 @media (prefers-reduced-motion: no-preference) { .idhead { transition: transform 140ms ease; } .idhead:active { transform: scale(.99); } }
+
+/* ===== Home (app pass): greeting bar, hero card, shortcuts, swipe row ===== */
+.hbar { display: flex; align-items: center; gap: var(--s2); margin: var(--s2) 0 var(--s4); padding-top: var(--safe-t); }
+.hbar__text { flex: 1; min-width: 0; }
+.hbar__date { display: block; color: var(--text-2); font-size: var(--fs-s, .95rem); }
+.hbar__hello { font-size: clamp(1.4rem, 6vw, 1.75rem); line-height: 1.15; letter-spacing: -.01em; margin-top: 2px; }
+.circbtn { position: relative; flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--surface);
+  border: 1px solid var(--line); color: var(--heading); font: inherit; font-weight: 800; text-decoration: none; cursor: pointer; }
+.circbtn .i { width: 24px; height: 24px; }
+.circbtn--me { background: var(--tint-blue); border-color: transparent; }
+.circbtn__dot { position: absolute; top: 9px; right: 11px; width: 10px; height: 10px; border-radius: 50%; background: var(--brand-red, #c8102e); border: 2px solid var(--surface); }
+.herocard { display: flex; align-items: center; gap: var(--s3); padding: var(--s4); border-radius: var(--r-card); background: var(--tint-blue); color: var(--text); text-decoration: none; margin-bottom: var(--s4); min-height: 96px; }
+.herocard__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.herocard__kicker { font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); }
+.herocard__title { font-size: 1.2rem; font-weight: 800; line-height: 1.2; color: var(--heading); }
+.herocard__meta { color: var(--text-2); font-size: var(--fs-s, .95rem); }
+.herocard > .i { flex: none; color: var(--text-2); }
+.shortcuts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s2); margin-bottom: var(--s5); }
+.shortcut { display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: var(--text); font-weight: 700; font-size: var(--fs-s, .95rem); }
+.shortcut__dot { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; background: var(--tint-blue); color: var(--heading); }
+.shortcut__dot .i { width: 28px; height: 28px; }
+.shortcut--orange .shortcut__dot { background: var(--tint-orange); }
+.shortcut--blush .shortcut__dot { background: var(--tint-blush, var(--tint-orange)); }
+.shortcut--ink .shortcut__dot { background: var(--heading); color: var(--bg, #fff); }
+.hscroll { list-style: none; display: flex; gap: var(--s3); overflow-x: auto; scroll-snap-type: x mandatory; margin: 0; padding: 2px 0 var(--s3); scrollbar-width: none; }
+.hscroll::-webkit-scrollbar { display: none; }
+.hscroll > li { flex: none; width: min(72vw, 260px); scroll-snap-align: start; }
+.mini { display: flex; flex-direction: column; gap: 4px; height: 100%; padding: var(--s4); border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--line); color: var(--text); text-decoration: none; }
+.mini__date { font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--text-2); }
+.mini__title { font-weight: 800; font-size: 1.05rem; line-height: 1.25; color: var(--heading); }
+.mini__meta { color: var(--text-2); font-size: var(--fs-s, .95rem); }
+@media (prefers-reduced-motion: no-preference) { .herocard, .mini, .shortcut__dot, .circbtn { transition: transform 140ms ease; } .herocard:active, .mini:active { transform: scale(.985); } .shortcut:active .shortcut__dot, .circbtn:active { transform: scale(.94); } }
