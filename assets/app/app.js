@@ -3237,7 +3237,7 @@
       var target = !restoring && location.hash && document.getElementById(location.hash.slice(1));
       if (target) { target.scrollIntoView({ block: 'start' }); target.focus({ preventScroll: true }); }
       restoring = false;
-      setupNavTitle();
+      setupNavTitle(); blurUp(view);
     });
   }
 
@@ -3324,6 +3324,14 @@
     // A tab always opens its main screen, so Results means the results
     // list, never the last tournament you looked at
     if (tab) navDir = 'tab';
+    // A tapped event card grows into the event page (where the browser supports it)
+    if (!tab && /^\/app\/events\/[^/?#]+$/.test(href.split('?')[0]) && a.matches('a.pcard, a.tcard') && document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      a.style.viewTransitionName = 'hero'; navDir = 'tab';
+      document.startViewTransition(function () {
+        return go(href).then(function () { var eh = view.querySelector('.ehero'); if (eh) eh.style.viewTransitionName = 'hero'; });
+      });
+      return;
+    }
     go(href);
   });
 
@@ -3372,13 +3380,35 @@
     if (navObs) { navObs.disconnect(); navObs = null; }
     navbar.classList.remove('navtitle--on');
     var h = view.querySelector('h1'); if (!h || location.pathname === '/app' || !('IntersectionObserver' in window)) return;
-    navbar.firstChild.textContent = h.textContent.replace(/\s+/g, ' ').trim();
+    h.classList.add('ltitle'); navbar.firstChild.textContent = h.textContent.replace(/\s+/g, ' ').trim();
     navObs = new IntersectionObserver(function (en) {
       var e0 = en[0]; navbar.classList.toggle('navtitle--on', !e0.isIntersecting && e0.boundingClientRect.top < 0);
     }, { rootMargin: '-56px 0px 0px 0px', threshold: 0 });
     navObs.observe(h);
   }
 
+  // Large title shrinks a little as you scroll, then the small bar takes over
+  (function () {
+    var tick = false;
+    window.addEventListener('scroll', function () {
+      if (tick) return; tick = true;
+      requestAnimationFrame(function () { tick = false; document.documentElement.style.setProperty('--tp', Math.min(Math.max(window.scrollY, 0) / 70, 1).toFixed(3)); });
+    }, { passive: true });
+  })();
+  // Photos: show a tiny blurred copy first, swap in the sharp one when it has loaded
+  var LQIP = null;
+  fetch('/assets/app/lqip.json').then(function (r) { return r.json(); }).then(function (j) { LQIP = j; blurUp(view); }).catch(function () {});
+  function blurUp(root) {
+    if (!LQIP || !root) return;
+    root.querySelectorAll('[style*="--ph:url("]').forEach(function (el) {
+      if (el.__bu) return; el.__bu = 1;
+      var m = /--ph:\s*url\(['"]?([^'")]+)/.exec(el.getAttribute('style') || ''); if (!m || !LQIP[m[1]]) return;
+      var full = m[1], im = new Image();
+      if (el.getBoundingClientRect().top > window.innerHeight * 2) return;
+      el.style.setProperty('--ph', 'url(' + LQIP[full] + ')');
+      im.onload = function () { el.style.setProperty('--ph', 'url("' + full + '")'); }; im.onerror = im.onload; im.src = full;
+    });
+  }
   // Pull down at the top to refresh
   (function () {
     var ptr = document.createElement('div'); ptr.className = 'ptr'; ptr.setAttribute('aria-hidden', 'true'); ptr.innerHTML = '<span class="spinner"></span>'; document.body.appendChild(ptr);

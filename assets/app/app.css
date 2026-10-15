@@ -2050,3 +2050,8 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 :root[data-theme="dark"] .tabbar a[aria-current="page"] { background: #fff; color: #14101a; }
 :root[data-theme="dark"] .tabbar a[aria-current="page"] .tabbar__sym { color: #14101a; }
 @media (orientation: landscape) and (max-height: 500px) { :root { --tabbar-h: 72px; } .tabbar { padding: 4px; } }
+
+.ltitle { transform-origin: left center; transform: scale(calc(1 - .18 * var(--tp, 0))); will-change: transform; }
+::view-transition-group(hero) { animation-duration: 420ms; animation-timing-function: cubic-bezier(.2,.8,.2,1); }
+::view-transition-old(hero), ::view-transition-new(hero) { height: 100%; object-fit: cover; }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*) { animation: none !important; } }
