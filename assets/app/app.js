@@ -642,13 +642,14 @@
   // The latest champions: warm orange card; a photo only when it is of these winners
   // Latest champions: three small cards you swipe, instead of one tall panel
   function champStrip(list) {
-    var items = list.filter(function (r) { return firsts(r).length; }).slice(0, 4);
+    var items = list.filter(function (r) { return firsts(r).length; }).slice(0, 5);
     if (!items.length) return '';
     return '<section class="hsec" aria-labelledby="h-champ"><div class="section__head"><h2 class="section__title" id="h-champ">Latest champions</h2></div><ul class="hscroll">' +
-      items.map(function (r, i) {
-        var w = firsts(r)[0];
-        return '<li><a class="mini ' + catClass(r.cat ? r : { cat: categoryOf(r.t.title) }) + '" href="/app/results/' + encodeURIComponent(r.id) + '"><span class="mini__date">' + icon('trophy', 'i--sm') + esc(shortTitle(r.t.title)) + '</span>' +
-          '<span class="mini__title">' + esc(w.who) + '</span><span class="mini__meta">' + esc(r.t.meta || '') + '</span></a></li>';
+      items.map(function (r) {
+        var f = firsts(r)[0], cat = catClass(r.cat ? r : { cat: categoryOf(r.t.title) });
+        return '<li><a class="pcard ' + cat + '" href="/app/results/' + encodeURIComponent(r.id) + '"' + (f.photo ? ' style="--ph:url(\'' + esc(f.photo) + '\')"' : '') + '>' +
+          '<span class="pcard__cat">' + icon('trophy', 'i--sm') + 'Champions</span>' +
+          '<span class="pcard__body"><span class="pcard__date">' + esc(shortTitle(r.t.title)) + '</span><span class="pcard__title">' + esc(f.who) + '</span><span class="pcard__meta">' + esc(r.t.meta || '') + '</span></span></a></li>';
       }).join('') + '</ul></section>';
   }
   function championPanel(r) {
@@ -1144,10 +1145,11 @@
         : '';
       var onNow = isSaved(x.id);
       var html = backLink('/app/events', 'Events') +
-        (hostPhoto ? '<div class="chero"><img class="chero__img chero__img--wide" src="' + esc(hostPhoto) + '" alt="" loading="lazy" data-hide-on-error>' + '' + '</div>' : '') +
-        '<div class="eband ' + catClass(x) + '">' + saveBtn(x.id, x.short) + '<p class="eyebrow">' + esc(String(e.subtitle || '').toLowerCase().indexOf(String(x.cat || '').toLowerCase().replace(/'s$/, '')) === 0 ? e.subtitle : (x.cat || 'Open') + ' · ' + (e.subtitle || season)) + '</p>' +
-        '<h1 class="detail-title">' + esc(e.title) + '</h1>' +
-        (x.club ? '<p>' + esc(x.club) + '</p>' : '') + '</div>' +
+        '<header class="ehero ' + catClass(x) + '"' + (hostPhoto ? ' style="--ph:url(\'' + esc(hostPhoto) + '\')"' : '') + '>' +
+          '<span class="ehero__cat">' + esc(x.cat || 'Open') + '</span>' + saveBtn(x.id, x.short) +
+          '<div class="ehero__body"><p class="ehero__sub">' + esc(String(e.subtitle || '').toLowerCase().indexOf(String(x.cat || '').toLowerCase().replace(/'s$/, '')) === 0 ? e.subtitle : (e.subtitle || season)) + '</p>' +
+          '<h1 class="ehero__title">' + esc(e.title) + '</h1>' +
+          (x.club ? '<p class="ehero__club">' + icon('pin', 'i--sm') + esc(x.club) + '</p>' : '') + '</div></header>' +
         '<div class="detail-date detail-date--plain"><div><b>' + esc(e.date || 'Date to be announced') + '</b>' + statusLine(st) + '</div></div>';
       if (e.alert) html += '<div class="note" role="note"><b>' + esc(e.alertLabel || 'Update') + '</b>' + esc(e.alert) + '</div>';
 

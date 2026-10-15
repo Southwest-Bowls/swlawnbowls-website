@@ -1586,3 +1586,16 @@ html[data-text="xxlarge"] .hub__stats { grid-template-columns: repeat(2, 1fr); }
 @media (prefers-reduced-motion: no-preference) { .ccover { transition: transform 260ms cubic-bezier(.2,.9,.3,1.2); } .ccover:active { transform: scale(.98); } }
 
 .mapslow { position: absolute; left: 12px; right: 12px; top: 12px; z-index: 6; padding: 10px 14px; border-radius: 14px; background: var(--surface); box-shadow: 0 6px 20px rgba(35,17,32,.2); font-size: var(--fs-sm); }
+
+/* ===== Event page hero: full-width photo with the title on it ===== */
+.ehero { position: relative; display: flex; align-items: flex-end; min-height: 280px; margin: var(--s2) 0 var(--s3); border-radius: 28px; overflow: hidden; color: #fff; isolation: isolate;
+  background: var(--cat-solid, #3a2a38) var(--ph, none) center / cover no-repeat; box-shadow: 0 2px 4px rgba(35, 17, 32, .10), 0 16px 36px rgba(35, 17, 32, .22); }
+.ehero::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(18, 8, 16, .1) 20%, rgba(18, 8, 16, .5) 55%, rgba(18, 8, 16, .9) 100%); }
+.ehero__cat { position: absolute; top: 14px; left: 14px; padding: 5px 12px; border-radius: 999px; background: var(--cat-solid); color: #231120; font-size: .8125rem; font-weight: 800; }
+.ehero > .iconbtn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,.22); color: #fff; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.ehero > .iconbtn .i { fill: none; stroke: #fff; } .ehero > .iconbtn[data-on="true"] .i { fill: #fff; }
+.ehero__body { padding: 18px 20px 20px; width: 100%; }
+.ehero__sub { margin: 0 0 6px; font-size: .8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; opacity: .92; }
+.ehero__title { margin: 0; font-size: 2rem; line-height: 1.08; font-weight: 800; letter-spacing: -.025em; color: #fff; text-shadow: 0 1px 14px rgba(0,0,0,.35); }
+.ehero__club { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; opacity: .95; }
+.hscroll > li:has(> .pcard) .pcard__title { font-size: 1.1rem; }
