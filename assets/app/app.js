@@ -642,15 +642,13 @@
   // The latest champions: warm orange card; a photo only when it is of these winners
   // Latest champions: three small cards you swipe, instead of one tall panel
   function champStrip(list) {
-    var items = list.filter(function (r) { return firsts(r).length; }).slice(0, 5);
+    var items = list.filter(function (r) { return firsts(r).length; }).slice(0, 6);
     if (!items.length) return '';
-    return '<section class="hsec" aria-labelledby="h-champ"><div class="section__head"><h2 class="section__title" id="h-champ">Latest champions</h2></div><ul class="hscroll">' +
-      items.map(function (r) {
-        var f = firsts(r)[0], cat = catClass(r.cat ? r : { cat: categoryOf(r.t.title) });
-        return '<li><a class="pcard ' + cat + '" href="/app/results/' + encodeURIComponent(r.id) + '"' + (f.photo ? ' style="--ph:url(\'' + esc(f.photo) + '\')"' : '') + '>' +
-          '<span class="pcard__cat">' + icon('trophy', 'i--sm') + 'Champions</span>' +
-          '<span class="pcard__body"><span class="pcard__date">' + esc(shortTitle(r.t.title)) + '</span><span class="pcard__title">' + esc(f.who) + '</span><span class="pcard__meta">' + esc(r.t.meta || '') + '</span></span></a></li>';
-      }).join('') + '</ul></section>';
+    return '<section class="hsec" aria-labelledby="h-champ"><div class="section__head"><h2 class="section__title" id="h-champ">Latest champions</h2></div>' + deckShell(items.map(function (r) {
+      var f = firsts(r)[0], cat = catClass(r.cat ? r : { cat: categoryOf(r.t.title) });
+      return '<a class="kcard kcard--champ ' + cat + '" href="/app/results/' + encodeURIComponent(r.id) + '"><div class="kcard__photo"' + (f.photo ? ' style="--ph:url(\'' + esc(f.photo) + '\')"' : '') + '><span class="kcard__chip kcard__chip--cat">' + icon('trophy', 'i--sm') + 'Champions</span></div>' +
+        '<div class="kcard__body"><h3 class="kcard__name">' + esc(f.who) + '</h3><p class="kcard__city">' + esc(shortTitle(r.t.title)) + '</p><p class="kcard__sum">' + esc(r.t.meta || '') + '</p></div></a>';
+    }), 'Latest champions') + '</section>';
   }
   function championPanel(r) {
     var f = firsts(r);
@@ -1385,6 +1383,7 @@
         '<div id="res-list"></div></section>' +
         '<ul class="rows" style="margin-top:24px">' + linkRow('/archive', 'doc', '2022–2025 results', 'The results archive', { ext: true }) + '</ul>' +
         '';
+      wireDecks(view);
       view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
       function apply() {
         var qRaw = document.getElementById('q').value.trim(), q = qRaw.toLowerCase();
@@ -1435,6 +1434,7 @@
         awardsHtml(r.t) + divisionsHtml(r.t, params.get('division') || '') +
         '<div class="actions" style="margin-top:24px">' + shareBtn(r.t.title + ' — results', '/app/results/' + r.id) + '</div>' +
         (r.eventId ? '<ul class="rows" style="margin-top:16px">' + linkRow('/app/events/' + encodeURIComponent(r.eventId), 'cal', 'Event details') + '</ul>' : '');
+      wireDecks(view);
       var want = params.get('division') && document.getElementById('div-' + params.get('division'));
       if (want) setTimeout(function () { want.scrollIntoView({ block: 'start' }); }, 60);
     });
@@ -1585,6 +1585,34 @@
     }).join('') + '</section>';
   }
   function divSlug(dv) { return dv.slug || slugify(dv.label || 'results'); }
+  // Swipeable deck (one big card at a time). Used for champions and podium photos.
+  function deckShell(slides, label) {
+    return '<div class="cdeck" role="group" aria-roledescription="carousel" aria-label="' + esc(label) + '">' +
+      '<div class="cdeck__bar"><span class="cdeck__count" aria-live="polite">1 of ' + slides.length + '</span>' + (slides.length > 1 ? '<span class="cdeck__arrows"><button class="circbtn" type="button" data-deck="-1" aria-label="Previous">' + icon('back') + '</button><button class="circbtn" type="button" data-deck="1" aria-label="Next">' + icon('chev') + '</button></span>' : '') + '</div>' +
+      '<ul class="cdeck__track" tabindex="0" aria-label="' + esc(label) + '">' + slides.map(function (h, i) {
+        return '<li class="cdeck__slide" role="group" aria-roledescription="slide" aria-label="' + (i + 1) + ' of ' + slides.length + '">' + h + '</li>'; }).join('') + '</ul></div>';
+  }
+  function wireDecks(root) {
+    root.querySelectorAll('.cdeck').forEach(function (dk) {
+      if (dk.dataset.wired) return; dk.dataset.wired = '1';
+      var tr = dk.querySelector('.cdeck__track'), cn = dk.querySelector('.cdeck__count'), n = tr.children.length;
+      function w() { var sl = tr.querySelector('.cdeck__slide'); return sl ? sl.getBoundingClientRect().width + 14 : 1; }
+      function cur() { return Math.max(0, Math.min(n - 1, Math.round(tr.scrollLeft / w()))); }
+      function step(d) { tr.scrollTo({ left: (cur() + d) * w(), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
+      tr.addEventListener('scroll', function () { cn.textContent = (cur() + 1) + ' of ' + n; }, { passive: true });
+      tr.addEventListener('keydown', function (ev) { if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') { ev.preventDefault(); step(ev.key === 'ArrowRight' ? 1 : -1); } });
+      dk.querySelectorAll('[data-deck]').forEach(function (b) { b.addEventListener('click', function () { step(+b.getAttribute('data-deck')); }); });
+    });
+  }
+  // Podium as big swipeable photo cards (1st, 2nd, 3rd)
+  function podiumDeck(podium, label, winnerLabel) {
+    return deckShell(podium.map(function (p) {
+      var n = +p.rank, cls = n === 1 ? 'plc--1' : n === 2 ? 'plc--2' : n === 3 ? 'plc--3' : 'plc--n', ph = safeUrl(p.photo);
+      return '<article class="kcard kcard--pod"><div class="kcard__photo"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '>' +
+        '<span class="kcard__place plc ' + cls + '">' + (n ? '<b>' + n + '</b><small>' + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th') + '</small>' : icon('trophy')) + '</span></div>' +
+        '<div class="kcard__body"><h3 class="kcard__name">' + esc(p.names || '') + '</h3>' + (n === 1 ? '<p class="kcard__city">' + esc(winnerLabel || 'Champions') + '</p>' : (p.rankLabel && !/place$/i.test(p.rankLabel) ? '<p class="kcard__city">' + esc(p.rankLabel) + '</p>' : '')) + '</div></article>';
+    }), (label || 'Results') + ' podium');
+  }
   function divisionsHtml(t, openSlug) {
     var divs = t.divisions || [];
     // One division: its winners are the event's champions. Several (venues,
@@ -1605,7 +1633,7 @@
         '<section class="division' + (multi ? ' division--in' : '') + '">' + (multi ? '' : '<h2 class="division__title">' + esc(dv.label || 'Results') + '</h2>') +
         (dv.venue ? '<p class="division__venue">' + esc(dv.venue) + '</p>' : '') +
         (groups.length > 1 && groups[0].label ? '<h3 class="flight">' + esc(groups[0].label) + '</h3>' : '') +
-        '<ol class="places" aria-label="' + esc(dv.label || '') + ' top places">' + podium.map(item).join('') + '</ol>';
+        (podium.some(function (p) { return safeUrl(p.photo); }) ? podiumDeck(podium, dv.label, winnerLabel) : '<ol class="places" aria-label="' + esc(dv.label || '') + ' top places">' + podium.map(item).join('') + '</ol>');
       if (total > podium.length) {
         html += '<details class="fold"><summary><span>Complete standings</span><span class="row__meta">' + total + ' places' +
           (groups.length > 1 ? ' · ' + groups.length + ' flights' : '') + '</span>' + CHEV + '</summary>' +

@@ -1623,3 +1623,15 @@ html[data-text="xxlarge"] .hub__stats { grid-template-columns: repeat(2, 1fr); }
 @media (prefers-reduced-motion: no-preference) { .kcard { transition: transform 260ms cubic-bezier(.2,.9,.3,1.2); } }
 
 .search--list[hidden] { display: none; }
+
+/* Decks reused for champions and podium photos; bigger photos */
+.kcard--champ { text-decoration: none; color: inherit; }
+.kcard--champ .kcard__photo { aspect-ratio: 4 / 5; }
+.kcard--pod .kcard__photo { aspect-ratio: 4 / 5; background-color: var(--subtle); }
+.kcard__chip--cat { display: inline-flex; align-items: center; gap: 6px; background: var(--cat-solid, #f5c93a); color: #231120; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.kcard__place { position: absolute; top: 14px; left: 14px; width: 64px; height: 64px; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+.kcard__place b { font-size: 1.9rem; }
+.kcard--pod .kcard__body { padding-bottom: 16px; }
+.cdeck .kcard__name { font-size: 1.35rem; }
+.kcard__actions .btn { padding-inline: 12px; white-space: nowrap; }
+.kcard__actions .btn--follow span { white-space: nowrap; }
