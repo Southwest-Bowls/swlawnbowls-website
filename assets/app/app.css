@@ -40,6 +40,8 @@
   --tint-blue:   #dcf3fd;
   --tint-orange: #fff0d8;
   --tint-blush:  #fae6e9;
+  --tint-yellow: #fff6c9;
+  --cat-w: #f4b3c6; --cat-m: #19b6f2; --cat-c: #f5c93a;
   --tint-ink:    #231120;   /* charcoal card, white text */
   --on-tint-link: var(--brand-red);
   --date-ontint: #ffffff;
@@ -94,6 +96,7 @@
   --tint-blue:   #183e50;
   --tint-orange: #493525;
   --tint-blush:  #482632;
+  --tint-yellow: #4a4220;
   --tint-ink:    #160a14;
   /* Blue on the dark blue/orange tints is only ~4.5:1, so links on tinted
      cards are white in dark mode (≥11:1). */
@@ -1247,3 +1250,18 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .hero-label { font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin: 0 var(--s2) var(--s2); }
 .herostack { display: grid; gap: var(--s3); margin-bottom: var(--s4); }
 .herostack .herocard { margin-bottom: 0; }
+
+/* Event colours: women's pink, men's blue, club and open yellow. The standings card is yellow too, as an accent outside the scheme. */
+.tint--yellow { background: var(--tint-yellow); }
+.cat--w { --cat-tint: var(--tint-blush); --cat-solid: var(--cat-w); }
+.cat--m { --cat-tint: var(--tint-blue); --cat-solid: var(--cat-m); }
+.cat--c { --cat-tint: var(--tint-yellow); --cat-solid: var(--cat-c); }
+.dateblock.cat--w, .dateblock.cat--m, .dateblock.cat--c { background: var(--cat-solid); color: #231120; }
+.herocard.cat--w, .herocard.cat--m, .herocard.cat--c, .mini.cat--w, .mini.cat--m, .mini.cat--c { background: var(--cat-tint); border-color: transparent; }
+button.cal__day.cat--w, button.cal__day.cat--m, button.cal__day.cat--c { background: var(--cat-solid); color: #231120; }
+button.cal__day--sel { background: var(--heading); color: var(--surface); }
+.segmented [role="tab"].cat--w[aria-selected="true"] { background: var(--cat-w); color: #231120; }
+.segmented [role="tab"].cat--m[aria-selected="true"] { background: var(--cat-m); color: #231120; }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); justify-content: center; padding: var(--s3) 0 0; margin: 0; color: var(--text-2); font-size: var(--fs-s, .95rem); }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.legend__dot { width: 14px; height: 14px; border-radius: 50%; background: var(--cat-solid); }

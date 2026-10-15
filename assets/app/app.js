@@ -482,8 +482,10 @@
   /* ---------------------------------------------------------------
      Shared pieces of markup
      --------------------------------------------------------------- */
+  // Colour tells the kind of event: women's pink, men's blue, club and open (mixed) yellow
+  function catClass(x) { return x && x.cat === "Women's" ? 'cat--w' : x && x.cat === "Men's" ? 'cat--m' : 'cat--c'; }
   function dateBlock(x, accent, onTint) {
-    var cls = 'dateblock' + (accent ? ' dateblock--accent' : '') + (onTint ? ' dateblock--ontint' : '');
+    var cls = 'dateblock ' + catClass(x) + (accent ? ' dateblock--accent' : '') + (onTint ? ' dateblock--ontint' : '');
     if (!x.dates) return '<span class="' + cls + '" aria-hidden="true"><small>TBA</small><b>–</b></span>';
     return '<span class="' + cls + '" aria-hidden="true"><small>' +
       fmt(x.dates.start, { month: 'short' }) + '</small><b>' + fmt(x.dates.start, { day: 'numeric' }) + '</b></span>';
@@ -509,8 +511,10 @@
     for (var i = 0; i < lead; i++) cells += '<span class="cal__blank"></span>';
     for (var d = 1; d <= n; d++) {
       var iso = ym + '-' + String(d).padStart(2, '0'), ev = on(iso);
+      var kinds = {}; ev.forEach(function (e0) { kinds[catClass(e0)] = 1; });
+      var kc = Object.keys(kinds).length === 1 ? ' ' + Object.keys(kinds)[0] : '';
       cells += ev.length
-        ? '<button type="button" class="cal__day cal__day--has' + (iso === today ? ' cal__day--today' : '') + (iso === showDay ? ' cal__day--sel' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === showDay) +
+        ? '<button type="button" class="cal__day cal__day--has' + kc + (iso === today ? ' cal__day--today' : '') + (iso === showDay ? ' cal__day--sel' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === showDay) +
           '" aria-label="' + esc(fmt(iso, { weekday: 'long', month: 'long', day: 'numeric' }) + ', ' + ev.length + (ev.length === 1 ? ' event' : ' events')) + '">' + d + '</button>'
         : '<span class="cal__day' + (iso === today ? ' cal__day--today' : '') + '">' + d + '</span>';
     }
@@ -518,7 +522,7 @@
     var html = '<div class="cal"><div class="cal__head"><button class="circbtn" type="button" data-cal-nav="-1" aria-label="Previous month">' + icon('back') + '</button>' +
       '<h2 class="cal__title" aria-live="polite">' + esc(fmt(first, { month: 'long', year: 'numeric' })) + '</h2>' +
       '<button class="circbtn" type="button" data-cal-nav="1" aria-label="Next month">' + icon('chev') + '</button></div>' +
-      '<div class="cal__grid" role="group" aria-label="Days with events"><span class="cal__dow" aria-hidden="true">Sun</span><span class="cal__dow" aria-hidden="true">Mon</span><span class="cal__dow" aria-hidden="true">Tue</span><span class="cal__dow" aria-hidden="true">Wed</span><span class="cal__dow" aria-hidden="true">Thu</span><span class="cal__dow" aria-hidden="true">Fri</span><span class="cal__dow" aria-hidden="true">Sat</span>' + cells + '</div></div>';
+      '<div class="cal__grid" role="group" aria-label="Days with events"><span class="cal__dow" aria-hidden="true">Sun</span><span class="cal__dow" aria-hidden="true">Mon</span><span class="cal__dow" aria-hidden="true">Tue</span><span class="cal__dow" aria-hidden="true">Wed</span><span class="cal__dow" aria-hidden="true">Thu</span><span class="cal__dow" aria-hidden="true">Fri</span><span class="cal__dow" aria-hidden="true">Sat</span>' + cells + '</div><ul class="legend" aria-label="Colours"><li><span class="legend__dot cat--w"></span>Women’s</li><li><span class="legend__dot cat--m"></span>Men’s</li><li><span class="legend__dot cat--c"></span>Club and open</li></ul></div>';
     html += '<div id="cal-day-list" tabindex="-1">' + (!anyThisMonth ? state('empty', 'No events this month', 'Use the arrows to look at another month.')
       : '<h2 class="section__title list-title">' + esc(fmt(showDay, { weekday: 'long', month: 'long', day: 'numeric' })) + '</h2>' +
         (dayEv.length ? '<ul class="list list--cards">' + dayEv.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '<p class="muted">Nothing scheduled this day.</p>')) + '</div>';
@@ -566,8 +570,9 @@
   function resultDate(r) { var d = parseDates((r.t.meta || '') + ' ' + (r.year || '')); return d ? d.start : ''; }
   function resultBlock(r) {
     var d = resultDate(r);
-    return d ? '<span class="dateblock" aria-hidden="true"><small>' + fmt(d, { month: 'short' }) + '</small><b>' + fmt(d, { day: 'numeric' }) + '</b></span>'
-      : '<span class="dateblock" aria-hidden="true">' + icon('trophy') + '</span>';
+    var cc = catClass(r.cat ? r : { cat: categoryOf(r.t.title) });
+    return d ? '<span class="dateblock ' + cc + '" aria-hidden="true"><small>' + fmt(d, { month: 'short' }) + '</small><b>' + fmt(d, { day: 'numeric' }) + '</b></span>'
+      : '<span class="dateblock ' + cc + '" aria-hidden="true">' + icon('trophy') + '</span>';
   }
   // The latest champions: warm orange card; a photo only when it is of these winners
   // Latest champions: three small cards you swipe, instead of one tall panel
@@ -577,7 +582,7 @@
     return '<section class="hsec" aria-labelledby="h-champ"><div class="section__head"><h2 class="section__title" id="h-champ">Latest champions</h2></div><ul class="hscroll">' +
       items.map(function (r, i) {
         var w = firsts(r)[0];
-        return '<li><a class="mini mini--' + (i % 3) + '" href="/app/results/' + encodeURIComponent(r.id) + '"><span class="mini__date">' + icon('trophy', 'i--sm') + esc(shortTitle(r.t.title)) + '</span>' +
+        return '<li><a class="mini ' + catClass(r.cat ? r : { cat: categoryOf(r.t.title) }) + '" href="/app/results/' + encodeURIComponent(r.id) + '"><span class="mini__date">' + icon('trophy', 'i--sm') + esc(shortTitle(r.t.title)) + '</span>' +
           '<span class="mini__title">' + esc(w.who) + '</span><span class="mini__meta">' + esc(r.t.meta || '') + '</span></a></li>';
       }).join('') + '</ul></section>';
   }
@@ -755,7 +760,7 @@
       html += '<section aria-labelledby="h-next"><h2 class="hero-label" id="h-next" tabindex="-1">' + esc(headLabel) + '</h2><div class="herostack">' +
         heroEvs.map(function (heroEv) {
           var hst = entryStatus(heroEv, today), isMine = ids.indexOf(heroEv.id) >= 0;
-          return '<a class="herocard" href="/app/events/' + encodeURIComponent(heroEv.id) + '">' + dateBlock(heroEv, false, true) +
+          return '<a class="herocard ' + catClass(heroEv) + '" href="/app/events/' + encodeURIComponent(heroEv.id) + '">' + dateBlock(heroEv, false, true) +
             '<span class="herocard__main">' + (isMine ? '<span class="herocard__kicker">Saved</span>' : '') +
             '<span class="herocard__title">' + esc(heroEv.short) + '</span>' +
             '<span class="herocard__meta">' + esc([dateRangeLabel(heroEv.dates), heroEv.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
@@ -779,7 +784,7 @@
         '<a class="section__more" href="/app/events">See all' + icon('chev', 'i--sm') + '</a></div><ul class="hscroll">' +
         more.map(function (x, i) {
           var st = entryStatus(x, today);
-          return '<li><a class="mini mini--' + (i % 3) + '" href="/app/events/' + encodeURIComponent(x.id) + '"><span class="mini__date">' + esc(dateRangeLabel(x.dates, true)) + '</span>' +
+          return '<li><a class="mini ' + catClass(x) + '" href="/app/events/' + encodeURIComponent(x.id) + '"><span class="mini__date">' + esc(dateRangeLabel(x.dates, true)) + '</span>' +
             '<span class="mini__title">' + esc(x.short) + '</span><span class="mini__meta">' + esc(x.clubLabel || '') + '</span>' + (st ? statusLine(st) : '') + '</a></li>';
         }).join('') + '</ul></section>';
     }
@@ -1411,7 +1416,7 @@
         pageHead((year ? year + ' ' : '') + 'Standings', 'Season points') +
         '<div class="segmented" role="tablist" aria-label="Which standings">' + srcs.map(function (s) {
           var on = s.key === cur.key;
-          return '<button type="button" role="tab" id="tab-' + esc(s.key) + '" aria-controls="panel" aria-selected="' + on + '" tabindex="' + (on ? 0 : -1) + '" data-list="' + esc(s.key) + '">' + esc(s.label) + '</button>';
+          return '<button type="button" class="' + (s.key === 'women' ? 'cat--w' : s.key === 'men' ? 'cat--m' : '') + '" role="tab" id="tab-' + esc(s.key) + '" aria-controls="panel" aria-selected="' + on + '" tabindex="' + (on ? 0 : -1) + '" data-list="' + esc(s.key) + '">' + esc(s.label) + '</button>';
         }).join('') + '</div>' +
         '<label class="search">' + icon('search') + '<span class="sr-only">Find a player</span>' +
         '<input type="search" id="q" placeholder="Find a player" value="' + esc(params.get('q') || '') + '" autocomplete="off" enterkeyhint="search"></label>' +
@@ -1469,7 +1474,7 @@
     return loadStandingsSources().then(function (srcs) {
       if (!srcs.length) return '';
       var y = srcs[0].year;
-      return '<a class="standlink tint tint--blue" href="/app/standings">' + icon('medal') +
+      return '<a class="standlink tint tint--yellow" href="/app/standings">' + icon('medal') +
         '<span class="standlink__body"><span class="standlink__title">' + esc((y ? y + ' ' : '') + 'Standings') + '</span>' +
         '<span class="standlink__meta">' + esc(srcs.map(function (s) { return s.label; }).join(' & ')) + ' season points</span></span>' + CHEV + '</a>';
     }).catch(function () { return ''; });
