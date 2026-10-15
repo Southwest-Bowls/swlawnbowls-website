@@ -1243,3 +1243,7 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .hub__stat b { font-size: 1.6rem; font-weight: 800; color: var(--heading); font-variant-numeric: tabular-nums; }
 .hub__stat span { color: var(--text-2); font-size: var(--fs-s, .95rem); }
 .mrow__meta { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+
+.hero-label { font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin: 0 var(--s2) var(--s2); }
+.herostack { display: grid; gap: var(--s3); margin-bottom: var(--s4); }
+.herostack .herocard { margin-bottom: 0; }

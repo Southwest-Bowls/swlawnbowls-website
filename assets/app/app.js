@@ -742,16 +742,26 @@
         '<span><b>' + esc(x.e.alertLabel || 'Update') + ' · ' + esc(x.short) + '</b><span class="alert__text">' + esc(x.e.alert) + '</span></span></a>';
     }).join('');
 
-    // 2. Hero card: your next saved event, otherwise the next event anywhere. Saving never enters anyone.
-    var heroEv = mineNext[0] || live[0];
-    if (heroEv) {
-      var hst = entryStatus(heroEv, today);
-      html += '<section aria-labelledby="h-next"><h2 class="sr-only" id="h-next" tabindex="-1">' + (mineNext[0] ? 'Your next saved event' : 'Next event') + '</h2>' +
-        '<a class="herocard" href="/app/events/' + encodeURIComponent(heroEv.id) + '">' + dateBlock(heroEv, false, true) +
-        '<span class="herocard__main"><span class="herocard__kicker">' + (mineNext[0] ? 'Your next event' : 'Next event') + '</span>' +
-        '<span class="herocard__title">' + esc(heroEv.short) + '</span>' +
-        '<span class="herocard__meta">' + esc([dateRangeLabel(heroEv.dates), heroEv.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
-        (hst ? statusLine(hst) : '') + '</span>' + CHEV + '</a></section>';
+    // 2. Next up: every event on the next date (men's and women's, club and Division events can overlap),
+    //    plus anything already under way. Saving never enters anyone.
+    var underway = live.filter(function (x) { return eventPhase(x, today) === 'now'; });
+    var future = live.filter(function (x) { return eventPhase(x, today) !== 'now'; });
+    var nextStart = future.length ? future[0].dates.start : '';
+    var sameDay = nextStart ? future.filter(function (x) { return x.dates && x.dates.start === nextStart; }) : [];
+    var heroEvs = underway.concat(sameDay).slice(0, 4);
+    var shownIds = {}; heroEvs.forEach(function (x) { shownIds[x.id] = true; });
+    if (heroEvs.length) {
+      var headLabel = underway.length && !sameDay.length ? 'On now' : underway.length ? 'On now and next' : (heroEvs.length > 1 ? 'Next up · ' + fmt(nextStart, { weekday: 'long', month: 'long', day: 'numeric' }) : 'Next event');
+      html += '<section aria-labelledby="h-next"><h2 class="hero-label" id="h-next" tabindex="-1">' + esc(headLabel) + '</h2><div class="herostack">' +
+        heroEvs.map(function (heroEv) {
+          var hst = entryStatus(heroEv, today), isMine = ids.indexOf(heroEv.id) >= 0;
+          return '<a class="herocard" href="/app/events/' + encodeURIComponent(heroEv.id) + '">' + dateBlock(heroEv, false, true) +
+            '<span class="herocard__main">' + (isMine ? '<span class="herocard__kicker">Saved</span>' : '') +
+            '<span class="herocard__title">' + esc(heroEv.short) + '</span>' +
+            '<span class="herocard__meta">' + esc([dateRangeLabel(heroEv.dates), heroEv.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
+            (hst ? statusLine(hst) : '') + '</span>' + CHEV + '</a>';
+        }).join('') + '</div>' +
+        (future.length > sameDay.length && sameDay.length >= 4 ? '' : '') + '</section>';
     }
 
     // 3. Four quick links as round shortcuts
@@ -763,7 +773,7 @@
     }).join('') + '</nav>';
 
     // 4. Upcoming events: a row of cards you swipe sideways
-    var more = live.filter(function (x) { return x !== heroEv; }).slice(0, 8);
+    var more = live.filter(function (x) { return !shownIds[x.id]; }).slice(0, 8);
     if (more.length) {
       html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head"><h2 class="section__title" id="h-up">Coming up</h2>' +
         '<a class="section__more" href="/app/events">See all' + icon('chev', 'i--sm') + '</a></div><ul class="hscroll">' +
