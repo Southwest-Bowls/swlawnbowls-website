@@ -475,9 +475,12 @@
       "subtitle": "Women's Sponsored",
       "date": "Saturday, May 30, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:00 AM — Green open for practice",
+        "8:45 AM — Announcements and trial ends"
+      ],
       "format": "singles",
-      "formatDetails": "Singles",
+      "formatDetails": "Singles · 4 games of two 7-end sets",
       "club": {
         "name": "Long Beach Lawn Bowling Club",
         "address": "1109 Federation Dr, Long Beach, CA 90804",
@@ -523,9 +526,13 @@
       "subtitle": "Men's Sponsored",
       "date": "Sunday, July 5, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:30 AM — Check-in",
+        "8:45 AM — Announcements",
+        "9:00 AM — Start (sharp)"
+      ],
       "format": "pairs",
-      "formatDetails": "Pairs · Skip / Lead",
+      "formatDetails": "Pairs · Skip / Lead · four 10-end games (format depends on entries)",
       "club": {
         "name": "Newport Harbor Lawn Bowling Club",
         "address": "1550 Crown Dr N, Newport Beach, CA 92625",
@@ -571,9 +578,13 @@
       "subtitle": "Women's Sponsored",
       "date": "Saturday, August 8, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:00 AM — Green open for practice",
+        "8:15 AM — Check-in",
+        "8:45 AM — Announcements and trial ends"
+      ],
       "format": "fours",
-      "formatDetails": "Rinks (Fours)",
+      "formatDetails": "Rinks (Fours) · four 10-end games",
       "club": {
         "name": "Coronado Lawn Bowling Club",
         "address": "1019 7th St, Coronado, CA 92118",
@@ -619,9 +630,13 @@
       "subtitle": "Men's Sponsored",
       "date": "Saturday, August 8 – Sunday, August 9, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:30 AM — Check-in",
+        "8:45 AM — Announcements",
+        "9:00 AM — Start (sharp)"
+      ],
       "format": "pairs",
-      "formatDetails": "3-Bowl Pairs · Skip / Lead",
+      "formatDetails": "Pairs · Skip / Lead · 3 bowls · three 18-end games · Day 2: single elimination",
       "club": {
         "name": "Long Beach Lawn Bowling Club",
         "address": "1109 Federation Dr, Long Beach, CA 90804",
@@ -667,9 +682,13 @@
       "subtitle": "Men's Sponsored",
       "date": "Saturday, September 26, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:30 AM — Check-in",
+        "8:45 AM — Announcements",
+        "9:00 AM — Start (sharp)"
+      ],
       "format": "pairs",
-      "formatDetails": "Vet-Novice Mix/Match Pairs · Skip / Lead",
+      "formatDetails": "Vet-Novice Mix/Match Pairs · Skip / Lead · four 10-end games (format depends on entries)",
       "club": {
         "name": "Laguna Beach / MacKenzie Park / Sun City Lawn Bowling Clubs",
         "address": "",
@@ -727,9 +746,12 @@
       "subtitle": "Women's Sponsored",
       "date": "Saturday, October 3, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:00 AM — Green open for practice",
+        "8:45 AM — Announcements and trial ends"
+      ],
       "format": "triples",
-      "formatDetails": "Mix/Match Vet Novice Triples · Skip / Vice / Lead",
+      "formatDetails": "Mix/Match Vet Novice Triples · Skip / Vice / Lead · 3 bowls · three 12-end games",
       "club": {
         "name": "Long Beach Lawn Bowling Club",
         "address": "1109 Federation Dr, Long Beach, CA 90804",
@@ -981,9 +1003,13 @@
       "subtitle": null,
       "date": "Sunday, October 25, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:30 AM — Check-in",
+        "8:45 AM — Announcements",
+        "9:00 AM — Start (sharp)"
+      ],
       "format": "",
-      "formatDetails": "Waterbury Tournament",
+      "formatDetails": "Triples · 3 bowls · four 10-end games",
       "club": {
         "name": "Laguna Woods Lawn Bowling Club",
         "address": "Moulton Pkwy, Laguna Woods, CA 92637",
@@ -1029,9 +1055,13 @@
       "subtitle": "Men's Sponsored",
       "date": "Sunday, November 22, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:30 AM — Check-in",
+        "8:45 AM — Announcements",
+        "9:00 AM — Start (sharp)"
+      ],
       "format": "",
-      "formatDetails": "5-Man All-Star",
+      "formatDetails": "5-Man All-Star · AM: Pairs and Triples · PM Game 1: Pairs and Triples · PM Game 2: Singles and Rinks · Singles to 18 points · other games 14 ends",
       "club": {
         "name": "Newport Harbor Lawn Bowling Club",
         "address": "1550 Crown Dr N, Newport Beach, CA 92625",
@@ -1077,9 +1107,13 @@
       "subtitle": "Men's Sponsored",
       "date": "Saturday, June 27 – Monday, June 29, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:30 AM — Check-in",
+        "8:45 AM — Announcements",
+        "9:00 AM — Start (sharp)"
+      ],
       "format": "singles",
-      "formatDetails": "Singles · US Nationals Playdown",
+      "formatDetails": "Singles · US Nationals Playdown · double elimination · 21-point games · three games a day",
       "club": {
         "name": "Long Beach Lawn Bowling Club",
         "address": "1109 Federation Dr, Long Beach, CA 90804",
@@ -1175,9 +1209,13 @@
       "subtitle": "Men's Sponsored",
       "date": "Saturday, July 25 – Sunday, August 2, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:15 AM — Check-in",
+        "8:30 AM — Announcements",
+        "9:00 AM — Start (sharp)"
+      ],
       "format": "pairs",
-      "formatDetails": "Pairs · US Nationals Playdown · Skip / Lead",
+      "formatDetails": "Pairs · US Nationals Playdown · Skip / Lead · double elimination · 18-end games · two games a day",
       "club": {
         "name": "Newport Harbor LBC / Laguna Beach LBC",
         "address": "Multiple clubs",
@@ -1223,9 +1261,11 @@
       "subtitle": "Women's Sponsored",
       "date": "Saturday, July 25 – Sunday, August 2, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:45 AM — Announcements and trial ends"
+      ],
       "format": "pairs",
-      "formatDetails": "Pairs · US Nationals Playdown · Skip / Lead",
+      "formatDetails": "Pairs · US Nationals Playdown · Skip / Lead · two 18-end games a day",
       "club": {
         "name": "Newport Harbor LBC / Laguna Beach LBC",
         "address": "Multiple clubs",
@@ -1271,9 +1311,13 @@
       "subtitle": "Women's Sponsored",
       "date": "Sunday, August 9, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:00 AM — Green open for practice",
+        "8:15 AM — Check-in",
+        "8:45 AM — Announcements and trial ends"
+      ],
       "format": "triples",
-      "formatDetails": "Triples · Skip / Vice / Lead",
+      "formatDetails": "Triples · Skip / Vice / Lead · 3 bowls · three 14-end games",
       "club": {
         "name": "Newport Harbor Lawn Bowling Club",
         "address": "1550 Crown Dr N, Newport Beach, CA 92625",
