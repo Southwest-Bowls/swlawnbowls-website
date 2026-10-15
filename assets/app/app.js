@@ -1700,7 +1700,11 @@
   function more() {
     setTitle('More');
     var today = todayISO();
-    return loadEvents().catch(function () { return []; }).then(function (events) {
+    return Promise.all([loadEvents().catch(function () { return []; }), getJSON('/clubs-data.json').catch(function () { return {}; }),
+      getJSON('/news-data.json').catch(function () { return {}; }), loadResults().catch(function () { return []; })]).then(function (all) {
+      var events = all[0], nClubs = (all[1].clubs || []).length, results = all[3];
+      var news = (all[2].items || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+      var upcoming = events.filter(function (x) { var ph = eventPhase(x, today); return ph === 'upcoming' || ph === 'now'; }).length;
       currentNotices = events.filter(function (x) { var p = eventPhase(x, today); return x.e.alert && (p === 'upcoming' || p === 'now'); });
       var n = currentNotices.length;
       // Four plain groups, one row style. Icon colour tells the group, nothing else changes.
@@ -1711,11 +1715,15 @@
           (web ? '<span class="mrow__end" aria-hidden="true">' + icon('ext', 'i--sm') + '</span><span class="sr-only">Opens in your browser</span>' : '<span class="mrow__end" aria-hidden="true">' + icon('chev', 'i--sm') + '</span>') + '</a></li>';
       }
       function group(label, rows) { return '<section class="mgroup" aria-labelledby="mg-' + slugify(label) + '"><h2 class="mgroup__label" id="mg-' + slugify(label) + '">' + esc(label) + '</h2><ul class="mlist">' + rows.join('') + '</ul></section>'; }
-      view.innerHTML = '<h1 class="mtitle">More</h1>' +
+      function stat(n, label) { return '<span class="hub__stat"><b>' + n + '</b><span>' + esc(label) + '</span></span>'; }
+      view.innerHTML = '<h1 class="sr-only">More</h1>' +
+        '<section class="hub" aria-label="Southwest Bowls Division"><span class="logo-plate hub__logo"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75"></span>' +
+        '<div class="hub__text"><span class="hub__name">Southwest Bowls Division</span><span class="hub__sub">Lawn bowls across Southern California</span></div>' +
+        '<div class="hub__stats">' + stat(nClubs, 'Clubs') + stat(upcoming, 'Upcoming') + stat(results.length, 'Results') + '</div></section>' +
         group('Explore', [
-          mrow('/app/more/clubs', 'pin', 'Clubs', 'Map and list', 'blue'),
-          mrow('/app/more/news', 'news', 'News', '', 'blue'),
-          mrow('/app/more/play', 'flag', 'Learn bowls', '', 'blue'),
+          mrow('/app/more/clubs', 'pin', 'Clubs', nClubs ? nClubs + ' clubs, on a map or in a list' : 'Map and list', 'blue'),
+          mrow('/app/more/news', 'news', 'News', news[0] ? news[0].title : '', 'blue'),
+          mrow('/app/more/play', 'flag', 'Learn bowls', 'Learn to bowl, coaching, umpires, markers', 'blue'),
           mrow('/app/watch', 'tv', 'Southwest TV', 'Livestreams and replays', 'blue'),
           mrow('/app/more/resources', 'doc', 'Resources', '', 'blue')]) +
         group('About', [

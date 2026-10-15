@@ -1229,3 +1229,17 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .phead h1 { font-size: 1.9rem; letter-spacing: -.01em; }
 .page-sec > .embed-card, .page-sec > .card { background: transparent; border: 0; padding: 0; }
 .page-sec:has(> .embed-card) { padding: var(--s4); }
+
+/* More: the Division's identity and real numbers on top, rows that preview what is inside */
+.hub { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s4); margin: var(--s3) 0 var(--s5); display: grid; grid-template-columns: auto 1fr; gap: var(--s3) var(--s4); align-items: center; padding-top: calc(var(--s4) + var(--safe-t)); }
+.hub__logo { padding: 8px; }
+.hub__logo img { height: 56px; width: auto; }
+.hub__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hub__name { font-size: 1.3rem; font-weight: 800; line-height: 1.2; color: var(--heading); }
+.hub__sub { color: var(--text-2); }
+.hub__stats { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); padding-top: var(--s3); }
+.hub__stat { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.hub__stat + .hub__stat { border-left: 1px solid var(--line); }
+.hub__stat b { font-size: 1.6rem; font-weight: 800; color: var(--heading); font-variant-numeric: tabular-nums; }
+.hub__stat span { color: var(--text-2); font-size: var(--fs-s, .95rem); }
+.mrow__meta { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
