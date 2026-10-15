@@ -9,14 +9,14 @@ console.log('1. Token request:', tok.status, tok.ok ? 'OK' : 'FAILED');
 if (!tok.ok) { console.error(await tok.text()); process.exit(1); }
 const { access_token, scope } = await tok.json();
 console.log('   Scopes granted:', String(scope || '').split(' ').filter(s => /payments|orders|vault|payouts/i.test(s)).map(s => s.replace('https://uri.paypal.com/services/', '')).join(', ') || '(none listed)');
-const entryId = 'SMOKE-' + Date.now();
+const entryId = 'SWD-2026-WATERBURY-' + String(Date.now()).slice(-4);
 const ord = await fetch(base + '/v2/checkout/orders', { method: 'POST', headers: { Authorization: 'Bearer ' + access_token, 'Content-Type': 'application/json', 'PayPal-Request-Id': entryId },
   body: JSON.stringify({ intent: 'CAPTURE',
     payment_source: { paypal: { experience_context: { brand_name: 'Southwest Bowls Division', locale: 'en-US', shipping_preference: 'NO_SHIPPING', user_action: 'PAY_NOW', landing_page: 'LOGIN',
       return_url: 'https://swlawnbowls-website.vercel.app/app?paid=1', cancel_url: 'https://swlawnbowls-website.vercel.app/app?cancelled=1' } } },
     purchase_units: [{ reference_id: entryId, custom_id: entryId, invoice_id: entryId, soft_descriptor: 'SWD WATERBURY',
       description: 'Tournament entry: 2026 SWD Waterbury (practice)',
-      items: [{ name: '2026 SWD Waterbury (practice entry)', description: 'Sunday, October 25, 2026 · Laguna Woods Lawn Bowling Club · Team entry', quantity: '1', category: 'DIGITAL_GOODS', unit_amount: { currency_code: 'USD', value: '1.00' } }],
+      items: [{ name: '2026 SWD Waterbury (practice entry)', description: 'Sunday, October 25, 2026 · Laguna Woods Lawn Bowling Club · Team entry', quantity: '1', category: 'DIGITAL_GOODS', url: 'https://swlawnbowls-website.vercel.app/app/events/waterbury-2026', image_url: 'https://swlawnbowls-website.vercel.app/assets/icons/icon-512.png', unit_amount: { currency_code: 'USD', value: '1.00' } }],
       amount: { currency_code: 'USD', value: '1.00', breakdown: { item_total: { currency_code: 'USD', value: '1.00' } } } }] }) });
 const o = await ord.json();
 console.log('2. Create order:', ord.status, o.status || '', o.id || '');
