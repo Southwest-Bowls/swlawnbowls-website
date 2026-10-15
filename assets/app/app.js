@@ -159,7 +159,7 @@
     return radioGroup('Appearance', 'data-theme-choice', [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], themePref());
   }
   function textChoices() {
-    return radioGroup('Text size', 'data-size', [['standard', 'Standard'], ['large', 'Large'], ['xlarge', 'Extra large'], ['xxlarge', 'Largest']], store('text') || 'standard');
+    return radioGroup('Text size', 'data-size', [['standard', 'Standard'], ['large', 'Large'], ['xlarge', 'Larger'], ['xxlarge', 'Extra large']], store('text') || 'standard');
   }
   function applyTextSize() {
     var v = store('text');

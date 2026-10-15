@@ -2199,3 +2199,7 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .nform textarea { border-radius: 24px; resize: vertical; }
 .nform__hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .nform .actions { margin-top: 18px; } .nform__done { text-align: center; padding: 24px 0; }
+
+/* Text size: four equal buttons, two by two */
+.choices[aria-label="Text size"], .choices:has(button[data-size]) { display: grid; grid-template-columns: 1fr 1fr; }
+.choices button[data-size] { width: 100%; }
