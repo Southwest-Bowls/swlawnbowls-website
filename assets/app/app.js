@@ -805,6 +805,7 @@
         '</div></div></section>';
     }
 
+    html += '<div class="tagline"><span class="art-plate"><img src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls — A Sport for Life!" width="341" height="160" decoding="async" loading="lazy"></span></div>';
     html += '<a class="minorlink" href="/app/page/about-us#partners">' + icon('people') + '<span>Partners &amp; affiliations</span>' + CHEV + '</a>';
 
     view.innerHTML = html;
