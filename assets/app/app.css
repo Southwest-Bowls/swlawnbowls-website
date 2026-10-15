@@ -1448,3 +1448,6 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--br
 .rcpt__note { background: var(--tint-orange); border-radius: var(--r-control); padding: var(--s3); margin: var(--s3) 0 0; }
 .rcpt__foot { color: var(--text-2); font-size: var(--fs-s, .95rem); margin: var(--s4) 0 0; }
 @media print { .tabbar, .back, .hubbanner, .actions { display: none !important; } }
+
+.rcpt__tagimg { display: block; width: 150px; height: auto; margin-top: 4px; }
+:root[data-theme="dark"] .rcpt__tagimg { background: #fff; border-radius: 8px; padding: 2px 6px; }

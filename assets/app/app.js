@@ -2421,7 +2421,7 @@
       view.innerHTML = backLink('/app/my', 'My SWD') + hubBanner() +
         '<article class="rcpt" aria-label="Receipt">' +
           '<header class="rcpt__head"><span class="logo-plate rcpt__logo"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75"></span>' +
-          '<div><b class="rcpt__org">Southwest Bowls Division</b><span class="rcpt__tag">Lawn Bowls: A Sport for Life!</span></div></header>' +
+          '<div><b class="rcpt__org">Southwest Bowls Division</b><img class="rcpt__tagimg" src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls: A Sport for Life!" width="341" height="160"></div></header>' +
           '<div class="rcpt__status rcpt__status--' + (paid ? 'ok' : 'wait') + '">' + (paid ? 'Payment received' : 'Entry received, payment pending') + '</div>' +
           '<h1 class="rcpt__title">' + esc(en.title) + '</h1>' +
           '<dl class="rcpt__list">' + row('Date', en.date) + row('Venue', [club, addr].filter(Boolean).join(', ')) + row('Entry fee', e.fee || '') + row('Paid with', how) +
@@ -2429,7 +2429,7 @@
           '<h2 class="rcpt__sub">Team</h2><ul class="rcpt__team">' + en.players.map(function (p) { return '<li><b>' + esc(p.role) + '</b> ' + esc(p.name) + (p.club ? ' <span class="muted">· ' + esc(p.club) + '</span>' : '') + '</li>'; }).join('') + '</ul>' +
           (en.method !== 'online' ? '<p class="rcpt__note">' + (en.method === 'check' ? 'Mail your check to: ' + esc((e.contact && e.contact.mailTo) || 'the tournament organizer') + '. ' : 'Bring cash to the green. ') + 'Your place is held. You will show as paid once the organizer receives it.</p>' : '') +
           '<p class="rcpt__foot">Keep this page for your records: take a screenshot or use Share. A confirmation would also be emailed to ' + esc(en.email) + '.</p></article>' +
-        '<div class="actions"><a class="btn btn--wide" href="/app">Back to the app</a>' + (x ? '<a class="btn btn--ghost btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '">View the tournament</a>' : '') + shareBtn(en.title + ' receipt ' + en.id, '/app/my') + '</div>';
+        '<div class="actions"><a class="btn btn--wide" href="/app">Back to the app</a>' + (x && x.dates ? '<a class="btn btn--ghost btn--wide" href="' + icsHref(x) + '" download="' + esc(x.id) + '.ics">' + icon('cal') + 'Add to my calendar</a>' : '') + (x ? '<a class="btn btn--ghost btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '">View the tournament</a>' : '') + shareBtn(en.title + ' receipt ' + en.id, '/app/my') + '</div>';
       window.scrollTo(0, 0);
     });
   }
