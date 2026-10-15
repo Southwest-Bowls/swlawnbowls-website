@@ -1321,3 +1321,7 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .plc--n { background: var(--subtle); color: var(--heading); }
 .plc .i { width: 26px; height: 26px; margin: 0 auto; }
 .mfield--icon select { width: 100%; min-height: 52px; padding: 0 var(--s4) 0 46px; border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); color: var(--text); font-size: max(16px, 1rem); }
+
+.idhead { text-decoration: none; }
+.idhead * { text-decoration: none; }
+.pro__photo, .pro__edit { text-decoration: none; }
