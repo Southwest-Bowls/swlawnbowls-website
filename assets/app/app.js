@@ -734,7 +734,7 @@
     var prof = store('profile') || {}, first = String(prof.name || '').trim().split(/\s+/)[0];
     currentNotices = live.filter(function (x) { return x.e.alert; });
     var unread = unreadCount(currentNotices);
-    var html = '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'long', month: 'long', day: 'numeric' })) + '</span>' +
+    var html = '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'short', month: 'short', day: 'numeric' })) + '</span>' +
       '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Southwest Bowls') + '</h1></div>' +
       '<a class="circbtn" id="hq" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
