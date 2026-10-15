@@ -2617,7 +2617,7 @@
   function memberHelpHtml(open) {
     return '<details class="fold mhelp"' + (open ? ' open' : '') + '><summary><span>Need help accessing your membership?</span>' + CHEV + '</summary>' +
       '<ul class="mhelp__list">' +
-        '<li><b>Your email isn’t recognised.</b> The roster may have an older address, or none. Tell the Division your name, club and the email you want to use.</li>' +
+        '<li><b>Your email isn’t recognized.</b> The roster may have an older address, or none. Tell the Division your name, club and the email you want to use.</li>' +
         '<li><b>You share an email with a partner or family.</b> After signing in you choose who you are. The Division confirms it before your membership shows — signing in never links everyone on a shared email.</li>' +
         '<li><b>Your details are wrong.</b> Once you’re in, use “Suggest a correction”. Nothing changes until the Division checks it.</li>' +
       '</ul><div class="actions"><a class="btn btn--ghost" href="/app/page/contact-us">' + icon('mail') + 'Contact Southwest Bowls</a></div></details>';
