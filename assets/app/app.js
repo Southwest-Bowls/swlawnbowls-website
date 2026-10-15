@@ -1203,6 +1203,37 @@
     });
   }
 
+  // Free-text "format details" -> the same few icon badges for every event; anything else becomes a short note
+  function formatBadges(x) {
+    var e = x.e, t = String(e.formatDetails || ''), out = [], notes = [];
+    var NUM = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8 };
+    function n(v) { v = String(v).toLowerCase(); return NUM[v] || parseInt(v, 10); }
+    var W = '(\\d+|one|two|three|four|five|six|seven|eight)', G = '(?:\\s+|\\s*[×x]\\s*)';
+    // Take a pattern only when it appears once (several different values means the text is too detailed for a badge)
+    function take(re, fn) {
+      var g = new RegExp(re.source, 'gi'), all = t.match(g);
+      if (!all || all.length !== 1) return;
+      var mm = re.exec(t); if (mm) { fn(mm); t = t.replace(mm[0], ' · '); }
+    }
+    take(new RegExp('\\b' + W + '[- ]bowls?\\b', 'i'), function (mm) { out.push(['bowl', n(mm[1]) + ' bowls']); });
+    var before = out.length;
+    take(new RegExp('\\b' + W + G + '(?:\\(\\d+\\)\\s*)?(\\d+)[- ]end\\s*games?\\b', 'i'), function (mm) { out.push(['ends', n(mm[1]) + ' × ' + mm[2] + ' ends']); });
+    take(new RegExp('\\b' + W + '\\s+games?\\s+of\\s+(\\d+)\\s+ends\\b', 'i'), function (mm) { out.push(['ends', n(mm[1]) + ' × ' + mm[2] + ' ends']); });
+    take(new RegExp('\\b' + W + '\\s*(?:games?\\s*)?[×x]\\s*(\\d+)\\s*ends\\b', 'i'), function (mm) { out.push(['ends', n(mm[1]) + ' × ' + mm[2] + ' ends']); });
+    take(new RegExp('\\b' + W + '\\s*[×x]\\s*(\\d+)[- ]point\\s*games?\\b', 'i'), function (mm) { out.push(['ends', n(mm[1]) + ' × ' + mm[2] + ' pts']); });
+    take(new RegExp('\\b' + W + '\\s+(\\d+)[- ]point\\s*games?\\b', 'i'), function (mm) { out.push(['ends', (n(mm[1]) > 1 ? n(mm[1]) + ' × ' : '') + mm[2] + ' pts']); });
+    if (out.length === before) take(/\b(\d+)[- ]end\s*games?\b/i, function (mm) { out.push(['ends', mm[1] + ' ends']); });
+    var ttl = fold((e.title || '') + ' ' + (x.cat || '') + ' ' + (x.short || '') + ' ' + (e.format || '')), fmt0 = fold(e.format || '');
+    t.split(/\s*[·•|—]\s*/).forEach(function (sg) {
+      sg = sg.replace(/^[\s,;:\-–]+|[\s,;:\-–]+$/g, '').trim(); if (!sg) return;
+      var f = fold(sg), words = f.split(/[^a-z0-9]+/).filter(function (w) { return w && !/^(tournament|event|the|and|of|format|games?|teams?)$/.test(w); });
+      if (!words.length) return;
+      if (words.every(function (w) { return ttl.indexOf(w) >= 0 || w === fmt0 + 's' || w + 's' === fmt0; })) return;
+      if (/^skip\b|^lead\b/i.test(sg) && sg.length <= 24) { out.push(['people', sg.replace(/\s*\/\s*/g, ' / ')]); return; }
+      notes.push(sg);
+    });
+    return { badges: out, notes: notes };
+  }
   function overviewPanel(x, phase, st, flyer, cops, hasResult) {
     var e = x.e, h = '';
     // Date, venue, format, deadline, fee and schedule first
@@ -1211,20 +1242,13 @@
     if (x.dates) {
       var multi = x.dates.start !== x.dates.end, st0 = startTime(e.time);
       var right = multi ? ['Ends', fmt(x.dates.end, { weekday: 'short', month: 'short', day: 'numeric' }), ''] : (x.deadline && phase !== 'past' ? ['Entries close', fmt(x.deadline, { weekday: 'short', month: 'short', day: 'numeric' }), ''] : null);
-      var badges = [], ttl = fold((x.e.title || '') + ' ' + (x.cat || '') + ' ' + (x.short || ''));
-      String(e.formatDetails || '').split(/\s*[·•|]\s*/).forEach(function (sg) {
-        sg = sg.trim(); if (!sg) return;
-        var words = fold(sg).split(/[^a-z0-9]+/).filter(function (w) { return w && !/^(tournament|event|the|and|of)$/.test(w); });
-        if (words.length && words.every(function (w) { return ttl.indexOf(w) >= 0; })) return;
-        badges.push([/bowls?\b/i.test(sg) ? 'bowl' : /\bends?\b|games?\b/i.test(sg) ? 'ends' : 'doc', cap(sg)]);
-      });
+      var fb = formatBadges(x), badges = fb.badges;
       if (e.format) badges.push(['people', cap(e.format)]);
-      if (e.fee) badges.push(['$', String(e.fee)]);
+      if (e.fee && !/^tbd/i.test(e.fee)) badges.push(['$', String(e.fee).split(/\s*[(·—]/)[0].trim()]);
       if ((e.rules || []).concat(e.formatDetails || [], e.notes || []).some(function (r) { return /\bA or B green\b|designate A or B/i.test(String(r)); })) badges.push(['A/B', 'A or B green']);
       h += '<div class="ticket"><div class="ticket__row"><div class="ticket__side"><span class="ticket__k">' + (multi ? 'Starts' : 'Event day') + '</span><b class="ticket__v">' + esc(fmt(x.dates.start, { weekday: 'short', month: 'short', day: 'numeric' })) + '</b>' + (st0 ? '<span class="ticket__s">' + esc(st0) + '</span>' : '') + '</div>' +
         (right ? '<span class="ticket__arrow" aria-hidden="true">' + icon('chev') + '</span><div class="ticket__side ticket__side--r"><span class="ticket__k">' + right[0] + '</span><b class="ticket__v">' + esc(right[1]) + '</b></div>' : '') + '</div>' +
-        (badges.length ? '<ul class="ticket__badges">' + badges.map(function (b) { return '<li><span class="ticket__ic" aria-hidden="true">' + (PATHS[b[0]] ? icon(b[0]) : esc(b[0])) + '</span><span>' + esc(b[1]) + '</span></li>'; }).join('') + '</ul>' : '') +
-        '' +
+        (badges.length ? '<ul class="ticket__badges">' + badges.map(function (b) { return '<li><span class="ticket__ic" aria-hidden="true">' + (PATHS[b[0]] ? icon(b[0]) : esc(b[0])) + '</span><span>' + esc(b[1]) + '</span></li>'; }).join('') + '</ul>' : '') + (fb.notes.length ? (fb.notes.join(' · ').length > 110 ? '<details class="ticket__fd ticket__more"><summary>Format notes</summary><ul>' + fb.notes.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('') + '</ul></details>' : '<p class="ticket__fd">' + esc(fb.notes.join(' · ')) + '</p>') : '') +
         (e.club && e.club.address ? (safeUrl(e.club.mapUrl) ? '<a class="ticket__venue" href="' + esc(e.club.mapUrl) + '" target="_blank" rel="noopener"><span class="ticket__ic" aria-hidden="true">' + icon('pin') + '</span><span><b>' + esc(e.club.name || 'Venue') + '</b><small>' + esc(e.club.address) + ' · opens in Maps</small></span></a>' : '<div class="ticket__venue"><span class="ticket__ic" aria-hidden="true">' + icon('pin') + '</span><span><b>' + esc(e.club.name || 'Venue') + '</b><small>' + esc(e.club.address) + '</small></span></div>') : '') + '</div>';
     }
     var facts = [];

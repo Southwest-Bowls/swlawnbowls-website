@@ -1755,3 +1755,6 @@ h1, h2, .pcard__title, .ehero__title, .kcard__name, .ticket__v, .hub__stat > b, 
 .cabout { margin: 6px 0 var(--s4); }
 .cabout h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0 0 6px; }
 .cabout p { margin: 0; color: var(--text-2); line-height: 1.5; }
+
+.ticket__more summary { cursor: pointer; font-weight: 600; color: var(--heading); min-height: 44px; display: flex; align-items: center; }
+.ticket__more ul { margin: 0; padding-left: 18px; }
