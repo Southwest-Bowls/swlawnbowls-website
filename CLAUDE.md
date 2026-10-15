@@ -48,7 +48,7 @@ source of truth — do not also keep a separate `places` list, or the two will
 drift apart.
 
 For a **tournament award** (Player of the Tournament and similar), add an `awards` array to that tournament in `results-data.json`:
-`"awards": [{ "title": "Player of the Tournament", "names": "Full Name", "photo": "/photos/…", "note": "optional" }]`.
+`"awards": [{ "title": "Bowler of the Tournament · Women", "names": "Full Name", "photo": "/photos/…", "note": "optional" }]`.
 The app shows it above the divisions and on that player's profile. Names are matched exactly as written. The results publishers do not edit `awards`, so check they keep it when you save.
 
 ### Adding an information page

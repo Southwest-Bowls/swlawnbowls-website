@@ -903,6 +903,10 @@
       "meta": "April 23–29 · Long Beach / Laguna Beach / Newport Harbor LBC",
       "navLabel": "Southwest Open",
       "eventUrl": "",
+      "awards": [
+        { "title": "Bowler of the Tournament · Women", "names": "Giulia Gallo", "photo": "/photos/swd-2026-hub/bott-women-gallo.jpg" },
+        { "title": "Bowler of the Tournament · Men", "names": "Charlie Herbert", "photo": "/photos/swd-2026-hub/bott-men-herbert.jpg" }
+      ],
       "divisions": [
         {
           "label": "Men's Rinks",
