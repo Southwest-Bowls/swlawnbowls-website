@@ -998,6 +998,8 @@
       input.addEventListener('input', function () { expand = ''; special = ''; clearTimeout(tmr); tmr = setTimeout(apply, 120); });
       view.querySelector('form').addEventListener('submit', function (ev) { ev.preventDefault(); remember(input.value); apply(); input.blur(); });
       view.addEventListener('click', function (ev) {
+        // Back arrow with a search or chip showing: step back to the Search start first, only then leave Search
+        if (ev.target.closest('[data-close-search]') && (input.value.trim() || special)) { ev.preventDefault(); ev.stopPropagation(); input.value = ''; special = ''; apply(); return; }
         var sq = ev.target.closest('[data-sq]');
         if (sq) { var v = sq.getAttribute('data-sq'); haptic(); if (v === 'weekend' || v === 'open') { special = v; input.value = ''; } else { special = ''; input.value = v; remember(v); } apply(); return; }
         if (ev.target.closest('[data-clear-recent]')) { store('recentSearches', []); apply(); return; }
@@ -3409,7 +3411,7 @@
   function authLanding(photo, back) {
     return '<section class="auth">' + '<div class="auth__photo"' + (photo ? ' style="--ph:url(\'' + esc(photo) + '\')"' : '') + '></div>' +
       (back ? '<button class="iconbtn gbtn auth__back" type="button" data-auth="back" aria-label="Back">' + icon('back') + '</button>' : '') +
-      '<div class="auth__body"><span class="auth__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls Division" width="64" height="75"></span><h1 class="sr-only">Southwest Bowls</h1>' +
+      '<div class="auth__body"><span class="auth__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls Division" width="64" height="75"></span><h1 class="auth__t">Welcome to Southwest Bowls</h1>' +
       '<p class="auth__s">Sign in to enter tournaments and keep your details. Browsing needs no account.</p>' +
       '<button class="auth__apple" type="button" data-auth="apple">' + APPLE_SVG + 'Continue with Apple<small>Soon</small></button>' +
       '<div class="auth__row"><button class="auth__alt" type="button" data-auth="google">' + GOOGLE_SVG + 'Google<small>Soon</small></button>' +

@@ -2098,3 +2098,35 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 .pulse__e span { display: flex; flex-direction: column; min-width: 0; } .pulse__e b { font-family: var(--font-display); font-size: .95rem; line-height: 1.15; } .pulse__e small { font-size: var(--fs-xs); opacity: .75; text-transform: none; letter-spacing: 0; color: inherit; }
 .pulse__dot2 { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #231120; opacity: .55; }
 .pulse__more { display: block; margin-top: 6px; color: var(--text-2); font-size: var(--fs-xs); }
+
+/* Liquid glass arrows and round buttons */
+.circbtn, .gbtn, .prow__go, .smini__go, .back, .clcard__fav, .fcard__go, .ecard__ext {
+  background: linear-gradient(145deg, rgba(255,255,255,.62), rgba(255,255,255,.2)) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(190%); backdrop-filter: blur(18px) saturate(190%);
+  border: 1px solid rgba(255,255,255,.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), inset 0 -1px 1px rgba(255,255,255,.25), 0 6px 18px rgba(35,17,32,.12);
+  color: var(--heading);
+}
+:root[data-theme="dark"] .circbtn, :root[data-theme="dark"] .gbtn, :root[data-theme="dark"] .prow__go, :root[data-theme="dark"] .smini__go, :root[data-theme="dark"] .back, :root[data-theme="dark"] .ecard__ext {
+  background: linear-gradient(145deg, rgba(255,255,255,.22), rgba(255,255,255,.06)) !important; border-color: rgba(255,255,255,.26); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 1px rgba(255,255,255,.08), 0 6px 18px rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .circbtn, :root:not([data-theme="light"]) .gbtn, :root:not([data-theme="light"]) .prow__go, :root:not([data-theme="light"]) .smini__go, :root:not([data-theme="light"]) .back, :root:not([data-theme="light"]) .ecard__ext {
+  background: linear-gradient(145deg, rgba(255,255,255,.22), rgba(255,255,255,.06)) !important; border-color: rgba(255,255,255,.26); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 6px 18px rgba(0,0,0,.35); } }
+/* on photos the glass stays white-tinted with a white arrow */
+.gbtn, .auth__back, .signin__top .circbtn, .cphoto__back { color: #fff; border-color: rgba(255,255,255,.5); }
+.gbtn .i, .auth__back .i, .signin__top .circbtn .i { stroke: #fff; }
+.back { padding-right: 14px; }
+
+/* Liquid glass for every pill/chip sitting on a photo */
+.pcard__cat, .pcard__status, .ehero__cat, .clcard__tag:not(.clcard__tag--open), .fcard__tag, .kcard__chip, .ccover__chip, .welcome__skip, .welcome__brand, .tcard__av + * .x {
+  background: linear-gradient(145deg, rgba(255,255,255,.5), rgba(255,255,255,.14)) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(190%); backdrop-filter: blur(16px) saturate(190%);
+  border: 1px solid rgba(255,255,255,.55); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 4px 14px rgba(0,0,0,.18);
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.welcome__brand { color: #14101a; text-shadow: none; background: linear-gradient(145deg, rgba(255,255,255,.85), rgba(255,255,255,.5)) !important; }
+.clcard__tag--open, .pcard__cat { color: #14101a; text-shadow: none; }
+.clcard__tag--open { background: linear-gradient(145deg, rgba(228,245,138,.85), rgba(228,245,138,.5)) !important; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,.6); }
