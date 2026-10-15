@@ -688,7 +688,7 @@
   // (no endless shimmer), announced once to screen readers.
   function loading() {
     return '<div class="skel" role="status"><span class="sr-only">Loading…</span><span class="skel__h"></span><span class="skel__l"></span>' +
-      '<span class="skel__b"></span><span class="skel__b"></span></div>';
+      '<span class="skel__card"></span><span class="skel__card"></span><span class="skel__l skel__l--s"></span></div>';
   }
   // Every main screen opens with the same compact header: a short heading,
   // the section name, and one restrained decorative graphic.
@@ -3220,6 +3220,7 @@
       var target = !restoring && location.hash && document.getElementById(location.hash.slice(1));
       if (target) { target.scrollIntoView({ block: 'start' }); target.focus({ preventScroll: true }); }
       restoring = false;
+      setupNavTitle();
     });
   }
 
@@ -3318,6 +3319,126 @@
     next.focus(); next.click();
   });
 
+
+  /* ---------------------------------------------------------------
+     Polish: haptics, collapsing title, pull to refresh, edge swipe back,
+     long-press menu, bottom-sheet drag, offline pill, first-run welcome
+     --------------------------------------------------------------- */
+  function haptic(kind) {
+    try {
+      var H = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
+      if (H && H.impact) { H.impact({ style: kind === 'medium' ? 'MEDIUM' : 'LIGHT' }); return; }
+      if (navigator.vibrate) navigator.vibrate(kind === 'medium' ? 14 : 8);
+    } catch (e) {}
+  }
+  document.addEventListener('click', function (ev) {
+    if (ev.target.closest('[data-follow], [data-save], .tabbar a, .segmented button, .cchip, .wday')) haptic();
+  }, true);
+
+  // Collapsing title: when the screen's big heading scrolls away, a small frosted bar carries it
+  var navbar = document.createElement('div'); navbar.className = 'navtitle'; navbar.setAttribute('aria-hidden', 'true'); navbar.innerHTML = '<span></span>'; document.body.appendChild(navbar);
+  var navObs = null;
+  function setupNavTitle() {
+    if (navObs) { navObs.disconnect(); navObs = null; }
+    navbar.classList.remove('navtitle--on');
+    var h = view.querySelector('h1'); if (!h || location.pathname === '/app' || !('IntersectionObserver' in window)) return;
+    navbar.firstChild.textContent = h.textContent.replace(/\s+/g, ' ').trim();
+    navObs = new IntersectionObserver(function (en) {
+      var e0 = en[0]; navbar.classList.toggle('navtitle--on', !e0.isIntersecting && e0.boundingClientRect.top < 0);
+    }, { rootMargin: '-56px 0px 0px 0px', threshold: 0 });
+    navObs.observe(h);
+  }
+
+  // Pull down at the top to refresh
+  (function () {
+    var ptr = document.createElement('div'); ptr.className = 'ptr'; ptr.setAttribute('aria-hidden', 'true'); ptr.innerHTML = '<span class="spinner"></span>'; document.body.appendChild(ptr);
+    var y0 = null, dy = 0;
+    document.addEventListener('touchstart', function (ev) { y0 = (window.scrollY <= 0 && ev.touches.length === 1 && !ev.target.closest('dialog, .wstrip, .hscroll, .cdeck__track, .deck__track')) ? ev.touches[0].clientY : null; dy = 0; }, { passive: true });
+    document.addEventListener('touchmove', function (ev) {
+      if (y0 === null) return; dy = ev.touches[0].clientY - y0;
+      if (dy > 0 && window.scrollY <= 0) { ptr.style.transform = 'translate(-50%,' + Math.min(dy * .5, 56) + 'px)'; ptr.style.opacity = Math.min(dy / 90, 1); } else { ptr.style.opacity = 0; }
+    }, { passive: true });
+    document.addEventListener('touchend', function () {
+      if (y0 === null) return;
+      var go2 = dy > 96; ptr.style.transform = 'translate(-50%,-48px)'; ptr.style.opacity = 0; y0 = null;
+      if (go2) { haptic('medium'); cache = {}; EVENTS = null; render(); }
+    }, { passive: true });
+  })();
+
+  // Swipe in from the left edge to go back
+  (function () {
+    var x0 = null, yy0 = 0;
+    document.addEventListener('touchstart', function (ev) { var t = ev.touches[0]; x0 = (t.clientX < 22 && ev.touches.length === 1) ? t.clientX : null; yy0 = t.clientY; }, { passive: true });
+    document.addEventListener('touchend', function (ev) {
+      if (x0 === null) return; var t = ev.changedTouches[0], dx = t.clientX - x0, dyy = Math.abs(t.clientY - yy0); x0 = null;
+      if (dx > 90 && dyy < 60 && history.state && history.state.depth > 0) history.back();
+    }, { passive: true });
+  })();
+
+  // Bottom sheet: drag the handle (or the top of the sheet) down to close
+  (function () {
+    var y0 = null, dy = 0;
+    dlg.addEventListener('touchstart', function (ev) { var r = dlg.getBoundingClientRect(); y0 = (ev.touches[0].clientY - r.top < 44 || dlg.scrollTop <= 0) ? ev.touches[0].clientY : null; dy = 0; }, { passive: true });
+    dlg.addEventListener('touchmove', function (ev) { if (y0 === null) return; dy = ev.touches[0].clientY - y0; if (dy > 0 && dlg.scrollTop <= 0) { dlg.style.transition = 'none'; dlg.style.transform = 'translateY(' + dy + 'px)'; } }, { passive: true });
+    dlg.addEventListener('touchend', function () { if (y0 === null) return; dlg.style.transition = ''; if (dy > 110) closeDialog(); dlg.style.transform = ''; y0 = null; }, { passive: true });
+  })();
+
+  // Long-press an event card for quick actions
+  (function () {
+    var timer = null, hit = null, fired = false;
+    function cancel() { clearTimeout(timer); timer = null; }
+    document.addEventListener('touchstart', function (ev) {
+      var a = ev.target.closest('a.tcard, a.pcard'); if (!a || ev.touches.length !== 1) return;
+      var m = /\/app\/events\/([^/?#]+)/.exec(a.getAttribute('href') || ''); if (!m) return;
+      hit = decodeURIComponent(m[1]); fired = false; cancel();
+      timer = setTimeout(function () {
+        fired = true; haptic('medium');
+        loadEvents().then(function (list) {
+          var x = list.filter(function (q) { return q.id === hit; })[0]; if (!x) return;
+          var on = isSaved(x.id), maps = x.e.club && safeUrl(x.e.club.mapUrl) ? x.e.club.mapUrl : '';
+          openDialog(x.short, '<div class="qmenu">' +
+            '<a class="qmenu__i" href="/app/events/' + encodeURIComponent(x.id) + '" data-close-dlg>' + icon('chev') + 'Open event</a>' +
+            '<button class="qmenu__i" type="button" data-save="' + esc(x.id) + '" data-title="' + esc(x.short) + '" data-on="' + on + '">' + icon('bookmark') + (on ? 'Remove from saved' : 'Save event') + '</button>' +
+            '<button class="qmenu__i" type="button" data-share="/app/events/' + esc(x.id) + '" data-share-title="' + esc(x.e.title) + '">' + icon('share') + 'Share</button>' +
+            (maps ? '<a class="qmenu__i" href="' + esc(maps) + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>' : '') + '</div>');
+        });
+      }, 480);
+    }, { passive: true });
+    ['touchend', 'touchmove', 'touchcancel'].forEach(function (n) { document.addEventListener(n, cancel, { passive: true }); });
+    document.addEventListener('click', function (ev) { if (fired && ev.target.closest('a.tcard, a.pcard')) { ev.preventDefault(); ev.stopPropagation(); fired = false; } }, true);
+    document.addEventListener('click', function (ev) { if (ev.target.closest('[data-close-dlg], .qmenu [data-save], .qmenu [data-share]')) setTimeout(closeDialog, 60); });
+  })();
+
+  // Offline pill
+  (function () {
+    var pill = document.createElement('div'); pill.className = 'offpill'; pill.setAttribute('role', 'status'); pill.hidden = true; pill.textContent = 'You’re offline. Showing saved pages.'; document.body.appendChild(pill);
+    function upd() { pill.hidden = navigator.onLine; }
+    window.addEventListener('online', upd); window.addEventListener('offline', upd); upd();
+  })();
+
+  // First run: three short screens
+  function welcome() {
+    if (store('welcomed')) return;
+    var pages = [
+      ['cal', 'Every tournament, in one place', 'Dates, entry details, schedules and flyers for Southwest Division events.'],
+      ['star', 'Follow your clubs', 'Save events and follow clubs. It stays on your phone, no account needed.'],
+      ['trophy', 'Results and champions', 'Browse past results, podiums and the Division standings.']
+    ], i = 0, el = document.createElement('div'); el.className = 'welcome'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Welcome');
+    function draw() {
+      var p = pages[i], last = i === pages.length - 1;
+      el.innerHTML = '<button class="welcome__skip" type="button" data-w-skip>Skip</button><div class="welcome__art" aria-hidden="true">' + icon(p[0]) + '</div><h2 class="welcome__t">' + p[1] + '</h2><p class="welcome__s">' + p[2] + '</p>' +
+        '<div class="welcome__dots" aria-hidden="true">' + pages.map(function (_, k) { return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
+        '<button class="btn btn--wide btn--dark" type="button" data-w-next>' + (last ? 'Get started' : 'Next') + '</button>';
+      var b = el.querySelector('[data-w-next]'); if (b) b.focus();
+    }
+    function done() { store('welcomed', true); el.remove(); }
+    el.addEventListener('click', function (ev) {
+      if (ev.target.closest('[data-w-skip]')) { done(); return; }
+      if (ev.target.closest('[data-w-next]')) { haptic(); if (i < pages.length - 1) { i++; draw(); } else done(); }
+    });
+    document.body.appendChild(el); draw();
+  }
+
   applyTheme();
   applyTextSize();
   // Poster thumbnails: YouTube's own still, then the official SW TV logo
@@ -3339,6 +3460,7 @@
   })();
   if (!history.state) history.replaceState({ depth: 0 }, '');
   render();
+  setTimeout(welcome, 600);
 
   // Offline helper (network-first: new versions always win when online)
   if ('serviceWorker' in navigator) {
