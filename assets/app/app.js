@@ -1949,6 +1949,31 @@
         '<li><b>Your details are wrong.</b> Once you’re in, use “Suggest a correction”. Nothing changes until the Division checks it.</li>' +
       '</ul><div class="actions"><a class="btn btn--ghost" href="/app/page/contact-us">' + icon('mail') + 'Contact Southwest Bowls</a></div></details>';
   }
+  // Guest details: everyone can use the app without an account, including
+  // players from other divisions and other countries. These optional details
+  // stay on this phone; nothing is sent anywhere.
+  var DIVISION_HINTS = ['Southwest (SWD)', 'Pacific Inter-Mountain (PIMD)', 'Arizona', 'Other U.S. division', 'Outside the United States'];
+  function guestSection() {
+    var p = store('profile') || {};
+    return '<section class="section mysec" aria-labelledby="h-guest"><div class="section__head"><h2 class="section__title" id="h-guest">You’re browsing as a guest</h2></div>' +
+      '<p>Events, live scoring, results, clubs and Southwest TV are open to everyone. Players from other divisions and other countries are welcome to follow and enter events.</p>' +
+      '<form class="mform" id="g-form" novalidate>' +
+        '<label class="mfield"><span>Your name (optional)</span><input id="g-name" type="text" autocomplete="name" value="' + esc(p.name || '') + '"></label>' +
+        '<label class="mfield"><span>Home division or country (optional)</span><input id="g-div" type="text" list="g-div-list" value="' + esc(p.division || '') + '">' +
+          '<datalist id="g-div-list">' + DIVISION_HINTS.map(function (d) { return '<option value="' + esc(d) + '">'; }).join('') + '</datalist></label>' +
+        '<label class="mfield"><span>Home club (optional)</span><input id="g-club" type="text" value="' + esc(p.club || '') + '"></label>' +
+        '<div class="actions"><button class="btn btn--ghost" type="submit">Save on this phone</button></div>' +
+        '<p class="footnote">Kept on this phone only. You never need to be an SWD member to use the app or to enter an event; each event page says who can play.</p>' +
+      '</form></section>';
+  }
+  function wireGuest() {
+    var f = view.querySelector('#g-form'); if (!f) return;
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      store('profile', { name: f.querySelector('#g-name').value.trim(), division: f.querySelector('#g-div').value.trim(), club: f.querySelector('#g-club').value.trim() });
+      toast('Saved on this phone');
+    });
+  }
   // My SWD: membership (sign-in, preview while testing), then the things
   // kept on this phone — saved events and followed clubs — which never need
   // an account. Entries and personal results appear here once they exist.
@@ -1959,7 +1984,7 @@
     var preview = !!store('memberPreview') || !!memberSession();
     var today = todayISO();
 
-    view.innerHTML = pageHead('My SWD', 'Your membership and your Southwest', '') +
+    view.innerHTML = pageHead('My SWD', 'Your membership and your Southwest', '') + guestSection() +
       '<section class="section mysec" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
         '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + (preview ? loading() : '') + '</div></section>' +
       '<section class="section mysec" aria-labelledby="h-saved"><div class="section__head"><h2 class="section__title" id="h-saved">Saved events</h2>' +
@@ -1968,6 +1993,7 @@
       '<section class="section mysec" aria-labelledby="h-clubs"><div class="section__head"><h2 class="section__title" id="h-clubs">Followed clubs</h2>' +
         '<a class="section__more" href="/app/more/clubs">All clubs' + icon('chev', 'i--sm') + '</a></div><div id="my-clubs"></div></section>';
     var box = view.querySelector('#m-box');
+    wireGuest();
 
     // Saved events and followed clubs: this phone only, no sign-in
     loadEvents().then(function (events) {
