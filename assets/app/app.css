@@ -2212,3 +2212,9 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 /* Coloured backdrops fade in from the very top, so there is no hard edge under the status bar */
 .hbg, .escene__bg { -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16%, #000 42%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 16%, #000 42%, transparent 100%); }
 .mysec--top { margin-top: 0; }
+@media (max-width: 400px) {
+  .hbar__hello { font-size: 1.12rem; }
+  .hbar { gap: 6px; }
+  .hbar__logo { width: 40px; height: 40px; margin-right: 0; } .hbar__logo img { width: 24px; }
+  .hbar .circbtn { width: 40px; height: 40px; }
+}
