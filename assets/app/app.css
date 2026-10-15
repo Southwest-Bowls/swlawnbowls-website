@@ -1424,3 +1424,9 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--br
 .bgrid__role { color: var(--text-2); font-size: var(--fs-s, .95rem); line-height: 1.25; }
 .logochip--dark { background: #231120; border-color: #231120; }
 @media (prefers-reduced-motion: no-preference) { .bcard { transition: transform 140ms ease; } .bcard:active { transform: scale(.98); } }
+
+/* Logo tiles: the image always fits inside the tile */
+.logochip { overflow: hidden; box-sizing: border-box; }
+.logochip img { display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; }
+.logostrip .logochip { width: 148px; height: 84px; }
+.logogrid .logochip { width: 100%; height: 96px; }
