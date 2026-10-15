@@ -482,8 +482,8 @@
   /* ---------------------------------------------------------------
      Shared pieces of markup
      --------------------------------------------------------------- */
-  // Colour tells the kind of event: women's pink, men's blue, club and open (mixed) yellow
-  function catClass(x) { return x && x.cat === "Women's" ? 'cat--w' : x && x.cat === "Men's" ? 'cat--m' : 'cat--c'; }
+  // Colour tells the kind of event: women's pink, men's blue, mixed yellow, open grey
+  function catClass(x) { return x && x.cat === "Women's" ? 'cat--w' : x && x.cat === "Men's" ? 'cat--m' : x && x.cat === 'Mixed' ? 'cat--x' : 'cat--o'; }
   function dateBlock(x, accent, onTint) {
     var cls = 'dateblock ' + catClass(x) + (accent ? ' dateblock--accent' : '') + (onTint ? ' dateblock--ontint' : '');
     if (!x.dates) return '<span class="' + cls + '" aria-hidden="true"><small>TBA</small><b>–</b></span>';
@@ -522,7 +522,7 @@
     var html = '<div class="cal"><div class="cal__head"><button class="circbtn" type="button" data-cal-nav="-1" aria-label="Previous month">' + icon('back') + '</button>' +
       '<h2 class="cal__title" aria-live="polite">' + esc(fmt(first, { month: 'long', year: 'numeric' })) + '</h2>' +
       '<button class="circbtn" type="button" data-cal-nav="1" aria-label="Next month">' + icon('chev') + '</button></div>' +
-      '<div class="cal__grid" role="group" aria-label="Days with events"><span class="cal__dow" aria-hidden="true">Sun</span><span class="cal__dow" aria-hidden="true">Mon</span><span class="cal__dow" aria-hidden="true">Tue</span><span class="cal__dow" aria-hidden="true">Wed</span><span class="cal__dow" aria-hidden="true">Thu</span><span class="cal__dow" aria-hidden="true">Fri</span><span class="cal__dow" aria-hidden="true">Sat</span>' + cells + '</div><ul class="legend" aria-label="Colours"><li><span class="legend__dot cat--w"></span>Women’s</li><li><span class="legend__dot cat--m"></span>Men’s</li><li><span class="legend__dot cat--c"></span>Club and open</li></ul></div>';
+      '<div class="cal__grid" role="group" aria-label="Days with events"><span class="cal__dow" aria-hidden="true">Sun</span><span class="cal__dow" aria-hidden="true">Mon</span><span class="cal__dow" aria-hidden="true">Tue</span><span class="cal__dow" aria-hidden="true">Wed</span><span class="cal__dow" aria-hidden="true">Thu</span><span class="cal__dow" aria-hidden="true">Fri</span><span class="cal__dow" aria-hidden="true">Sat</span>' + cells + '</div><ul class="legend" aria-label="Colours"><li><span class="legend__dot cat--w"></span>Women’s</li><li><span class="legend__dot cat--m"></span>Men’s</li><li><span class="legend__dot cat--x"></span>Mixed</li><li><span class="legend__dot cat--o"></span>Open</li></ul></div>';
     html += '<div id="cal-day-list" tabindex="-1">' + (!anyThisMonth ? state('empty', 'No events this month', 'Use the arrows to look at another month.')
       : '<h2 class="section__title list-title">' + esc(fmt(showDay, { weekday: 'long', month: 'long', day: 'numeric' })) + '</h2>' +
         (dayEv.length ? '<ul class="list list--cards">' + dayEv.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '<p class="muted">Nothing scheduled this day.</p>')) + '</div>';
@@ -1095,7 +1095,7 @@
         : phase !== 'past' && st && st.kind === 'closed' ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">Entry details</a>' : '';
       var onNow = isSaved(x.id);
       var html = backLink('/app/events', 'Events') +
-        (hostPhoto ? '<div class="chero"><img class="chero__img chero__img--wide" src="' + esc(hostPhoto) + '" alt="" loading="lazy" data-hide-on-error>' + (st ? '<span class="chero__tag">' + esc(st.label) + '</span>' : '') + '</div>' : '') +
+        (hostPhoto ? '<div class="chero"><img class="chero__img chero__img--wide" src="' + esc(hostPhoto) + '" alt="" loading="lazy" data-hide-on-error>' + (st ? '<span class="chero__tag ' + catClass(x) + '">' + esc(st.label) + '</span>' : '') + '</div>' : '') +
         '<p class="eyebrow">' + esc(e.subtitle || season) + '</p>' +
         '<h1 class="detail-title">' + esc(e.title) + '</h1>' +
         (x.club ? '<p>' + esc(x.club) + '</p>' : '') +
@@ -1474,7 +1474,7 @@
     return loadStandingsSources().then(function (srcs) {
       if (!srcs.length) return '';
       var y = srcs[0].year;
-      return '<a class="standlink tint tint--yellow" href="/app/standings">' + icon('medal') +
+      return '<a class="standlink" href="/app/standings">' + icon('medal') +
         '<span class="standlink__body"><span class="standlink__title">' + esc((y ? y + ' ' : '') + 'Standings') + '</span>' +
         '<span class="standlink__meta">' + esc(srcs.map(function (s) { return s.label; }).join(' & ')) + ' season points</span></span>' + CHEV + '</a>';
     }).catch(function () { return ''; });

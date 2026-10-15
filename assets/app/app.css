@@ -41,7 +41,7 @@
   --tint-orange: #fff0d8;
   --tint-blush:  #fae6e9;
   --tint-yellow: #fff6c9;
-  --cat-w: #f4b3c6; --cat-m: #19b6f2; --cat-c: #f5c93a;
+  --cat-w: #f4b3c6; --cat-m: #19b6f2; --cat-x: #f5c93a; --cat-o: #b9b2b8;
   --tint-ink:    #231120;   /* charcoal card, white text */
   --on-tint-link: var(--brand-red);
   --date-ontint: #ffffff;
@@ -1255,13 +1255,16 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .tint--yellow { background: var(--tint-yellow); }
 .cat--w { --cat-tint: var(--tint-blush); --cat-solid: var(--cat-w); }
 .cat--m { --cat-tint: var(--tint-blue); --cat-solid: var(--cat-m); }
-.cat--c { --cat-tint: var(--tint-yellow); --cat-solid: var(--cat-c); }
-.dateblock.cat--w, .dateblock.cat--m, .dateblock.cat--c { background: var(--cat-solid); color: #231120; }
-.herocard.cat--w, .herocard.cat--m, .herocard.cat--c, .mini.cat--w, .mini.cat--m, .mini.cat--c { background: var(--cat-tint); border-color: transparent; }
-button.cal__day.cat--w, button.cal__day.cat--m, button.cal__day.cat--c { background: var(--cat-solid); color: #231120; }
+.cat--x { --cat-tint: var(--tint-yellow); --cat-solid: var(--cat-x); }
+.cat--o { --cat-tint: var(--subtle); --cat-solid: var(--cat-o); }
+.dateblock.cat--w, .dateblock.cat--m, .dateblock.cat--x, .dateblock.cat--o, .chero__tag.cat--w, .chero__tag.cat--m, .chero__tag.cat--x, .chero__tag.cat--o { background: var(--cat-solid); color: #231120; }
+.herocard.cat--w, .herocard.cat--m, .herocard.cat--x, .herocard.cat--o, .mini.cat--w, .mini.cat--m, .mini.cat--x, .mini.cat--o { background: var(--cat-tint); border-color: transparent; }
+button.cal__day.cat--w, button.cal__day.cat--m, button.cal__day.cat--x, button.cal__day.cat--o { background: var(--cat-solid); color: #231120; }
 button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .segmented [role="tab"].cat--w[aria-selected="true"] { background: var(--cat-w); color: #231120; }
 .segmented [role="tab"].cat--m[aria-selected="true"] { background: var(--cat-m); color: #231120; }
 .legend { list-style: none; display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); justify-content: center; padding: var(--s3) 0 0; margin: 0; color: var(--text-2); font-size: var(--fs-s, .95rem); }
 .legend li { display: inline-flex; align-items: center; gap: 6px; }
 .legend__dot { width: 14px; height: 14px; border-radius: 50%; background: var(--cat-solid); }
+.standlink { background: var(--surface); border: 1px solid var(--line); }
+.standlink > .i:first-child { color: var(--heading); }
