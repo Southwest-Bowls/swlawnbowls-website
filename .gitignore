@@ -35,3 +35,6 @@ private/
 
 # Supabase CLI working files (project link)
 /supabase/
+
+# Entries system dry-run mail
+.outbox/
