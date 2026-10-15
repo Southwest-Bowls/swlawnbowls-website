@@ -351,12 +351,13 @@
     if (today > x.deadline) return { kind: 'openish', label: 'Entries open', icon: 'hourglass' };
     var left = daysBetween(today, x.deadline);
     var label = left === 0 ? 'Entries open · close today' : left === 1 ? 'Entries open · close tomorrow'
+      : left <= 6 ? 'Entries open · close in ' + left + ' days'
       : 'Entries open · close ' + fmt(x.deadline, { month: 'short', day: 'numeric' });
-    return { kind: 'open', label: label, icon: 'hourglass', close: x.deadline };
+    return { kind: 'open', label: label, icon: 'hourglass', close: x.deadline, left: left, urgent: left <= 2 };
   }
   function statusLine(st) {
     if (!st) return '';
-    var cls = st.kind === 'open' || st.kind === 'openish' ? ' status--open' : st.kind === 'cancelled' ? ' status--cancelled' : '';
+    var cls = st.urgent ? ' status--urgent' : st.kind === 'open' || st.kind === 'openish' ? ' status--open' : st.kind === 'cancelled' ? ' status--cancelled' : '';
     return '<span class="status' + cls + '">' + icon(st.icon) + esc(st.label) + '</span>';
   }
 
@@ -808,7 +809,9 @@
     var unread = unreadCount(currentNotices);
     var hbgEv = (function () { var u0 = live.filter(function (x) { return eventPhase(x, today) === 'now'; }).concat(live.filter(function (x) { return eventPhase(x, today) !== 'now'; }))[0]; return u0 ? eventPhoto(u0, d.clubs) : ''; })();
     var html = (hbgEv ? '<div class="hbg" aria-hidden="true" style="--ph:url(\'' + esc(hbgEv) + '\')"></div>' : '') + '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'short', month: 'short', day: 'numeric' })) + '</span>' +
-      '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Hi, Guest') + '</h1></div>' +
+      '<h1 class="hbar__hello">' + (function () { var h = new Date().getHours(); return h < 5 ? 'Hello' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; })() + (first ? ', ' + esc(first) : '') + '</h1>' +
+      (function () { var fol = followed(), fe = live.filter(function (x) { return (x.clubIds || []).some(function (id) { return fol.indexOf(id) >= 0; }); })[0];
+        return fe ? '<a class="hbar__club" href="/app/events/' + encodeURIComponent(fe.id) + '">' + icon('star', 'i--sm') + esc(fe.clubLabel) + ' hosts ' + esc(fe.short) + ' · ' + esc(dateRangeLabel(fe.dates, true)) + '</a>' : ''; })() + '</div>' +
       '<a class="circbtn" id="hq" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
       '<a class="circbtn" href="/app/more/settings" aria-label="App settings">' + icon('gear') + '</a></header>';
@@ -828,6 +831,20 @@
     var sameDay = nextStart ? future.filter(function (x) { return x.dates && x.dates.start === nextStart; }) : [];
     var heroEvs = underway.concat(sameDay).slice(0, 4);
     var shownIds = {}; heroEvs.forEach(function (x) { shownIds[x.id] = true; });
+    // Live pulse: what is on right now, or a countdown to the next event with a nudge for closing entries
+    (function () {
+      var pc = '';
+      if (underway.length) {
+        var ue = underway[0], ls = ue.e.liveScoring || {}, hasDraw = (ls.sheets && ls.sheets.length) || ls.pubUrl;
+        pc = '<a class="pulse pulse--live" href="/app/events/' + encodeURIComponent(ue.id) + (hasDraw ? '?tab=draw' : '') + '"><span class="pulse__dot" aria-hidden="true"></span><span class="pulse__t"><small>Happening now</small><b>' + esc(ue.short) + '</b><span>' + esc(ue.clubLabel) + (underway.length > 1 ? ' · +' + (underway.length - 1) + ' more' : '') + '</span></span>' + (hasDraw ? '<span class="pulse__go">Draw & scores' + icon('chev', 'i--sm') + '</span>' : '') + '</a>';
+      } else if (future.length) {
+        var dd = daysBetween(today, nextStart), ne = sameDay[0];
+        pc = '<a class="pulse" href="/app/events/' + encodeURIComponent(ne.id) + '"><span class="pulse__n" aria-hidden="true">' + dd + '</span><span class="pulse__t"><small>' + (dd === 1 ? 'day to go' : 'days to go') + '</small><b>' + esc(ne.short) + '</b><span>' + esc(ne.clubLabel) + (sameDay.length > 1 ? ' · +' + (sameDay.length - 1) + ' more that day' : '') + '</span></span></a>';
+      }
+      var urg = live.map(function (x) { return { x: x, st: entryStatus(x, today) }; }).filter(function (o) { return o.st && o.st.kind === 'open' && o.st.left <= 3; }).sort(function (a, b) { return a.st.left - b.st.left; })[0];
+      if (urg) pc += '<a class="pulse__nudge' + (urg.st.urgent ? ' pulse__nudge--hot' : '') + '" href="/app/events/' + encodeURIComponent(urg.x.id) + '">' + icon('hourglass', 'i--sm') + '<span><b>' + (urg.st.left === 0 ? 'Entries close today' : urg.st.left === 1 ? 'Entries close tomorrow' : 'Entries close in ' + urg.st.left + ' days') + '</b> · ' + esc(urg.x.short) + '</span></a>';
+      html += pc ? '<div class="pulsewrap">' + pc + '</div>' : '';
+    })();
     if (heroEvs.length) {
       var headLabel = underway.length && !sameDay.length ? 'On now' : underway.length ? 'On now and next' : (heroEvs.length > 1 ? 'Next up · ' + fmt(nextStart, { weekday: 'long', month: 'long', day: 'numeric' }) : 'Next event');
       html += '<section aria-labelledby="h-next"><h2 class="hero-label" id="h-next" tabindex="-1">' + esc(headLabel) + '</h2><ul class="stage">' +
@@ -850,6 +867,7 @@
         more.map(function (x) { return '<li>' + photoCard(x, d.clubs, today) + '</li>'; }).join('') + '</ul></section>';
     }
 
+    html += '<div id="home-champ"></div>';
     html += '<div class="tagline"><span class="art-plate"><img src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls — A Sport for Life!" width="341" height="160" decoding="async" loading="lazy"></span></div>';
     html += '<div id="home-partners"></div>';
 
@@ -862,6 +880,10 @@
     }).catch(function () {});
     var sb = view.querySelector('[data-story]');
     if (sb) sb.addEventListener('click', function () { storyDialog(d.story); });
+    loadResults().then(function (list) {
+      var el = view.querySelector('#home-champ'); if (!el) return;
+      el.innerHTML = champStrip(list); if (typeof wireDecks === 'function') wireDecks(el);
+    }).catch(function () {});
   }
   // Typing on Home moves to the full search screen, keeping the caret.
   var searchFocus = false;

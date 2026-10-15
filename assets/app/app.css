@@ -1885,3 +1885,17 @@ h1, h2, h3, .chead__t, .phero__name, .cdname, .dtitle h1, .tcard__title, .ticket
 .evcard > .iconbtn[data-on="true"] .i { fill: #231120; }
 
 .list--cards > li.evcard, .list > li.evcard { background: none; padding: 0; border-radius: 0; min-height: 0; }
+
+/* Home: live pulse, nudge, greeting line */
+.pulsewrap { display: grid; gap: 8px; margin: 0 0 var(--s4); }
+.pulse { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 24px; text-decoration: none; color: var(--heading); background: color-mix(in srgb, var(--surface) 78%, transparent); -webkit-backdrop-filter: saturate(170%) blur(20px); backdrop-filter: saturate(170%) blur(20px); box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 8px 22px rgba(35,17,32,.08); }
+.pulse__n { flex: none; min-width: 52px; text-align: center; font-family: var(--font-display); font-size: 2.4rem; font-weight: 600; line-height: 1; letter-spacing: -.03em; }
+.pulse__t { flex: 1; min-width: 0; display: flex; flex-direction: column; } .pulse__t small { color: var(--text-2); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; }
+.pulse__t b { font-family: var(--font-display); font-size: 1.05rem; line-height: 1.2; } .pulse__t > span { color: var(--text-2); font-size: var(--fs-sm); }
+.pulse__go { flex: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 560; font-size: var(--fs-sm); }
+.pulse__dot { flex: none; width: 14px; height: 14px; border-radius: 50%; background: #e5484d; box-shadow: 0 0 0 0 rgba(229,72,77,.5); margin: 0 6px; }
+@media (prefers-reduced-motion: no-preference) { .pulse__dot { animation: pulse 1.6s ease-out infinite; } @keyframes pulse { 70% { box-shadow: 0 0 0 12px rgba(229,72,77,0); } 100% { box-shadow: 0 0 0 0 rgba(229,72,77,0); } } }
+.pulse__nudge { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; text-decoration: none; color: #3a2a00; background: #fbe3a6; font-size: var(--fs-sm); min-height: 44px; }
+.pulse__nudge--hot { background: #ffd0cf; color: #5a0d10; }
+.status--urgent { color: #b3261e; font-weight: 600; }
+.hbar__club { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: var(--fs-xs); color: var(--text-2); text-decoration: none; }
