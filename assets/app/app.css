@@ -57,7 +57,7 @@
   --backdrop:    rgba(35, 17, 32, .6);
 
   /* Type: Arial is the official typeface */
-  --font: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --fs-xs: .75rem;     /* 12px — eyebrows only */
   --fs-sm: .875rem;    /* 14px — secondary labels */
   --fs-md: 1rem;       /* 16px — body */
@@ -1474,3 +1474,21 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--br
 .settings--danger { border-color: var(--brand-red); }
 .btn--danger { background: var(--brand-red); color: #fff; }
 .btn--ghost.btn--danger { background: transparent; color: var(--brand-red); border: 2px solid var(--brand-red); }
+
+/* ===== Premium pass: system type, frosted bars, layered depth, tighter headings ===== */
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-synthesis-weight: none; }
+h1, h2, h3, .detail-title, .phead h1, .mtitle, .hub__name, .rcpt__title { letter-spacing: -.022em; }
+h1 { font-weight: 800; }
+.phead h1, .mtitle { font-size: 2.1rem; line-height: 1.1; }
+.eyebrow, .hub__label, .mgroup__label, .hero-label { letter-spacing: .07em; }
+.tabbar { background: color-mix(in srgb, var(--bg) 78%, transparent); -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px); border-top: .5px solid color-mix(in srgb, var(--line) 80%, transparent); }
+.actionbar { background: color-mix(in srgb, var(--surface) 82%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+.mlist, .herocard, .mini, .rcard, .block, .hub, .ccard, .bcard, .rcpt, .dolist, .divcard, .idhead, .settings, .award { box-shadow: 0 1px 2px rgba(35, 17, 32, .05), 0 10px 28px rgba(35, 17, 32, .06); }
+:root[data-theme="dark"] .mlist, :root[data-theme="dark"] .herocard, :root[data-theme="dark"] .mini, :root[data-theme="dark"] .rcard, :root[data-theme="dark"] .block, :root[data-theme="dark"] .hub, :root[data-theme="dark"] .rcpt { box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 10px 28px rgba(0,0,0,.28); }
+.btn { letter-spacing: .005em; box-shadow: 0 1px 2px rgba(35, 17, 32, .12); }
+.btn--ghost { box-shadow: none; }
+.back, .circbtn, .chip { -webkit-backdrop-filter: saturate(180%) blur(12px); backdrop-filter: saturate(180%) blur(12px); }
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .herocard, .mini, .rcard, .mrow, .chip, .circbtn, .bcard, .shortcut__dot { transition: transform 220ms cubic-bezier(.2, .9, .3, 1.2), box-shadow 220ms ease, background-color 160ms ease; }
+  .btn:active, .herocard:active, .mini:active, .rcard:active, .bcard:active, .chip:active { transform: scale(.975); }
+}
