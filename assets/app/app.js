@@ -361,16 +361,20 @@
     return getJSON('/results-data.json').then(function (d) {
       if (RESULTS && RESULTS.src === d) return RESULTS.list;
       var list = (d.tournaments || []).map(function (t, i) {
-        var m = /id=([^&]+)/.exec(t.eventUrl || '');
+        // Which event these results belong to: an explicit eventId (one id,
+        // or a list when one result covers several events), else the
+        // eventUrl's ?id=, else a result id that is itself an event id
+        var m = /[?&]id=([^&#]+)/.exec(t.eventUrl || '');
+        var eids = [].concat(t.eventId || (m ? decodeURIComponent(m[1]) : []), t.id);
         var year = (/\b(20\d{2})\b/.exec(t.title + ' ' + t.id) || [])[1] || '';
         return {
-          t: t, id: t.id, order: i, eventId: m ? decodeURIComponent(m[1]) : '', year: year,
+          t: t, id: t.id, order: i, eventId: eids[0] !== t.id ? eids[0] : (m ? decodeURIComponent(m[1]) : t.id), eventIds: eids, year: year,
           cat: categoryOf(t.title), names: (t.divisions || []).map(divisionNames).join(' ')
         };
       });
       RESULTS = { src: d, list: list };
       RESULT_EVENTS = {};
-      list.forEach(function (r) { if (r.eventId) RESULT_EVENTS[r.eventId] = true; RESULT_EVENTS[r.id] = true; });
+      list.forEach(function (r) { r.eventIds.forEach(function (k) { RESULT_EVENTS[k] = true; }); });
       return list;
     });
   }
@@ -568,7 +572,7 @@
   // Every main screen opens with the same compact header: a short heading,
   // the section name, and one restrained decorative graphic.
   function pageHead(title, label, art) {
-    var g = art === 'bowls' ? '<img class="phead__art" src="/assets/app/art/welcome-bowls.png" alt="" aria-hidden="true" width="121" height="48" decoding="async">'
+    var g = art === 'logo' ? '<span class="logo-plate phead__logo" aria-hidden="true"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75" decoding="async"></span>'
       : art ? '<span class="phead__icon phead__icon--' + art + '" aria-hidden="true">' + icon(art === 'trophy' ? 'trophy' : 'tv') + '</span>' : '';
     return '<header class="phead"><div class="phead__text"><h1>' + esc(title) + '</h1><p class="phead__label">' + esc(label) + '</p></div>' + g + '</header>';
   }
@@ -876,7 +880,7 @@
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
       var segs = [['upcoming', 'Upcoming'], ['saved', 'Saved']].concat(hasPast ? [['past', 'Completed']] : []);
       var nSet = (f.cat ? 1 : 0) + (f.club ? 1 : 0);
-      view.innerHTML = pageHead('Find your next game.', 'Events', 'bowls') +
+      view.innerHTML = pageHead('Find your next game.', 'Events', 'logo') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search events or clubs</span>' +
         '<input type="search" id="q" placeholder="Search events" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
         '<div class="segmented" role="group" aria-label="Which events">' + segs.map(function (k) {
@@ -995,7 +999,7 @@
         return;
       }
       var e = x.e, phase = eventPhase(x, today), st = entryStatus(x, today);
-      var result = all[1].filter(function (r) { return r.eventId === id; })[0];
+      var result = all[1].filter(function (r) { return r.eventIds.indexOf(id) >= 0; })[0];
       setTitle(x.short);
 
       var flyer = safeUrl(e.flyer && (e.flyer.localPath || e.flyer.externalUrl));
@@ -1628,7 +1632,7 @@
     return loadEvents().catch(function () { return []; }).then(function (events) {
       currentNotices = events.filter(function (x) { var p = eventPhase(x, today); return x.e.alert && (p === 'upcoming' || p === 'now'); });
       var n = currentNotices.length;
-      view.innerHTML = pageHead('Your Southwest.', 'More', 'bowls') +
+      view.innerHTML = pageHead('Your Southwest.', 'More', 'logo') +
         '<a class="feature-tile tint tint--blue" href="/app/more/clubs">' + icon('pin') +
           '<span class="feature-tile__body"><span class="feature-tile__title">Find your club</span><span class="feature-tile__sub">Visit. Play. Belong.</span></span>' + CHEV + '</a>' +
         '<h2 class="section__title list-title">Explore</h2>' +
@@ -1713,7 +1717,7 @@
     return getJSON('/clubs-data.json').then(function (d) {
       var clubs = d.clubs || [];
       var q0 = params.get('q') || '';
-      view.innerHTML = backLink('/app/more', 'More') + pageHead('Find your club.', 'Clubs · Cambria to Coronado', 'bowls') +
+      view.innerHTML = backLink('/app/more', 'More') + pageHead('Find your club.', 'Clubs · Cambria to Coronado', 'logo') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search clubs</span>' +
         '<input type="search" id="q" placeholder="Search by club or city" value="' + esc(q0) + '" autocomplete="off"></label><div id="c-list"></div>';
       function apply() {
@@ -2200,7 +2204,6 @@
   var scrollMemory = {};
   var renderToken = 0;
   var restoring = false;
-  var tabMemory = {};
 
   function render() {
     var path = location.pathname, params = new URLSearchParams(location.search);
@@ -2210,8 +2213,6 @@
     document.querySelectorAll('.tabbar a').forEach(function (a) {
       if (a.getAttribute('data-tab') === route[2]) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
-    // Remember where each tab was, so tapping the tab returns there
-    tabMemory[route[2]] = path + location.search;
     var token = ++renderToken;
     var fresh = view.cloneNode(false);           // drop listeners left by the last screen
     view.parentNode.replaceChild(fresh, view); view = fresh;
@@ -2309,7 +2310,8 @@
       if (location.pathname === root) { window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); return; }
       return go(root);
     }
-    if (tab && tabMemory[tab]) return go(tabMemory[tab]);
+    // A tab always opens its main screen, so Results means the results
+    // list, never the last tournament you looked at
     go(href);
   });
 

@@ -706,7 +706,7 @@ html[data-text="xlarge"] .tabbar a { font-size: .6875rem; }
 .phead__text { flex: 1; min-width: 0; }
 .phead h1 { font-size: 1.5rem; line-height: 1.2; letter-spacing: -.01em; }
 .phead__label { color: var(--text-2); margin-top: 2px; }
-.phead__art { flex: none; width: auto; height: 44px; margin-top: 6px; object-fit: contain; }
+.phead__logo { padding: 6px; margin-top: 2px; }
 .phead__icon { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; margin-top: 2px; }
 .phead__icon .i { width: 30px; height: 30px; }
 .phead__icon--trophy { color: #b06f00; background: var(--tint-orange); }

@@ -432,7 +432,8 @@ function selectEvent(eventId) {
       title: event.title,
       meta: [shortDate, club].filter(Boolean).join(' · '),
       navLabel: event.title.replace(/^20\d\d\s+/, '').replace(/^SWD\s+/, '').trim(),
-      eventUrl: `https://www.swlawnbowls.org/2026-tournaments-events/${event.id}`,
+      eventUrl: `/event?id=${event.id}`,
+      eventId: event.id,
       divisions: [{
         label: null, columns: 2,
         places: [

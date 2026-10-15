@@ -18,6 +18,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>
+  /* Opened from the home-screen icon? Go straight to the app before
+     anything of the website is drawn (pwa.js does this too, but only
+     after the page has loaded, which showed the website for a second). */
+  if (matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) location.replace('/app');
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Southwest Lawn Bowls — Home of Southwest Bowls</title>
 <meta name="description" content="Southwest Bowls Division — lawn bowling across Southern California, from Cambria to San Diego.">

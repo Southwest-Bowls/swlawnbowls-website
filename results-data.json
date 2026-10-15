@@ -431,6 +431,7 @@
     },
     {
       "id": "womens-singles-playdowns-2026",
+      "eventId": "womens-us-nationals-singles-playdowns-2026",
       "title": "2026 Women's Singles US National Playdowns",
       "meta": "July 11–12 · Laguna Beach LBC",
       "navLabel": "Women's Singles Playdowns",
@@ -462,6 +463,7 @@
     },
     {
       "id": "womens-pairs-playdowns-2026",
+      "eventId": "womens-us-nationals-pairs-playdowns-2026",
       "title": "2026 Women's Pairs US National Playdowns",
       "meta": "Jul 25–Aug 2 · Newport Harbor LBC / Laguna Beach LBC",
       "navLabel": "Women's Pairs Playdowns",
@@ -503,6 +505,7 @@
     },
     {
       "id": "mens-pairs-playdowns-2026",
+      "eventId": "mens-us-nationals-pairs-playdowns-2026",
       "title": "2026 Men's Pairs US National Playdowns",
       "meta": "Jul 25–Aug 2 · Newport Harbor LBC / Laguna Beach LBC",
       "navLabel": "Men's Pairs Playdowns",
@@ -574,6 +577,7 @@
     },
     {
       "id": "mens-singles-playdowns-2026",
+      "eventId": "mens-us-nationals-singles-playdowns-2026",
       "title": "2026 Men's Singles US National Playdowns",
       "meta": "June 27–29 · Long Beach LBC",
       "navLabel": "Men's Singles Playdowns",
@@ -615,6 +619,7 @@
     },
     {
       "id": "truvic-seniors",
+      "eventId": "truvic-seniors-3-bowls-pairs-2026",
       "title": "2026 TRUVIC Seniors 3 Bowls Pairs",
       "meta": "June 20 · Beverly Hills LBC",
       "navLabel": "TRUVIC Seniors",
@@ -645,6 +650,7 @@
     },
     {
       "id": "amador-martinez",
+      "eventId": "martinez-triples-2026",
       "title": "2026 Amador Martinez Triples",
       "meta": "June 14 · Oxnard LBC",
       "navLabel": "Amador Martinez",
@@ -675,6 +681,7 @@
     },
     {
       "id": "pat-gonzales",
+      "eventId": "pat-gonzales-mixed-aussie-pairs-2026",
       "title": "24th Annual Pat Gonzales Mixed Aussie Pairs",
       "meta": "June 13 · Long Beach LBC",
       "navLabel": "Pat Gonzales Pairs",
@@ -726,6 +733,7 @@
     },
     {
       "id": "coronado-crown-city-cup",
+      "eventId": "coronado-crown-city-cup-2026",
       "title": "2026 Coronado Crown City Cup",
       "meta": "June 6–7 · Coronado LBC",
       "navLabel": "Crown City Cup",
@@ -761,6 +769,7 @@
     },
     {
       "id": "john-clark",
+      "eventId": "john-clark-2-bowls-triples-2026",
       "title": "2026 John Clark 2-Bowl Mixed Triples",
       "meta": "May 31 · Hermosa Beach LBC",
       "navLabel": "John Clark Triples",
@@ -796,6 +805,7 @@
     },
     {
       "id": "womens-singles",
+      "eventId": "swd-womens-singles-katy-stone-2026",
       "title": "2026 SWD Women's Singles",
       "meta": "May 30 · Long Beach LBC",
       "navLabel": "Women's Singles",
@@ -826,6 +836,7 @@
     },
     {
       "id": "disney-pairs",
+      "eventId": "bhlbc-disney-pairs-2026",
       "title": "2026 BHLBC Disney Pairs",
       "meta": "May 23–25 · Beverly Hills LBC",
       "navLabel": "Disney Pairs",
@@ -856,6 +867,7 @@
     },
     {
       "id": "joe-siegman",
+      "eventId": "joe-siegman-pairs-2026",
       "title": "2026 Joe Siegman Pairs",
       "meta": "May 3 · Beverly Hills LBC",
       "navLabel": "Joe Siegman Pairs",
@@ -886,6 +898,7 @@
     },
     {
       "id": "southwest-open-2026",
+      "eventId": ["mens-southwest-division-open-2026", "womens-sw-open-2026"],
       "title": "2026 Southwest Open",
       "meta": "April 23–29 · Long Beach / Laguna Beach / Newport Harbor LBC",
       "navLabel": "Southwest Open",
@@ -1442,6 +1455,7 @@
     },
     {
       "id": "vet-novice-mix-match-triples",
+      "eventId": "vet-novice-mix-match-triples-2026",
       "title": "2026 SWD Vet/Novice Mix/Match Triples",
       "meta": "April 18 · Santa Anita Bowling Green Club",
       "navLabel": "Vet/Novice Mix/Match Triples",
@@ -1477,6 +1491,7 @@
     },
     {
       "id": "murray-allison",
+      "eventId": "mens-murray-allison-singles-2026",
       "title": "2026 SWD Murray-Allison Singles",
       "meta": "April 11 · Riverside LBC",
       "navLabel": "Murray-Allison Singles",
@@ -1573,6 +1588,7 @@
     },
     {
       "id": "mixed-pairs",
+      "eventId": "mixed-pairs-2026",
       "title": "2026 SWD Mixed Pairs",
       "meta": "March 28 · Laguna Woods LBC",
       "navLabel": "SWD Mixed Pairs",
@@ -1629,6 +1645,7 @@
     },
     {
       "id": "socal-rinks",
+      "eventId": "mens-southern-california-rinks-championship-2026",
       "title": "2026 SWD Men's So Cal Rinks",
       "meta": "March 14–15 · Santa Monica LBC",
       "navLabel": "So Cal Rinks",
@@ -1654,6 +1671,7 @@
     },
     {
       "id": "cal5s",
+      "eventId": "womens-cal-5s-2026",
       "title": "2026 SWD Women's Cal 5s",
       "meta": "March 14 · Laguna Beach LBC",
       "navLabel": "Cal 5s",
@@ -1684,6 +1702,7 @@
     },
     {
       "id": "mumma",
+      "eventId": "mumma-mixed-pairs-2026",
       "title": "2026 SWD Mumma Mixed Pairs",
       "meta": "February 28 · Riverside LBC",
       "navLabel": "Mumma Mixed Pairs",
