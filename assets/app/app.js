@@ -841,11 +841,12 @@
     var hbgEv = (function () { var u0 = live.filter(function (x) { return eventPhase(x, today) === 'now'; }).concat(live.filter(function (x) { return eventPhase(x, today) !== 'now'; }))[0]; return u0 ? eventPhoto(u0, d.clubs) : ''; })();
     var html = (hbgEv ? '<div class="hbg" aria-hidden="true" style="--ph:url(\'' + esc(hbgEv) + '\')"></div>' : '') + '<header class="hbar"><span class="hbar__logo" aria-hidden="true"><img src="/assets/app/swd-logo.png" alt="" width="30" height="35"></span><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'short' }) + ', ' + fmt(today, { month: 'short' })) + ' <b class="rollnum" data-roll="' + (+today.slice(8)) + '" data-roll-key="home-day-' + today + '">' + (+today.slice(8)) + '</b></span>' +
       '<h1 class="hbar__hello">' + (function () { var h = new Date().getHours(); return h < 5 ? 'Hello' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; })() + (first ? ', ' + esc(first) : '') + '</h1>' +
-      (function () { var fol = followed(), fe = live.filter(function (x) { return (x.clubIds || []).some(function (id) { return fol.indexOf(id) >= 0; }); })[0];
-        return fe ? '<a class="hbar__club" href="/app/events/' + encodeURIComponent(fe.id) + '">' + icon('star', 'i--sm') + esc(fe.clubLabel) + ' hosts ' + esc(fe.short) + ' · ' + esc(dateRangeLabel(fe.dates, true)) + '</a>' : ''; })() + '</div>' +
+'</div>' +
       '<a class="circbtn" id="hq" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
-      '<a class="circbtn" href="/app/more/settings" aria-label="App settings">' + icon('gear') + '</a></header>';
+      '<a class="circbtn" href="/app/more/settings" aria-label="App settings">' + icon('gear') + '</a></header>' +
+      (function () { var fol = followed(), fe = live.filter(function (x) { return (x.clubIds || []).some(function (id) { return fol.indexOf(id) >= 0; }); })[0];
+        return fe ? '<a class="hbar__club" href="/app/events/' + encodeURIComponent(fe.id) + '">' + icon('star', 'i--sm') + '<span>' + esc(fe.clubLabel) + ' hosts ' + esc(fe.short) + ' · ' + esc(dateRangeLabel(fe.dates, true)) + '</span></a>' : ''; })();
 
     // Urgent: a change to a saved event
     var myAlerts = mineNext.filter(isCritical);

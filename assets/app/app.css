@@ -2179,3 +2179,11 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .signin__nocode { margin: var(--s4) 0 var(--s2); padding: 14px 16px; border-radius: 22px; background: color-mix(in srgb, var(--surface) 80%, transparent); font-size: var(--fs-sm); color: var(--text-2); }
 .signin__nocode b { display: block; color: var(--heading); margin-bottom: 4px; font-family: var(--font-display); }
 .signin__nocode ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+
+/* Header: keep date and greeting on one line each; club note is its own row */
+.hbar__date, .hbar__hello { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hbar__text { min-width: 0; flex: 1 1 auto; }
+.hbar { flex-wrap: nowrap; }
+.hbar__club { display: flex; align-items: center; gap: 8px; margin: -6px 0 var(--s3); padding: 8px 14px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 75%, transparent); font-size: var(--fs-xs); min-height: 40px; }
+.hbar__club span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 380px) { .hbar__logo { width: 40px; height: 40px; } .hbar .circbtn { width: 42px; height: 42px; } }
