@@ -2743,7 +2743,7 @@
       (list.length ? '<ul class="list list--plain">' + list.map(function (en) {
         return '<li><div class="rcard rcard--col"><span class="rcard__body"><span class="rcard__title"><a href="/app/receipt/' + encodeURIComponent(en.id) + '">' + esc(en.title) + '</a></span><span class="rcard__meta">' + esc(en.players.map(function (p) { return p.name; }).join(', ')) + '</span></span>' + statusChip(en.status) +
           (en.status === 'paid' || en.status === 'pending_payment' ? '<button class="btn btn--ghost btn--sm" type="button" data-withdraw="' + esc(en.id) + '" aria-label="Request withdrawal from ' + esc(en.title) + '">Request withdrawal</button>' : '') + '</div></li>'; }).join('') + '</ul>'
-        : '<p class="muted">No entries yet. Open an event and tap Enter.</p>') + '<p class="footnote">Preview only. Withdrawals are approved and refunded by the tournament organizer.</p></section>';
+        : '<p class="muted">No entries yet. Open an event and tap Enter.</p>') + '<p class="footnote">' + (memberSession() ? '' : 'Kept on this phone. Sign in with the email you entered with to keep them safe. ') + 'Preview only. Withdrawals are approved and refunded by the tournament organizer.</p></section>';
   }
   // Tournament director console (preview with made-up demo teams)
   function demoEntries(eventId) {
