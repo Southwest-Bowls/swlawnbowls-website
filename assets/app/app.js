@@ -1384,7 +1384,7 @@
         (r.t.meta ? '<p class="eyebrow">' + esc(r.t.meta) + '</p>' : '') +
         '<h1 class="detail-title">' + esc(r.t.title) + '</h1>' +
         (r.t.divisions && r.t.divisions.length > 1 ? '<p class="muted divhint">' + r.t.divisions.length + ' events in this tournament. Tap one to see its results.</p>' : '') +
-        divisionsHtml(r.t, params.get('division') || '') +
+        awardsHtml(r.t) + divisionsHtml(r.t, params.get('division') || '') +
         '<div class="actions" style="margin-top:24px">' + shareBtn(r.t.title + ' — results', '/app/results/' + r.id) + '</div>' +
         (r.eventId ? '<ul class="rows" style="margin-top:16px">' + linkRow('/app/events/' + encodeURIComponent(r.eventId), 'cal', 'Event details') + '</ul>' : '');
       var want = params.get('division') && document.getElementById('div-' + params.get('division'));
@@ -1526,6 +1526,16 @@
   }
   function byRank(list) { return list.slice().sort(function (a, b) { return (+a.rank || 99) - (+b.rank || 99); }); }
   // Verified winners first; the complete published standings underneath.
+    // Tournament awards (results-data.json: "awards": [{ "title": "Player of the Tournament", "names": "...", "photo": "...", "note": "..." }])
+  function awardsHtml(t) {
+    var a = (t.awards || []).filter(function (x) { return x && x.title && x.names; });
+    if (!a.length) return '';
+    return '<section class="awards" aria-label="Awards">' + a.map(function (x) {
+      return '<div class="award"><span class="award__ic" aria-hidden="true">' + icon('medal') + '</span><span class="award__body"><span class="award__title">' + esc(x.title) + '</span>' +
+        '<span class="award__who">' + esc(x.names) + '</span>' + (x.note ? '<span class="award__note">' + esc(x.note) + '</span>' : '') + '</span>' +
+        (safeUrl(x.photo) ? '<img class="place__photo" src="' + esc(x.photo) + '" alt="' + esc(x.names) + '" loading="lazy">' : '') + '</div>';
+    }).join('') + '</section>';
+  }
   function divSlug(dv) { return dv.slug || slugify(dv.label || 'results'); }
   function divisionsHtml(t, openSlug) {
     var divs = t.divisions || [];
@@ -2294,6 +2304,7 @@
       var tourns = new Set(mine.map(function (m) { return m.r.id; })).size;
       var pod = mine.filter(function (m) { return +m.rank >= 1 && +m.rank <= 3; }).length, wins = mine.filter(function (m) { return +m.rank === 1; }).length;
       var photo = store('memberPhoto:self');
+      var awards = []; list.forEach(function (r) { (r.t.awards || []).forEach(function (a) { if (p.name && splitNames(a.names).indexOf(fold(p.name).trim()) >= 0) awards.push({ r: r, a: a }); }); });
       var honours = (p.honours || []).slice().sort(function (a, b) { return String(b.year) > String(a.year) ? 1 : -1; });
       // Partners played with most
       var pc = {}; mine.forEach(function (m) { m.partners.forEach(function (n) { n = n.trim(); if (n) pc[n] = (pc[n] || 0) + 1; }); });
@@ -2308,6 +2319,7 @@
         ((p.badges || []).length ? '<ul class="badges" aria-label="About me">' + p.badges.map(function (b) { return '<li class="badge">' + icon('check', 'i--sm') + esc(badgeLabel(b)) + '</li>'; }).join('') + '</ul>' : '') +
         '<p class="pro__bio">' + (p.bio ? esc(p.bio).replace(/\n/g, '<br>') : '<span class="muted">Add a short bio with Edit.</span>') + '</p>' +
         (p.name ? '<div class="hub__stats mystats"><span class="hub__stat"><b>' + tourns + '</b><span>Tournaments</span></span><span class="hub__stat"><b>' + pod + '</b><span>Podiums</span></span><span class="hub__stat"><b>' + wins + '</b><span>Wins</span></span></div>' : '') +
+        (awards.length ? '<section class="block"><h2>Awards</h2><ul class="honours">' + awards.map(function (x) { return '<li><span class="honours__yr">' + esc(x.r.year || '') + '</span><a href="/app/results/' + encodeURIComponent(x.r.id) + '">' + esc(x.a.title + ' · ' + shortTitle(x.r.t.title)) + '</a></li>'; }).join('') + '</ul></section>' : '') +
         '<section class="block"><h2>Other honours</h2>' + (honours.length ? '<ul class="honours">' + honours.map(function (h) { return '<li><span class="honours__yr">' + esc(h.year || '') + '</span><span>' + esc(h.text) + '</span></li>'; }).join('') + '</ul>'
           : '<p class="muted">Anything else you want to list, such as a title from another division or year. Add it with Edit.</p>') + '</section>' +
         (partners.length ? '<section class="block"><h2>Played most with</h2><p>' + partners.map(esc).join(' · ') + '</p></section>' : '') +
