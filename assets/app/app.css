@@ -156,7 +156,7 @@ svg { flex: none; }
 .skip:focus { top: calc(8px + var(--safe-t)); }
 
 /* Line icons — one consistent stroke style */
-.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 .i--sm { width: 18px; height: 18px; }
 
 /* ---------- Identity header ------------------------------------------
