@@ -1876,3 +1876,12 @@ h1, h2, h3, .chead__t, .phero__name, .cdname, .dtitle h1, .tcard__title, .ticket
 .ehero__title { font-size: clamp(1.55rem, 7vw, 2rem); font-weight: 650; }
 
 .dtext { margin-bottom: 96px; }
+
+/* Event cards in lists */
+.evcard { position: relative; list-style: none; margin: 0 0 12px; padding: 0; background: none; border: 0; box-shadow: none; }
+.evcard .tcard { padding-right: 64px; }
+.evcard > .iconbtn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,.4); color: #231120; width: 44px; height: 44px; }
+.evcard > .iconbtn .i { stroke: #231120; }
+.evcard > .iconbtn[data-on="true"] .i { fill: #231120; }
+
+.list--cards > li.evcard, .list > li.evcard { background: none; padding: 0; border-radius: 0; min-height: 0; }

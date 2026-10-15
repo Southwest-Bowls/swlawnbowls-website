@@ -599,17 +599,15 @@
       : (dayEv.length ? '<ol class="tl">' + tl + '</ol>' : '<p class="muted tl__none">Nothing scheduled this day. Days with a coloured dot have events.</p>')) + '</div></div>';
     return html;
   }
+  // One event as a coloured card (same look as the calendar timeline)
   function eventRow(x, today) {
-    var e = x.e, phase = eventPhase(x, today);
-    var meta = [x.clubLabel, e.format && cap(e.format)].filter(Boolean).join(' · ');
-    var update = e.alert && phase !== 'past'
-      ? '<span class="status status--update">' + icon('bell') + esc(e.alertLabel || 'Update') + '</span>' : '';
-    return '<li class="evrow">' + dateBlock(x) +
-      '<a class="evrow__main" href="/app/events/' + encodeURIComponent(x.id) + '">' +
-      '<span class="evrow__title">' + esc(x.short) + '</span>' +
-      '<span class="sr-only">' + esc(dateRangeLabel(x.dates, true)) + '. </span>' +
-      '<span class="evrow__meta">' + esc(meta) + (x.dates && x.dates.start !== x.dates.end ? ' · ' + esc(dateRangeLabel(x.dates)) : '') + '</span>' +
-      statusLine(entryStatus(x, today)) + update + '</a>' + saveBtn(x.id, x.short) + '</li>';
+    var e = x.e, phase = eventPhase(x, today), ph = eventPhoto(x, CLUBS_LIST), st = entryStatus(x, today);
+    var update = e.alert && phase !== 'past' ? '<span class="tcard__st">' + icon('bell') + esc(e.alertLabel || 'Update') + '</span>' : '';
+    return '<li class="evcard"><a class="tcard ' + catClass(x) + '" href="/app/events/' + encodeURIComponent(x.id) + '">' +
+      '<span class="tcard__who"><span class="tcard__av"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '></span><span class="tcard__wt"><b>' + esc(x.clubLabel || 'Southwest Bowls') + '</b><small>' + esc(x.cat || 'Open') + (e.format ? ' · ' + esc(cap(e.format)) : '') + '</small></span></span>' +
+      '<span class="tcard__time">' + esc(dateRangeLabel(x.dates, true)) + (e.time && phase !== 'past' && x.dates && x.dates.start === x.dates.end ? ' · ' + esc(startTime(e.time) || e.time) : '') + '</span>' +
+      '<span class="tcard__title">' + esc(x.short) + '</span>' +
+      (st ? '<span class="tcard__st">' + icon(st.icon) + esc(st.label) + '</span>' : '') + update + '</a>' + saveBtn(x.id, x.short) + '</li>';
   }
   function sectionHead(id, title, href, label) {
     return '<div class="section__head"><h2 class="section__title" id="' + id + '">' + esc(title) + '</h2>' +
@@ -1150,7 +1148,6 @@
       var entryOpen = phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && method !== 'none';
       var primaryBar = hubEnter ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/enter">Enter this tournament (preview)</a>' : entryOpen ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">' + (method === 'online' ? 'Enter online' : method === 'paypal' ? 'Enter and pay' : 'How to enter') + '</a>'
         : phase !== 'past' && method === 'none' && flyer ? '<a class="btn btn--wide" href="' + esc(flyer) + '" target="_blank" rel="noopener">See the flyer</a>'
-        : phase === 'past' && result ? '<a class="btn btn--wide" href="?tab=results" data-goto-tab="results">See the results</a>'
         : '';
       var onNow = isSaved(x.id);
       var html = (hostPhoto ? '<div class="escene__bg" aria-hidden="true" style="--ph:url(\'' + esc(hostPhoto) + '\')"></div>' : '') + backLink('/app/events', 'Events') +
