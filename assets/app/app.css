@@ -1183,6 +1183,6 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 
 /* Sign-in backdrop: the Division logo, large, blurred and faint behind the form */
 .signin { position: relative; isolation: isolate; }
-.signin::before { content: ''; position: absolute; z-index: -1; left: 50%; top: 14%; width: 125%; aspect-ratio: 1 / 1; transform: translateX(-50%);
-  background: url('/assets/app/swd-logo.png') center / contain no-repeat; opacity: .13; filter: blur(2.5px) saturate(.8); pointer-events: none; }
+.signin::before { content: ''; position: absolute; z-index: -1; left: 6%; right: 10%; top: 41%; aspect-ratio: 205 / 240;
+  background: url('/assets/app/swd-logo.png') center / contain no-repeat; opacity: .13; filter: blur(2px) saturate(.8); pointer-events: none; }
 :root[data-theme="dark"] .signin::before { opacity: .16; }
