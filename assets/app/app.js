@@ -500,24 +500,25 @@
     var n = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
     function on(iso) { return list.filter(function (x) { return x.dates && x.dates.start <= iso && iso <= x.dates.end; }); }
     var anyThisMonth = false, firstDay = '', nextDay = '';
+    for (var d0 = 1; d0 <= n; d0++) {
+      var iso0 = ym + '-' + String(d0).padStart(2, '0');
+      if (on(iso0).length) { anyThisMonth = true; if (!firstDay) firstDay = iso0; if (!nextDay && iso0 >= today) nextDay = iso0; }
+    }
+    var showDay = selDay && selDay.slice(0, 7) === ym ? selDay : (nextDay || firstDay);
     var cells = '';
     for (var i = 0; i < lead; i++) cells += '<span class="cal__blank"></span>';
     for (var d = 1; d <= n; d++) {
       var iso = ym + '-' + String(d).padStart(2, '0'), ev = on(iso);
-      if (ev.length) { anyThisMonth = true; if (!firstDay) firstDay = iso; if (!nextDay && iso >= today) nextDay = iso; }
       cells += ev.length
-        ? '<button type="button" class="cal__day cal__day--has' + (iso === today ? ' cal__day--today' : '') + (iso === selDay ? ' cal__day--sel' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === selDay) +
+        ? '<button type="button" class="cal__day cal__day--has' + (iso === today ? ' cal__day--today' : '') + (iso === showDay ? ' cal__day--sel' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === showDay) +
           '" aria-label="' + esc(fmt(iso, { weekday: 'long', month: 'long', day: 'numeric' }) + ', ' + ev.length + (ev.length === 1 ? ' event' : ' events')) + '">' + d + '</button>'
         : '<span class="cal__day' + (iso === today ? ' cal__day--today' : '') + '">' + d + '</span>';
     }
-    // Default to the selected day, else today if it is in this month, else the month's first event day
-    var showDay = selDay && selDay.slice(0, 7) === ym ? selDay : (nextDay || firstDay);
     var dayEv = showDay ? on(showDay) : [];
     var html = '<div class="cal"><div class="cal__head"><button class="circbtn" type="button" data-cal-nav="-1" aria-label="Previous month">' + icon('back') + '</button>' +
       '<h2 class="cal__title" aria-live="polite">' + esc(fmt(first, { month: 'long', year: 'numeric' })) + '</h2>' +
       '<button class="circbtn" type="button" data-cal-nav="1" aria-label="Next month">' + icon('chev') + '</button></div>' +
       '<div class="cal__grid" role="group" aria-label="Days with events"><span class="cal__dow" aria-hidden="true">Sun</span><span class="cal__dow" aria-hidden="true">Mon</span><span class="cal__dow" aria-hidden="true">Tue</span><span class="cal__dow" aria-hidden="true">Wed</span><span class="cal__dow" aria-hidden="true">Thu</span><span class="cal__dow" aria-hidden="true">Fri</span><span class="cal__dow" aria-hidden="true">Sat</span>' + cells + '</div></div>';
-    html = html.replace('data-cal-day="' + showDay + '" aria-pressed="false"', 'data-cal-day="' + showDay + '" aria-pressed="true"').replace('cal__day cal__day--has' + (showDay === today ? ' cal__day--today' : '') + '"', 'cal__day cal__day--has' + (showDay === today ? ' cal__day--today' : '') + ' cal__day--sel"');
     html += '<div id="cal-day-list" tabindex="-1">' + (!anyThisMonth ? state('empty', 'No events this month', 'Use the arrows to look at another month.')
       : '<h2 class="section__title list-title">' + esc(fmt(showDay, { weekday: 'long', month: 'long', day: 'numeric' })) + '</h2>' +
         (dayEv.length ? '<ul class="list list--cards">' + dayEv.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '<p class="muted">Nothing scheduled this day.</p>')) + '</div>';
@@ -661,6 +662,10 @@
     document.querySelectorAll('[data-notices] [data-upd-label]').forEach(function (el) {
       el.textContent = el.getAttribute('data-upd-label') === 'short' ? updatesShort(list) : updatesLabel(list);
     });
+    document.querySelectorAll('.circbtn[data-notices]').forEach(function (b) {   // Home bell: clear the dot once seen
+      var d = b.querySelector('.circbtn__dot'); if (d) d.remove();
+      b.setAttribute('aria-label', 'Tournament updates');
+    });
   }
 
   // Share: the phone's share sheet when there is one, otherwise copy the
@@ -728,7 +733,7 @@
     var unread = unreadCount(currentNotices);
     var html = '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'long', month: 'long', day: 'numeric' })) + '</span>' +
       '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Your Southwest') + '</h1></div>' +
-      '<a class="circbtn" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
+      '<a class="circbtn" id="hq" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
       '<a class="circbtn circbtn--me" href="/app/my" aria-label="My SWD">' + (initials(prof.name) ? esc(initials(prof.name)) : icon('person')) + '</a></header>';
 
@@ -1007,7 +1012,7 @@
         var ec = ev.target.closest('[data-ecat]');
         if (ec) { document.getElementById('f-cat').value = ec.getAttribute('data-ecat'); apply(); return; }
         var cn = ev.target.closest('[data-cal-nav]');
-        if (cn) { calMonth = addMonths(calMonth, +cn.getAttribute('data-cal-nav')); calDay = ''; apply(); return; }
+        if (cn) { var dirN = cn.getAttribute('data-cal-nav'); calMonth = addMonths(calMonth, +dirN); calDay = ''; apply(); var nb = view.querySelector('[data-cal-nav="' + dirN + '"]'); if (nb) nb.focus({ preventScroll: true }); return; }
         var cd = ev.target.closest('[data-cal-day]');
         if (cd) { calDay = cd.getAttribute('data-cal-day'); apply(); var dl = document.getElementById('cal-day-list'); if (dl) dl.focus({ preventScroll: true }); return; }
         var b = ev.target.closest('[data-show]');
@@ -1030,7 +1035,7 @@
         if (fb) {
           var panel = document.getElementById('filters-panel'), open = panel.hidden;
           panel.hidden = !open; fb.setAttribute('aria-expanded', open);
-          if (open) document.getElementById('f-cat').focus();
+          if (open) document.getElementById('f-club').focus();
         }
       });
       apply();
@@ -1304,11 +1309,11 @@
         });
         var filtered = q || cat || year;
         var cap = (filtered || showAll) ? out.length : 8, shown = out.slice(0, cap);
-        document.getElementById('res-list').innerHTML = out.length
+        document.getElementById('res-list').innerHTML = '<p class="sr-only" aria-live="polite">' + out.length + ' result' + (out.length === 1 ? '' : 's') + '</p>' + (out.length
           ? '<ul class="list list--plain">' + shown.map(resultRow).join('') + '</ul>' +
             (out.length > cap ? '<button class="btn btn--ghost btn--wide" type="button" data-showall>Show all ' + out.length + ' results</button>'
               : filtered ? '<p class="count">' + out.length + ' result' + (out.length === 1 ? '' : 's') + ' <button class="clear" type="button" data-clear>Clear filters</button></p>' : '')
-          : state('empty', 'No results match', 'Try a different name or clear the filters.', '<button class="btn btn--ghost" type="button" data-clear>Clear filters</button>');
+          : state('empty', 'No results match', 'Try a different name or clear the filters.', '<button class="btn btn--ghost" type="button" data-clear>Clear filters</button>'));
         var u = new URLSearchParams();
         if (q) u.set('q', qRaw); if (cat) u.set('cat', cat); if (year) u.set('year', year);
         history.replaceState(history.state, '', '/app/results' + (u.toString() ? '?' + u : ''));
@@ -1825,11 +1830,18 @@
         if (cview !== 'map') { box.innerHTML = ''; return; }
         var q = fold(document.getElementById('q').value.trim());
         var shown = clubs.filter(function (c) { return !q || fold(c.name + ' ' + c.city + ' ' + (c.summary || '')).indexOf(q) >= 0; });
+        if (!shown.length) { box.innerHTML = state('empty', 'No clubs match', 'Try another name or city.'); return; }
         var sel = shown.filter(function (c) { return (c.id || slugify(c.name)) === selId; })[0];
         box.innerHTML = clubMapHtml(shown, sel ? selId : '') + '<div id="c-card" aria-live="polite">' + clubCard(sel) + '</div>';
         box.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
       }
+      function syncUrl() {
+        var u = new URLSearchParams(), qv = document.getElementById('q').value.trim();
+        if (qv) u.set('q', qv); if (cview === 'list') u.set('view', 'list');
+        history.replaceState(history.state, '', '/app/more/clubs' + (u.toString() ? '?' + u : ''));
+      }
       function apply() {
+        syncUrl();
         if (cview === 'map') { document.getElementById('c-list').innerHTML = ''; return; }
         var q = fold(document.getElementById('q').value.trim());
         var list = clubs.filter(function (c) { return !q || fold(c.name + ' ' + c.city + ' ' + (c.summary || '')).indexOf(q) >= 0; });
@@ -1838,12 +1850,11 @@
           return '<li><a class="rcard" href="/app/more/clubs/' + encodeURIComponent(id) + '"><span class="clubdot' + (on ? ' clubdot--on' : '') + '" aria-hidden="true">' + icon(on ? 'star' : 'pin') + '</span>' +
             '<span class="rcard__body"><span class="rcard__title">' + esc(c.name) + '</span><span class="rcard__meta">' + esc(c.city + (c.status === 'private' ? ' · Private club' : '') + (on ? ' · Following' : '')) + '</span></span>' + CHEV + '</a></li>';
         }).join('') + '</ul>' : state('empty', 'No clubs match', 'Try another name or city.');
-        history.replaceState(history.state, '', '/app/more/clubs' + (q ? '?q=' + encodeURIComponent(document.getElementById('q').value.trim()) : ''));
       }
       document.getElementById('q').addEventListener('input', function () { apply(); drawMap(); });
       view.addEventListener('click', function (ev) {
         var pin = ev.target.closest('[data-pin]');
-        if (pin) { selId = pin.getAttribute('data-pin'); drawMap(); var ca = document.getElementById('c-card'); if (ca) ca.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); return; }
+        if (pin) { selId = pin.getAttribute('data-pin'); drawMap(); var pb = view.querySelector('[data-pin="' + selId + '"]'); if (pb) pb.focus({ preventScroll: true }); var ca = document.getElementById('c-card'); if (ca) ca.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); return; }
         var cv = ev.target.closest('[data-cview]');
         if (cv) { cview = cv.getAttribute('data-cview'); view.querySelectorAll('[data-cview]').forEach(function (b) { b.setAttribute('aria-pressed', b === cv); }); drawMap(); apply(); }
       });
@@ -2079,13 +2090,18 @@
   var SIGNUP_OPEN = false;
   function signInScreen(params) {
     setTitle('Sign in');
-    var email = '', timer = null;
+    var email = '', timer = null, root = view;
+    function live() { if (view === root) return true; clearInterval(timer); return false; }
     var MAIL_ART = '<svg class="signin__art" viewBox="0 0 120 90" aria-hidden="true" focusable="false"><rect x="14" y="22" width="92" height="58" rx="10" class="sa-body"/>' +
       '<path d="M18 28 60 58l42-30" class="sa-flap"/><circle cx="96" cy="22" r="11" class="sa-dot"/><path d="m91 22 4 4 7-8" class="sa-tick"/></svg>';
     function shell(step, inner, backTo) {
       view.innerHTML = '<div class="signin"><div class="signin__top"><button class="circbtn" type="button" data-sback aria-label="Back">' + icon('back') + '</button>' +
         '<span class="signin__step">Step ' + step + ' of 2</span></div>' + inner + '</div>';
-      view.querySelector('[data-sback]').addEventListener('click', function () { if (backTo) backTo(); else go('/app/my'); });
+      view.querySelector('[data-sback]').addEventListener('click', function () {
+        if (backTo) { backTo(); return; }
+        if (history.state && history.state.from) { history.back(); return; }
+        navDir = 'back'; go('/app/my', true);
+      });
     }
     function socialRow() {
       return '<div class="signin__or"><span>or continue with</span></div><div class="social">' +
@@ -2108,7 +2124,7 @@
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { out.textContent = 'Enter your email address.'; f.querySelector('#s-email').focus(); return; }
         email = v; f.querySelector('button').disabled = true; out.textContent = '';
         store('afterSignIn', '/app/my');
-        var next = function () { codeStep(); };
+        var next = function () { if (live()) codeStep(); };
         // Same answer whether or not the address exists: never reveal who is on the roster
         memberFetch('/auth/v1/otp?redirect_to=' + encodeURIComponent(location.origin + '/app/my'), { email: email, create_user: SIGNUP_OPEN }).then(next, next);
       });
@@ -2133,7 +2149,7 @@
         if (left > 0) { tm.textContent = 'You can resend the code in ' + left + ' seconds'; left--; return; }
         clearInterval(timer); tm.innerHTML = '<button class="textlink" type="button" id="c-resend">Resend code</button>';
         tm.querySelector('#c-resend').addEventListener('click', function () {
-          memberFetch('/auth/v1/otp', { email: email, create_user: SIGNUP_OPEN }).then(function () { toast('Code sent'); }, function () { toast('Code sent'); });
+          memberFetch('/auth/v1/otp', { email: email, create_user: SIGNUP_OPEN }).then(function () { if (live()) toast('Code sent'); }, function () { if (live()) toast('Code sent'); });
           left = 45; timer = setInterval(tick, 1000); tick();
         });
       }
@@ -2147,11 +2163,12 @@
         if (code.length < 6) { out.textContent = 'Enter the 6-digit code from the email.'; inp.focus(); return; }
         busy = true; f.querySelector('button').disabled = true; out.textContent = '';
         memberFetch('/auth/v1/verify', { type: 'email', email: email, token: code }).then(function (j) {
+          if (!live()) return;
           clearInterval(timer);
           setMemberSession({ access: j.access_token, refresh: j.refresh_token, expires: Date.now() + (j.expires_in || 3600) * 1000 });
           store('memberPreview', true); toast('Signed in');
           go('/app/my', true);
-        }, function () { busy = false; f.querySelector('button').disabled = false; inp.value = ''; paint(); out.textContent = 'That code didn’t work. Check it or ask for a new one.'; });
+        }, function () { if (!live()) return; busy = false; f.querySelector('button').disabled = false; inp.value = ''; paint(); out.textContent = 'That code didn’t work. Check it or ask for a new one.'; });
       });
     }
     if (params.get('demo') === 'code') { email = 'you@example.com'; codeStep(); return Promise.resolve(); }
