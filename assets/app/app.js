@@ -1096,13 +1096,13 @@
       var onNow = isSaved(x.id);
       var html = backLink('/app/events', 'Events') +
         (hostPhoto ? '<div class="chero"><img class="chero__img chero__img--wide" src="' + esc(hostPhoto) + '" alt="" loading="lazy" data-hide-on-error>' + (st ? '<span class="chero__tag ' + catClass(x) + '">' + esc(st.label) + '</span>' : '') + '</div>' : '') +
-        '<p class="eyebrow">' + esc(e.subtitle || season) + '</p>' +
+        '<div class="eband ' + catClass(x) + '"><p class="eyebrow">' + esc(x.cat || 'Open') + ' · ' + esc(e.subtitle || season) + '</p>' +
         '<h1 class="detail-title">' + esc(e.title) + '</h1>' +
-        (x.club ? '<p>' + esc(x.club) + '</p>' : '') +
+        (x.club ? '<p>' + esc(x.club) + '</p>' : '') + '</div>' +
         '<div class="detail-date">' + dateBlock(x, true) + '<div><b>' + esc(e.date || 'Date to be announced') + '</b>' + statusLine(st) + '</div></div>';
       if (e.alert) html += '<div class="note" role="note"><b>' + esc(e.alertLabel || 'Update') + '</b>' + esc(e.alert) + '</div>';
 
-      html += '<div class="segmented" role="tablist" aria-label="Event sections">' + tabs.map(function (t) {
+      html += '<div class="segmented segmented--cat ' + catClass(x) + '" role="tablist" aria-label="Event sections">' + tabs.map(function (t) {
         return '<button type="button" role="tab" id="tab-' + t[0] + '" aria-controls="panel" aria-selected="' + (t[0] === tab) + '" tabindex="' + (t[0] === tab ? 0 : -1) + '" data-tab="' + t[0] + '">' + t[1] + '</button>';
       }).join('') + '</div><div id="panel" role="tabpanel" tabindex="-1"></div>' +
         '<div class="actionbar">' + primaryBar + '<button class="btn btn--ghost' + (primaryBar ? '' : ' btn--wide') + '" type="button" data-save="' + esc(x.id) + '" data-title="' + esc(x.short) + '" data-on="' + onNow + '" aria-label="' + esc(saveLabel(onNow, x.short)) + '">' + icon('bookmark') +

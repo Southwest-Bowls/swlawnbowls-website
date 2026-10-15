@@ -1268,3 +1268,10 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .legend__dot { width: 14px; height: 14px; border-radius: 50%; background: var(--cat-solid); }
 .standlink { background: var(--surface); border: 1px solid var(--line); }
 .standlink > .i:first-child { color: var(--heading); }
+
+/* Event page: coloured title band and selected tab follow the event type; the Enter button stays red */
+.eband { background: var(--cat-tint); border-radius: var(--r-card); padding: var(--s4); margin-bottom: var(--s3); border-left: 6px solid var(--cat-solid); }
+.eband .eyebrow { margin: 0 0 4px; }
+.eband .detail-title { margin: 0 0 4px; }
+.eband p { margin: 0; }
+.segmented--cat [role="tab"][aria-selected="true"] { background: var(--cat-solid); color: #231120; }
