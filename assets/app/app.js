@@ -2457,7 +2457,7 @@
     }
     function emailStep(msg) {
       clearInterval(timer);
-      shell(1, '<h1 class="signin__h">Welcome to Southwest Bowls</h1><p class="signin__sub"><b class="signin__lead">Log in or create an account</b>Enter your email and we’ll send you a code.</p>' +
+      shell(1, '<h1 class="signin__h">Log in or create an account</h1><p class="signin__sub">Enter your email and we’ll send you a code.</p>' +
         (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
         '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
         '<input id="s-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="' + esc(email) + '" required></span></label>' +
@@ -3343,7 +3343,7 @@
   function authLanding(photo, back) {
     return '<section class="auth">' + '<div class="auth__photo"' + (photo ? ' style="--ph:url(\'' + esc(photo) + '\')"' : '') + '></div>' +
       (back ? '<button class="iconbtn gbtn auth__back" type="button" data-auth="back" aria-label="Back">' + icon('back') + '</button>' : '') +
-      '<div class="auth__body"><span class="auth__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls Division" width="64" height="75"></span><h1 class="auth__t">Welcome to Southwest Bowls</h1>' +
+      '<div class="auth__body"><span class="auth__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls Division" width="64" height="75"></span><h1 class="sr-only">Southwest Bowls</h1>' +
       '<p class="auth__s">Sign in to enter tournaments and keep your details. Browsing needs no account.</p>' +
       '<button class="auth__apple" type="button" data-auth="apple">' + APPLE_SVG + 'Continue with Apple<small>Soon</small></button>' +
       '<div class="auth__row"><button class="auth__alt" type="button" data-auth="google">' + GOOGLE_SVG + 'Google<small>Soon</small></button>' +
