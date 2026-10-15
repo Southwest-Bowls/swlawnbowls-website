@@ -1906,7 +1906,7 @@
       view.innerHTML = '<h1 class="sr-only">More</h1>' +
         '<section class="hub" aria-label="Southwest Bowls Division"><span class="logo-plate hub__logo"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75"></span>' +
         '<div class="hub__text"><span class="hub__name">Southwest Bowls Division</span><span class="hub__sub">Lawn bowls across Southern California</span></div>' +
-        '<div class="hub__stats">' + metric('more-clubs', nClubs, 'Clubs', 'In the Division') + metric('more-ahead', upcoming, 'Ahead', 'Still to come') + metric('more-played', played, 'Played', 'This season') + '</div></section>' +
+        '<div class="hub__stats">' + metric('more-clubs', nClubs, 'Clubs', 'in the Division') + metric('more-ahead', upcoming, 'Tournaments', 'coming up') + metric('more-played', played, 'Tournaments', 'played this season') + '</div></section>' +
         group('Explore', [
           mrow('/app/more/clubs', 'pin', 'Clubs', nClubs ? nClubs + ' clubs, on a map or in a list' : 'Map and list', 'blue'),
           mrow('/app/more/news', 'news', 'News', news[0] ? news[0].title : '', 'blue'),
