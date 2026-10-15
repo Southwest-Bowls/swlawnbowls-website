@@ -1714,6 +1714,7 @@
       getJSON('/news-data.json').catch(function () { return {}; }), loadResults().catch(function () { return []; })]).then(function (all) {
       var events = all[0], nClubs = (all[1].clubs || []).length, results = all[3];
       var news = (all[2].items || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+      var played = events.filter(function (x) { return eventPhase(x, today) === 'past' && x.e.status !== 'cancelled'; }).length;
       var upcoming = events.filter(function (x) { var ph = eventPhase(x, today); return ph === 'upcoming' || ph === 'now'; }).length;
       currentNotices = events.filter(function (x) { var p = eventPhase(x, today); return x.e.alert && (p === 'upcoming' || p === 'now'); });
       var n = currentNotices.length;
@@ -1729,7 +1730,7 @@
       view.innerHTML = '<h1 class="sr-only">More</h1>' +
         '<section class="hub" aria-label="Southwest Bowls Division"><span class="logo-plate hub__logo"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75"></span>' +
         '<div class="hub__text"><span class="hub__name">Southwest Bowls Division</span><span class="hub__sub">Lawn bowls across Southern California</span></div>' +
-        '<div class="hub__stats">' + stat(nClubs, 'Clubs') + stat(upcoming, 'Events ahead') + stat(results.length, 'Results posted') + '</div></section>' +
+        '<div class="hub__stats">' + stat(nClubs, 'Clubs') + stat(upcoming, 'Events ahead') + stat(played, 'Played so far') + '</div></section>' +
         group('Explore', [
           mrow('/app/more/clubs', 'pin', 'Clubs', nClubs ? nClubs + ' clubs, on a map or in a list' : 'Map and list', 'blue'),
           mrow('/app/more/news', 'news', 'News', news[0] ? news[0].title : '', 'blue'),
