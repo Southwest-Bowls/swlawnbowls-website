@@ -2194,6 +2194,28 @@
     emailStep(); return Promise.resolve();
   }
 
+  // My results: every published place where the name on this phone appears (exact full-name match,
+  // split on commas, "&", "/" and "and"). Matching is local; nothing is sent anywhere. Names are
+  // never corrected, so a spelling variant in a result will not match until the Division fixes it.
+  function splitNames(str) { return String(str || '').split(/\s*(?:,|&|\/|\band\b)\s*/i).map(fold).map(function (x) { return x.trim(); }).filter(Boolean); }
+  function myResults(list, name) {
+    var me = fold(name).trim(); if (!me) return [];
+    var out = [];
+    list.forEach(function (r) {
+      (r.t.divisions || []).forEach(function (dv) {
+        divisionPlaces(dv).forEach(function (g) {
+          g.places.forEach(function (pl) {
+            if (splitNames(pl.names).indexOf(me) < 0) return;
+            var partners = String(pl.names).split(/\s*(?:,|&|\/|\band\b)\s*/i).filter(function (n) { return fold(n).trim() !== me; });
+            out.push({ r: r, rank: pl.rank, rankLabel: pl.rankLabel || '', div: [dv.label, g.label].filter(Boolean).join(' · '), partners: partners });
+          });
+        });
+      });
+    });
+    out.sort(function (a, b) { var da = resultDate(a.r), db = resultDate(b.r); return da < db ? 1 : da > db ? -1 : 0; });
+    return out;
+  }
+  function placeWord(n) { n = +n; return n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : n ? n + 'th' : ''; }
   // Identity header: everyone can use the app without an account, including
   // players from other divisions and other countries. The optional details
   // behind it stay on this phone; nothing is sent anywhere.
@@ -2244,6 +2266,7 @@
     var today = todayISO();
 
     view.innerHTML = profileHeader() +
+      '<div id="my-res"></div>' +
       (memberSession() ? '' : '<a class="btn btn--wide signin__cta" href="/app/signin">Sign in or create an account</a>') +
       (preview ? '<section class="section mysec" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
         '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + loading() + '</div></section>' : '') +
@@ -2256,6 +2279,20 @@
         '<ul class="rows rows--cards">' + linkRow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline copies') + '</ul></section>';
     var box = view.querySelector('#m-box');
     wireProfile();
+    // My results: from the published results, matched by the name entered on this phone
+    var prof0 = store('profile') || {};
+    if (prof0.name) loadResults().then(function (list) {
+      var mine = myResults(list, prof0.name), el = view.querySelector('#my-res'); if (!el) return;
+      var gold = mine.filter(function (m) { return +m.rank === 1; }).length, pod = mine.filter(function (m) { return +m.rank >= 1 && +m.rank <= 3; }).length;
+      el.innerHTML = '<section class="section mysec" aria-labelledby="h-myres"><div class="section__head"><h2 class="section__title" id="h-myres">My results</h2></div>' +
+        (mine.length ? '<div class="hub__stats mystats">' + '<span class="hub__stat"><b>' + mine.length + '</b><span>Events</span></span><span class="hub__stat"><b>' + pod + '</b><span>Podiums</span></span><span class="hub__stat"><b>' + gold + '</b><span>Wins</span></span></div>' +
+          '<ul class="list list--plain">' + mine.slice(0, 5).map(function (m) {
+            return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(m.r.id) + '">' + resultBlock(m.r) + '<span class="rcard__body"><span class="rcard__title">' + esc(shortTitle(m.r.t.title)) + '</span>' +
+              '<span class="rcard__meta">' + esc([placeWord(m.rank) || m.rankLabel, m.div, m.partners.length ? 'with ' + m.partners.join(', ') : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>';
+          }).join('') + '</ul>' + (mine.length > 5 ? '<p class="count">+ ' + (mine.length - 5) + ' more on the Results tab</p>' : '')
+          : '<p class="muted">No published results under “' + esc(prof0.name) + '” yet. Results match the full name exactly as the Division published it.</p>') +
+        '<p class="footnote">Matched on this phone from published results. Nothing is sent anywhere.</p></section>';
+    }).catch(function () {});
 
     // Saved events and followed clubs: this phone only, no sign-in
     loadEvents().then(function (events) {
