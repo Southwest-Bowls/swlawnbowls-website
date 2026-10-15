@@ -1,20 +1,21 @@
 # 04 - Tournament-director console
 
 Status: design draft, nothing built or connected. Written 2026-10-14.
+State, column and role names follow `02-schema.sql`.
 Sources: `docs/SWD-Hub-PRD.md` (sections 2, 4, 7, 8, 17, 18), `docs/SWD-Data-Findings.md`, `events-data.json`, `results-data.json`, `score-sheets/`, `docs/succession-and-accounts.md`.
 
 ## 1. Who, and on what device
 
 | Item | Decision |
 |---|---|
-| Users | Anne Nunes and Bill (surname OPEN QUESTION: PRD names Bill Brault as men's playdowns director; confirm it is the same Bill) |
+| Users | Anne Nunes and Bill (probably Bill Brault: the PRD names him men's playdowns director and `events-data.json` lists him as contact on 8 events; OPEN QUESTION: confirm it is the same Bill). Other TDs exist as event contacts (8 other people in the data) and need sign-in if they run events. |
 | Device | Phone first, one hand, outdoors in sun. Big tap targets, high contrast, works on weak signal. |
 | Placement | A "Run event" area inside the app, reachable only after sign-in. Public pages never show it. |
 | Payments | SWD's own PayPal account. Card data never touches our code. Apple Pay and Google Pay come through the processor. |
-| Refunds | Done by Anne and Bill. The console shows what to refund and records that it was done. |
+| Refunds | Done by Anne and Bill by hand in PayPal (or by check/cash). The console shows what to refund and records that it was done; it never sends a refund itself. |
 | Source of truth | The database, not Google Sheets. |
 
-OPEN QUESTION: PRD role table says a TD "cannot issue refunds (can request)". Giulia says Anne and Bill do refunds. Are Anne and Bill both Division Admin, or are they TDs with a refund permission? Design below assumes a per-person `can_refund` flag so either answer works.
+OPEN QUESTION: PRD role table says a TD "cannot issue refunds (can request)". Giulia says Anne and Bill do refunds. Are Anne and Bill both Division Admin, or are they TDs with a refund permission? `02-schema.sql` supports either: admins can always refund, and a TD can be given `tds.can_refund`. Can Giulia, as backup admin, also refund?
 
 OPEN QUESTION: Does Bill run events on his own or only back up Anne? Which events is each assigned to?
 
@@ -24,8 +25,8 @@ OPEN QUESTION: Does Bill run events on his own or only back up Anne? Which event
 |---|---|---|
 | Public | Names only, entry counts, draws, scores, results | Nothing |
 | Member | Own entries | Request withdrawal on own entry |
-| TD (Anne, Bill) | Assigned events only, including contact details and payment status | Everything on those events except where marked "refund" |
-| Refund-capable (Anne, Bill) | Same, plus refund queue | Approve withdrawal, mark refund done |
+| TD (assigned per event) | Assigned events only, including contact details and payment status | Everything on those events except approving withdrawals and recording refunds |
+| Refund-capable (Anne, Bill: admin, or TD with `can_refund`) | Same, plus refund queue | Approve or reject withdrawal, record refund as done |
 | Division Admin | All events, audit log | Reassign TDs, edit anything after verification |
 
 Rules that hold everywhere:
@@ -49,7 +50,7 @@ Rules that hold everywhere:
 | 9 | Standings and verify | Between and after rounds |
 | 10 | Publish results | End of event |
 
-Event status flow (from PRD section 6): `draft -> entries_open -> entries_closed -> in_progress -> finished -> results_published`. Screens 6 to 10 unlock at `in_progress`.
+Event status flow (`event_status` in `02-schema.sql`): `draft -> published -> entries_open -> entries_closed -> in_progress -> completed`, plus `cancelled`. (The PRD's `finished` is `completed` here; whether results are published is a separate flag in the later results tables, not an event status.) Screens 6 to 10 unlock at `in_progress`.
 
 ## 4. Screens
 
@@ -57,7 +58,7 @@ Event status flow (from PRD section 6): `draft -> entries_open -> entries_closed
 
 | Field | Detail |
 |---|---|
-| Shows | Events assigned to me, newest first: title, date, club, status, `confirmed / max`, pending-payment count, open withdrawals count |
+| Shows | Events assigned to me, newest first: title, date, club, status, `confirmed / max_entries`, pending-payment count, open withdrawals count |
 | Primary action | Tap an event to open it |
 | Empty | "No events assigned to you. Ask a division admin." |
 | Error | "Could not load events. Pull to retry." Cached list shown if offline. |
@@ -68,10 +69,10 @@ Event status flow (from PRD section 6): `draft -> entries_open -> entries_closed
 | Field | Detail |
 |---|---|
 | Row | Team name or lead name, player names with positions (skip/vice/lead etc.), club, fee, payment badge, entry status, checked-in dot |
-| Payment badge | `Paid online` / `Pending: check or cash` / `Pending: online, not completed` / `Paid by check` / `Paid by cash` / `Refunded` |
-| Filters | All, Pending payment, Confirmed, Waitlisted, Withdrawn |
+| Payment badge | `Paid online` / `Pending: check or cash` / `Pending: online, not completed` / `Paid by check` / `Paid by cash` / `Refunded` (derived from the withdrawal/payment refund fields, not an entry state) |
+| Filters | All, Pending payment, Confirmed, Waitlisted, Withdrawn, Expired, Cancelled |
 | Search | By any player name |
-| Primary action | Toggle paid/pending on a row (opens confirm sheet, section 4.3) |
+| Primary action | "Mark received" on a pending row (opens the confirm sheet, section 4.3). There is no one-tap toggle back to pending; undoing a payment goes through 4.3 with a reason. |
 | Secondary | Open entry, edit players, message entrant, export CSV |
 | Empty | "No entries yet. Entries open [date]." or, if open, "No entries yet. Share the entry link." with a copy-link button |
 | Error | Save failures keep the toggle in its old state and show "Not saved. Try again." No silent failures. |
@@ -86,18 +87,18 @@ Notes:
 | Field | Detail |
 |---|---|
 | Inputs | Method (check / cash / other), amount (defaults to event fee), check number, date received, who received it (defaults to me), note |
-| Primary action | "Mark received". Entry moves from `pending_payment` to `confirmed`. |
-| Undo | "Mark not received" within the same screen, reason required, logged |
+| Primary action | "Mark received". Entry moves from `pending_payment` to `confirmed` (`mark_paid`). |
+| Undo | "Mark not received" within the same screen, reason required, logged. **Gap:** needs a function that sets the payment to `voided` and the entry back to `pending_payment` (not in `02-schema.sql`). |
 | Emails | Entrant gets a receipt email. (Wording OPEN QUESTION.) |
 | Empty | n/a |
-| Error | Amount differs from fee: warn, allow with note. Event already full: ask "Confirm anyway or move to waitlist?" |
+| Error | Amount differs from the amount due: blocked in v1 (`mark_paid` requires the exact amount; partial and over-payments are an OPEN QUESTION). Event already full: today the entry moves to `waitlisted` with `needs_review`; a "confirm anyway" override (over cap) is a gap, not in `02-schema.sql`. |
 | Permissions | TD on assigned events |
 
 Pay-by-check flow, for context: player picks "Pay by check or cash" on the entry form, the entry is held as `pending_payment`, and the TD gets an email. The TD marks it received here.
 
 OPEN QUESTIONS:
-- Mailing address for checks: events-data.json has `contact.mailTo` per event (Anne's address on the sample). Keep per event?
-- Does a pending check/cash entry hold a place, and for how long before it is released? (PayPal holds are 30 minutes in the PRD; a mailed check needs days.) Suggest: hold until entry deadline, TD can release early.
+- Mailing address for checks: events-data.json has `contact.mailTo` per event (Anne's home address on the sample) which becomes `check_mail_to`. Keep per event, or use a division address instead of a private home address?
+- Does a pending check/cash entry hold a place, and for how long before it is released? (Online holds are 30 minutes; a mailed check needs days.) Schema default: hold until the entry deadline, never released silently; the TD can release early (release function not written yet).
 - Do entries paid at the door on the day need a separate flow?
 - Fee formats in the data are free text (`"$45/team"`, `"$15"`). Per-person vs per-team must become a field. See section 8.
 
@@ -108,23 +109,23 @@ Flow: player taps "Request withdrawal" in the app, states a reason, request land
 | Field | Detail |
 |---|---|
 | Row | Entry, who asked, when, reason, amount paid, method, deadline status (before/after), rule that applies |
-| Rule text | Shown from the event's configurable refund rule. Current text lives in the `deadline` field, e.g. "Entry deadline: Friday, April 11, 2026 (no refunds after)". |
+| Rule text | Shown from the event's `refund_policy_text`, with the amount suggested by `withdrawal_rule` (blank when no rule is set). Current text lives in the `deadline` field, e.g. "Entry deadline: Friday, April 11, 2026 (no refunds after)". |
 | Primary action | Approve, then choose: full refund / partial (amount) / no refund. Decline needs a reason. |
-| After approve | Entry becomes `withdrawn`. Slot released. First waitlisted entry is offered the slot (section 4.5). Entrant is emailed. |
-| Refund step | Paid online: console shows the PayPal transaction and a "Open in PayPal" link. Anne or Bill refunds in PayPal, then taps "Mark refunded". Paid by check: "Mark refund check sent" with check number. Paid by cash: "Mark cash returned". |
+| After approve | Entry becomes `withdrawn`. Slot released. The console prompts the TD to offer it to the first waitlisted entry (section 4.5); nothing is promoted automatically. Entrant is emailed. |
+| Refund step | Paid online: console shows the PayPal transaction and a "Open in PayPal" link. Anne or Bill refunds in PayPal, then taps "Mark refunded" and enters the PayPal refund id (`record_refund_issued`). Paid by check: "Mark refund check sent" with check number. Paid by cash: "Mark cash returned". |
 | Empty | "No withdrawal requests." |
 | Error | If "Mark refunded" is tapped but PayPal shows no refund, we cannot tell. This stays a manual confirmation in v1. |
-| Permissions | Approve and refund: Anne and Bill only (`can_refund`). Other TDs can view and recommend. |
+| Permissions | Approve, reject and record refunds: admins and TDs with `can_refund` (Anne and Bill) only, enforced in the database. Other TDs can view. "Recommend" has no function yet. |
 
 Withdrawal rules: the rule text is TBD. Design is configurable per event:
 
 | Setting | Values |
 |---|---|
-| `refund_policy_text` | Free text shown to players (to be supplied) |
-| `refund_cutoff` | Date/time, defaults to entry deadline |
-| `refund_before_cutoff` | full / minus fee / none |
-| `refund_after_cutoff` | none / TD discretion |
-| `auto_approve_before_cutoff` | on / off |
+| `events.refund_policy_text` | Free text shown to players (to be supplied) |
+| `events.withdrawal_rule.full_refund_until` | Date/time until which a full refund is suggested |
+| `events.withdrawal_rule.refund_percent_after` | Percent suggested after that (0 = none) |
+
+There is no auto-approve setting: every withdrawal is approved by Anne or Bill, and every refund is made by hand. (An earlier draft had `auto_approve_before_cutoff`; it was removed because it would move money without a person deciding.)
 
 OPEN QUESTIONS:
 - What is the actual refund and withdrawal rule? Does it differ by event (the sample says "no refunds after" the deadline)?
@@ -137,9 +138,9 @@ OPEN QUESTIONS:
 
 | Field | Detail |
 |---|---|
-| Row | Position, entry, date joined, payment state |
-| Primary action | "Promote" (moves to confirmed or pending payment) |
-| Auto behaviour | When a slot opens, next in line is notified and given a time window to pay. Window length is OPEN QUESTION. |
+| Row | Position (derived from entry order; no column yet), entry, date joined, payment state |
+| Primary action | "Promote" (moves to `pending_payment`, or `confirmed` if free). **Gap:** no promote function in `02-schema.sql`. |
+| Auto behaviour | Not in v1. A TD promotes by hand; the offer email then gives the player a time window to pay (length is OPEN QUESTION). Automatic promotion is an OPEN QUESTION. |
 | Secondary | Reorder (TD override, logged), remove |
 | Empty | "Nobody waiting." |
 | Error | Promote when no slot is free: "Event is full. Raise the limit or withdraw someone first." |
@@ -273,18 +274,18 @@ OPEN QUESTIONS:
 | Session expired | Return to the same screen after sign-in, no lost input |
 | Double tap | Writes are idempotent per action, a second tap does not toggle back |
 | Event not assigned | "You are not a director of this event" with a contact link |
-| Frozen event | After `finished`, scores are read-only for TDs |
+| Frozen event | After `completed`, scores are read-only for TDs |
 
 ## 6. Emails sent from the console (wording OPEN QUESTION for all)
 
 | Trigger | To |
 |---|---|
-| Check/cash entry submitted | TD (and entrant a confirmation of pending status) |
+| Check/cash entry submitted | The event's TDs and display contact (and entrant a confirmation of pending status) |
 | Payment marked received | Entrant |
-| Withdrawal requested | Anne and Bill |
+| Withdrawal requested | Anne and Bill (`can_refund`) |
 | Withdrawal approved/declined, refund marked done | Entrant |
 | Waitlist promotion | Entrant |
-| Draw posted | All confirmed entrants |
+| Draw posted | All `confirmed` entrants |
 
 OPEN QUESTION: Which address do these send from, and who owns it? `docs/succession-and-accounts.md` says a shared Gmail is in use today and Workspace on the domain is not yet set up.
 
@@ -292,7 +293,7 @@ OPEN QUESTION: Which address do these send from, and who owns it? `docs/successi
 
 | Step | Screens |
 |---|---|
-| A | 4.1, 4.2, 4.3 (check/cash and paid toggles) |
+| A | 4.1, 4.2, 4.3 (check/cash and mark received) |
 | B | 4.4, 4.5 |
 | C | 4.6, 4.7, 4.8, 4.9 |
 | D | 4.10 |
@@ -308,7 +309,7 @@ Counts and structure are from `docs/SWD-Data-Findings.md`. I have not opened the
 | Per-tournament workbook, one tab per year (e.g. "SWD Mumma Mixed Pairs"), about 40 workbooks and about 500 tabs | `events` (one row per event per year) plus `entries` and `entry_players` | Historical tabs stay in Drive, read-only. Not migrated in v1. |
 | Bare `YYYY` tab: raw timestamped form collector (Team #, Timestamp, Skip, Lead, ..., Note/Green) | `entries` + `entry_players` created by the online entry form | `created_at` replaces Timestamp. Team # becomes the draw number, assigned at draw time. |
 | `YYYY Entries` tab: hand-arranged roster, A/B green blocks, "ENTRIES CLOSED" marker | Entries screen (4.2) plus `games`/draw (4.7). "Entries closed" is event status. A/B green is a field on the entry or division. | OPEN QUESTION: is green assignment decided at entry, by the TD at draw, or by entry order? |
-| Public embed of the entries sheet (`entries.pubUrl` in events-data.json, 15 of 52 events blank) | Public entry list page reading the `entries` table | Names only. `pubUrl` field retired per event as each switches over. |
+| Public embed of the entries sheet (`entries.pubUrl` in events-data.json, 15 of 51 events blank) | Public entry list page reading the `public_entry_list` view | Names and clubs only. `pubUrl` field retired per event as each switches over. |
 | Southwest Open workbook: tabs by discipline x year (`2026Fours`, `2026Pairs`, `2026Singles`, `SyncLog`) | `events` per discipline, or one event with discipline field | OPEN QUESTION: one event with sub-events, or separate events? Results-data.json already splits the Open into divisions with flights. `SyncLog` is retired. |
 | SW Open per-discipline entry sheets (`SW Open Men_s Singles` etc., one `2026 Entries` tab) | `entries` for those events | OPEN QUESTION: do they feed the main workbook by script today? Script behaviour unknown. |
 | Results Sheets: end-by-end scoring per session and division (`Sat AM - Stars`, `Sun AM - Stars`, Nationals `Tues AM ... Scoresheet`) | `games` (per game score), optional `ends` detail | OPEN QUESTION: is end-by-end detail needed in the database, or only final game scores? Assume final scores only. |

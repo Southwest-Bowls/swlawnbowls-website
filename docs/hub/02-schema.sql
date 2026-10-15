@@ -593,7 +593,7 @@ BEGIN
 END $$;
 
 -- mark_paid: record money received and confirm the entry.
---   * PayPal: only the webhook (service role) may call it, with the capture id; the browser redirect never confirms.
+--   * PayPal: only server code on the service role may call it (the verified webhook, or the reconcile job reading PayPal's API), with the capture id; the browser redirect never confirms.
 --   * Check / cash / other: the event's TD or an admin.
 --   * Safe to call twice with the same paypal capture id.
 --   * Late payment (entry already expired/cancelled) is recorded but the entry is NOT revived: returns needs_review = true.
@@ -614,7 +614,7 @@ BEGIN
   SELECT * INTO ev FROM public.events WHERE id = e.event_id FOR UPDATE;
 
   IF p_method = 'paypal' THEN
-    IF NOT svc THEN RAISE EXCEPTION 'PayPal payments are recorded by the PayPal webhook only'; END IF;
+    IF NOT svc THEN RAISE EXCEPTION 'PayPal payments are recorded by the server (verified webhook or reconcile job) only'; END IF;
     IF p_paypal_capture_id IS NULL OR p_paypal_order_id IS NULL THEN RAISE EXCEPTION 'PayPal order and capture ids are required'; END IF;
     SELECT id INTO pid FROM public.payments WHERE paypal_capture_id = p_paypal_capture_id;
     IF FOUND THEN RETURN jsonb_build_object('payment_id', pid, 'entry_status', e.status, 'repeat', true); END IF;

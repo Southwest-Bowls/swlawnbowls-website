@@ -2,6 +2,7 @@
 
 Status: draft for Giulia and Anne to read. Nothing here is built or sent.
 Every email below is plain text first. Each body is under 120 words.
+State, column and role names follow `02-schema.sql`.
 
 ## 1. Writing rules (for older readers)
 
@@ -19,7 +20,7 @@ Every email below is plain text first. Each body is under 120 words.
 |---|---|
 | Sender name | Southwest Bowls Division |
 | From address | OPEN QUESTION: which division address? (webmaster@swlawnbowls.org is proposed in docs/succession-and-accounts.md but not confirmed as existing) |
-| Reply-to | The event TD's email, taken from `events.contact.email`. Falls back to the division address. |
+| Reply-to | The event's display contact, `events.td_contact_email` (from `contact.email` in events-data.json). Falls back to the division address. |
 | Email service | OPEN QUESTION: not chosen. Sender domain must be verified before launch or messages land in spam. |
 | Subject prefix | None. Event name goes in the subject so it sorts in the inbox. |
 
@@ -28,7 +29,7 @@ Footer, on every email:
 > Southwest Bowls Division, a division of Bowls USA.
 > Questions about this entry: {td_name}, {td_phone}, {td_email}.
 > You are receiving this because you entered or were entered in {event_title}.
-> Entry details are kept private. We never see your card number.
+> Your email and phone are kept private. Your name and club appear on the public entry list. We never see your card number.
 > {division_mailing_address} (OPEN QUESTION: which postal address)
 
 Reminder and digest emails add one line: "To stop these reminders, open the app, choose Settings, then Email, or reply STOP."
@@ -78,7 +79,7 @@ Subject: `You are entered: {event_title}`
 >
 > Questions: {td_name}, {td_phone}.
 
-Note: sent only after the database says `confirmed`. For online payment that is the PayPal confirmation, not the browser return page (PRD acceptance criterion). For check/cash it is when the TD marks the entry paid.
+Note: sent only after the database says `confirmed`. For online payment that is the verified PayPal capture recorded by the server (webhook or reconcile job), not the browser return page (PRD acceptance criterion). For check/cash it is when the TD marks the entry paid.
 
 ### E3. Waitlisted
 
@@ -106,13 +107,13 @@ Subject: `We received your withdrawal request: {event_title}`
 >
 > We received your request to withdraw from {event_title}. Your entry stays in place until it is approved.
 >
-> Anne Nunes or Bill Brault will review it. We will email you with the answer. Please allow {review_days} days.
+> {approver_names} will review it. We will email you with the answer. Please allow {review_days} days.
 >
 > Refund rules for this event: {refund_rule_text}
 >
 > You do not need to do anything. If you change your mind, call {td_name} on {td_phone}.
 
-OPEN QUESTION: the refund rule text is TBD. It is configurable per event (`events.refund_policy`). Existing flyers say things like "no refunds after" the deadline; no general rule has been stated. `{review_days}` is also TBD. Reviewers: confirm Anne and Bill are the only approvers.
+OPEN QUESTION: the refund rule text is TBD. It is configurable per event (`events.refund_policy_text` and `events.withdrawal_rule`). `{approver_names}` comes from the people with refund permission (`can_refund`), not hardcoded; today that is expected to be Anne Nunes and Bill (surname unconfirmed). Existing flyers say things like "no refunds after" the deadline; no general rule has been stated. `{review_days}` is also TBD. Reviewers: confirm Anne and Bill are the only approvers.
 
 ### E5. Withdrawal approved
 
@@ -128,7 +129,7 @@ Subject: `Your withdrawal is approved: {event_title}`
 >
 > Questions: {td_name}, {td_phone}.
 
-`{refund_line}` is one of: "We will send it to your original payment method and will email you when it is done." (online), "We will mail a check to the address you gave us." (check/cash; OPEN QUESTION whether SWD refunds by check) or "No refund is due under the rules for this event." (then show `{refund_rule_text}`).
+`{refund_line}` is one of: "We will send it to your original payment method and will email you when it is done." (online), "We will contact you to arrange it." (check/cash; OPEN QUESTION whether SWD refunds by check, and we hold no postal address for the player) or "No refund is due under the rules for this event." (then show `{refund_rule_text}`).
 
 ### E6. Refund sent
 
@@ -159,11 +160,11 @@ Subject: `A change to {event_title}`
 > Date: {event_date}
 > Place: {club_name}
 >
-> Your entry is still in place. If this change means you cannot play, you may withdraw and we will refund you in full. Open the app and choose your entry.
+> Your entry is still in place. If this change means you cannot play, you may ask to withdraw. Open the app and choose your entry. {refund_rule_text}
 >
 > Questions: {td_name}, {td_phone}.
 
-Sent only for changes to date, time, place, format or fee. Not for typo fixes. OPEN QUESTION: "refund in full on an event change" is a proposed rule, not a decided one. The TD/admin must confirm before launch.
+Sent only for changes to date, time, place, format or fee. Not for typo fixes. A promise of a full refund after an event change was removed from the wording because no refund rule is decided; a director may add it per event through `{refund_rule_text}`. OPEN QUESTION: should an event change entitle a player to a full refund? Anne and Bill must decide before launch.
 
 ### E8. Event cancelled
 
@@ -173,13 +174,13 @@ Subject: `{event_title} is cancelled`
 >
 > We are sorry to tell you that {event_title} on {event_date} is cancelled. Reason: {cancel_reason}.
 >
-> Refund: {refund_amount}, returned to the way you paid. We will email you when it is sent. You do not need to do anything.
+> Refund: {cancel_refund_line} You do not need to do anything.
 >
 > Entry cancelled: {players}
 >
 > Questions: {td_name}, {td_phone}.
 
-Cancelling an event is admin-only (PRD). The refunds are then queued for Anne or Bill; each sends E6 when done.
+Cancelling an event is admin-only (PRD). `{cancel_refund_line}` is filled per event once the cancellation refund amount is decided (OPEN QUESTION; full refund is proposed, not decided), for example "{refund_amount}, returned to the way you paid. We will email you when it is sent." Unpaid entrants get "You have not been charged." The refunds are queued for Anne or Bill; each sends E6 when done.
 
 ### E9. Deadline reminder
 
@@ -237,7 +238,7 @@ Subject: `New entry, payment pending: {event_title}`
 >
 > Open the entry: {admin_link}
 
-Satisfies the decision that the pay-by-check path "emails the TD". Goes to the event's TD(s) only.
+Satisfies the decision that the pay-by-check path "emails the TD". Goes to the event's assigned TDs and its display contact (`td_contact_email`) only.
 
 ### T2. Daily digest of new entries
 
@@ -274,7 +275,7 @@ Subject: `Withdrawal request to review: {event_title}`
 > Please approve or decline in the app: {admin_link}
 > Refunds are made in PayPal. The app will link you to the payment.
 
-Goes to the event TD and to the other of Anne and Bill (OPEN QUESTION: do both always get it, or only the TD of that event? Does either one alone approve?).
+Goes to everyone who can refund for that event (Anne and Bill, `can_refund`), plus the event's display contact for information (OPEN QUESTION: do both always get it, or only the TD of that event? Does either one alone approve? Today either one alone can approve).
 
 ## 6. In-app messages
 
@@ -284,13 +285,13 @@ Goes to the event TD and to the other of Anne and Bill (OPEN QUESTION: do both a
 | After submitting, online payment, success | "Payment received. You are entered. We have emailed you a confirmation." |
 | Online payment, window closed before finishing | "Your payment was not finished, so we have not entered you. You have not been charged. Please try again, or choose check or cash." |
 | Online payment, taken but entry not yet confirmed | "We are checking your payment. This can take a minute. You can close this page; we will email you." |
-| Entry status chips | "Pending payment", "Confirmed", "On the waiting list", "Withdrawal requested", "Withdrawn", "Refunded" |
+| Entry status chips | "Pending payment", "Confirmed", "On the waiting list", "Withdrawal requested" (an open request on a confirmed entry), "Withdrawn", "Not completed" (expired), "Cancelled", "Refunded" (derived from the refund fields, not an entry state) |
 | Withdraw button | "Ask to withdraw" |
 | Withdraw confirm box | "Ask to withdraw from {event_title}? Refund rules: {refund_rule_text} Your entry stays in place until it is approved." Buttons: "Ask to withdraw" and "Keep my entry". |
 | Withdrawal sent | "Request sent. {approvers} will review it. We will email you." |
 | Deadline passed | "Entries for this event have closed. Please call {td_name} on {td_phone}." |
 | Event full | "This event is full. You can join the waiting list. You will not be charged until a place is offered." (depends on the E3 OPEN QUESTION) |
-| Event cancelled banner | "This event is cancelled. If you were entered, you will be refunded and emailed." |
+| Event cancelled banner | "This event is cancelled. If you were entered, we will email you about your entry and any refund." |
 | Event changed banner | "Changed {change_date}: {change_summary}" |
 | Error, saving | "We could not save your entry. Nothing has been charged. Please try again, or call {td_name} on {td_phone}." |
 | Error, no connection | "No internet connection. Your entry has not been sent. Please try again when you are connected." |
@@ -336,7 +337,7 @@ Privacy policy must state:
 
 - What we collect: name, email, phone (optional), club, Bowls USA number, entry details, payment status and amounts.
 - What we do not collect: card numbers or bank details. PayPal handles them.
-- Who sees what: entry lists show names only to the public. Emails and phones are visible only to the player, the event's director, and division admins.
+- Who sees what: the public entry list shows player names, clubs and positions only. Emails and phones are visible only to the person who submitted the entry, the event's director, and division admins. (`02-schema.sql` currently also lets the other listed players on an entry read the submitter's contact row; that must be fixed before this sentence is true. See the WARNING in that file.)
 - Emails sent: the list in section 7 and no marketing email.
 - Livestream: events with a livestream notice say entering means consent to be filmed (existing wording in `events-data.json`). Repeat it in the entry flow, not only in the policy.
 - Who it is shared with: PayPal (payment), the email service, the database host. Name each when chosen. OPEN QUESTION: email service and hosting region not yet chosen.
