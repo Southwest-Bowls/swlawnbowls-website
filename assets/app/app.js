@@ -735,7 +735,7 @@
     currentNotices = live.filter(function (x) { return x.e.alert; });
     var unread = unreadCount(currentNotices);
     var html = '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'short', month: 'short', day: 'numeric' })) + '</span>' +
-      '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Southwest Bowls') + '</h1></div>' +
+      '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Hi, Guest') + '</h1></div>' +
       '<a class="circbtn" id="hq" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
       '<a class="circbtn" href="/app/more/settings" aria-label="App settings">' + icon('sliders') + '</a>' +
@@ -1091,8 +1091,9 @@
       var hostClub = (all[2].clubs || []).filter(function (c) { return (x.clubIds || []).indexOf(c.id) >= 0; })[0];
       var hostPhoto = hostClub && hostClub.image && /^\/photos\//.test(hostClub.image) && !hostClub.imageNeedsReview ? hostClub.image : '';
       var method = entryMethod(e);
+      var hubEnter = hubOn() && phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled';
       var entryOpen = phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && method !== 'none';
-      var primaryBar = entryOpen ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">' + (method === 'online' ? 'Enter online' : method === 'paypal' ? 'Enter and pay' : 'How to enter') + '</a>'
+      var primaryBar = hubEnter ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/enter">Enter this tournament (preview)</a>' : entryOpen ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">' + (method === 'online' ? 'Enter online' : method === 'paypal' ? 'Enter and pay' : 'How to enter') + '</a>'
         : phase !== 'past' && method === 'none' && flyer ? '<a class="btn btn--wide" href="' + esc(flyer) + '" target="_blank" rel="noopener">See the flyer</a>'
         : phase === 'past' && result ? '<a class="btn btn--wide" href="?tab=results" data-goto-tab="results">See the results</a>'
         : phase !== 'past' && st && st.kind === 'closed' ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">Entry details</a>' : '';
@@ -1795,7 +1796,7 @@
           mrow('/', 'globe', 'Southwest website', 'swlawnbowls.org', 'blush'),
           mrow(FACEBOOK_URL, 'facebook', 'Facebook', 'Follow Southwest', 'blush')]) +
         group('This app', [
-          mrow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline copies', 'orange')]);
+          mrow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline copies', 'orange')].concat(hubOn() ? [mrow('/app/td', 'flag', 'Director console', 'Preview for tournament directors', 'orange')] : []));
     });
   }
 
@@ -2272,6 +2273,173 @@
       '<span class="rcard__meta">' + esc([d ? fmt(d, { month: 'short', day: 'numeric' }) : '', m.rankLabel && !+m.rank ? m.rankLabel : '', m.slug ? m.div.replace(m.divLabel, '').replace(/^ · /, '') : m.div, m.partners.length ? 'with ' + m.partners.join(', ') : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>';
   }
   function placeWord(n) { n = +n; return n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : n ? n + 'th' : ''; }
+  /* ===============================================================
+     HUB PREVIEW (entry, payment choice, My entries, TD console)
+     Hidden behind ?hub=1 and never sent anywhere: entries are kept on this phone only,
+     no email is sent, no card is charged. It exists so the Division can try the screens
+     before the database and PayPal wiring are built (see docs/hub/).
+     =============================================================== */
+  function hubOn() { return !!store('hubPreview'); }
+  function hubBanner() { return '<p class="hubbanner" role="note"><b>Preview.</b> Nothing is sent, charged or shared. This only shows how entering will work.</p>'; }
+  var HUB_ROLES = { singles: ['Player'], pairs: ['Skip', 'Lead'], triples: ['Skip', 'Vice', 'Lead'], fours: ['Skip', 'Third', 'Second', 'Lead'], rinks: ['Skip', 'Third', 'Second', 'Lead'], '2+2': ['Player 1', 'Player 2', 'Player 3', 'Player 4'] };
+  function hubRoles(e) {
+    var pl = e.paypal && e.paypal.playerLabels;
+    if (pl && pl.length) return pl;
+    return HUB_ROLES[String(e.format || '').toLowerCase()] || ['Player 1', 'Player 2'];
+  }
+  var HUB_STATUS = { pending_payment: ['Pending payment', 'warn'], paid: ['Paid', 'ok'], waitlisted: ['Waitlisted', 'warn'], withdraw_requested: ['Withdrawal requested', 'warn'], withdrawn: ['Withdrawn', 'mute'], refunded: ['Refunded', 'mute'], checked_in: ['Checked in', 'ok'] };
+  function statusChip(s) { var m = HUB_STATUS[s] || [s, 'mute']; return '<span class="schip schip--' + m[1] + '">' + esc(m[0]) + '</span>'; }
+  function hubEntries() { return store('hubEntries') || []; }
+  function hubSave(list) { store('hubEntries', list); }
+
+  // Enter a tournament: 3 steps (team, how to pay, review), then a confirmation
+  function enterScreen(params, id) {
+    setTitle('Enter');
+    if (!hubOn()) { return go('/app/events/' + encodeURIComponent(id), true); }
+    return Promise.all([loadEvents(), getJSON('/clubs-data.json').catch(function () { return {}; })]).then(function (all) {
+      var x = all[0].filter(function (y) { return y.id === id; })[0], clubs = (all[1].clubs || []).map(function (c) { return c.name; }).sort();
+      if (!x) { view.innerHTML = backLink('/app/events', 'Events') + state('empty', 'We couldn’t find that event', ''); return; }
+      var e = x.e, c = e.contact || {}, roles = hubRoles(e), st = entryStatus(x, todayISO());
+      var data = { players: roles.map(function () { return { name: '', club: '' }; }), email: '', phone: '', method: '' };
+      var prof = store('profile') || {};
+      if (prof.name) { data.players[0].name = prof.name; data.players[0].club = prof.club || ''; }
+      var step = 1;
+      function head(n) {
+        return backLink('/app/events/' + encodeURIComponent(id), 'Event') + hubBanner() +
+          '<p class="eyebrow">Step ' + n + ' of 3 · ' + esc(x.short) + '</p>';
+      }
+      function clubSelect(i) {
+        return '<select data-club="' + i + '" aria-label="Club for ' + esc(roles[i]) + '"><option value="">Club…</option>' + clubs.map(function (n) { return '<option' + (n === data.players[i].club ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') +
+          '<option value="__other"' + (data.players[i].club && clubs.indexOf(data.players[i].club) < 0 ? ' selected' : '') + '>Another club or country</option></select>';
+      }
+      function stepTeam(err) {
+        view.innerHTML = head(1) + '<h1 class="signin__h">Your team</h1><p class="signin__sub">' + esc(e.format ? cap(e.format) : 'Team') + ' · entry fee ' + esc(e.fee || 'to be confirmed') + '. Players from any division or country can enter unless the flyer says otherwise.</p>' +
+          (err ? '<div class="note" role="alert">' + esc(err) + '</div>' : '') +
+          '<form class="mform" id="h-form" novalidate>' + roles.map(function (r, i) {
+            return '<fieldset class="hplayer"><legend>' + esc(r) + '</legend>' +
+              '<label class="mfield mfield--icon mfield--pill"><span class="sr-only">Name</span><span class="mfield__box">' + icon('person') + '<input data-name="' + i + '" type="text" autocomplete="name" placeholder="Full name" value="' + esc(data.players[i].name) + '"></span></label>' +
+              '<label class="mfield mfield--icon"><span class="sr-only">Club</span><span class="mfield__box">' + icon('people') + clubSelect(i) + '</span></label>' +
+              '<label class="mfield mfield--pill" data-other="' + i + '"' + (data.players[i].club && clubs.indexOf(data.players[i].club) < 0 ? '' : ' hidden') + '><span class="sr-only">Club or country name</span><input data-otherclub="' + i + '" type="text" placeholder="Club or country" value="' + esc(data.players[i].club && clubs.indexOf(data.players[i].club) < 0 ? data.players[i].club : '') + '"></label></fieldset>';
+          }).join('') +
+          '<fieldset class="hplayer"><legend>Who should we contact?</legend>' +
+            '<label class="mfield mfield--icon mfield--pill"><span class="sr-only">Email</span><span class="mfield__box">' + icon('mail') + '<input id="h-email" type="email" autocomplete="email" inputmode="email" placeholder="Email" value="' + esc(data.email) + '"></span></label>' +
+            '<label class="mfield mfield--icon mfield--pill"><span class="sr-only">Phone</span><span class="mfield__box">' + icon('phone') + '<input id="h-phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="Phone (optional)" value="' + esc(data.phone) + '"></span></label></fieldset>' +
+          '<div class="actions"><button class="btn btn--wide" type="submit">Continue</button></div></form>';
+        var f = view.querySelector('#h-form');
+        f.addEventListener('change', function (ev) {
+          var s = ev.target.getAttribute('data-club'); if (s === null) return;
+          f.querySelector('[data-other="' + s + '"]').hidden = ev.target.value !== '__other';
+        });
+        f.addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          roles.forEach(function (r, i) {
+            data.players[i].name = f.querySelector('[data-name="' + i + '"]').value.trim();
+            var sel = f.querySelector('[data-club="' + i + '"]').value;
+            data.players[i].club = sel === '__other' ? f.querySelector('[data-otherclub="' + i + '"]').value.trim() : sel;
+          });
+          data.email = f.querySelector('#h-email').value.trim(); data.phone = f.querySelector('#h-phone').value.trim();
+          var missing = data.players.filter(function (p) { return !p.name; }).length;
+          if (missing) return stepTeam('Enter a name for every player. ' + missing + ' still empty.');
+          if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email)) return stepTeam('Enter an email address so we can confirm your entry.');
+          step = 2; stepPay();
+        });
+      }
+      function payOption(val, ic, title, meta, extra) {
+        return '<label class="payopt"><input type="radio" name="pay" value="' + val + '"' + (data.method === val ? ' checked' : '') + '><span class="payopt__box"><span class="payopt__ic">' + icon(ic) + '</span><span class="payopt__main"><b>' + esc(title) + '</b><span>' + esc(meta) + '</span>' + (extra || '') + '</span></span></label>';
+      }
+      function stepPay(err) {
+        var payee = c.mailTo || '';
+        view.innerHTML = head(2) + '<h1 class="signin__h">How will you pay?</h1><p class="signin__sub">Entry fee: ' + esc(e.fee || 'to be confirmed') + '.</p>' +
+          (err ? '<div class="note" role="alert">' + esc(err) + '</div>' : '') +
+          '<form class="mform" id="h-pay" novalidate><div class="payopts">' +
+          payOption('online', 'lock', 'Pay now online', 'PayPal, Apple Pay or Google Pay. Your entry is confirmed straight away.') +
+          payOption('check', 'doc', 'Pay by check', payee ? 'Mail it to: ' + payee : 'Mail a check to the tournament organizer.') +
+          payOption('cash', 'flag', 'Pay cash at the green', 'Your entry is held until the organizer receives your payment.') + '</div>' +
+          '<p class="footnote">Can’t use online payment? Choose check or cash. The tournament organizer is told, and marks you as paid when it arrives.</p>' +
+          '<div class="actions"><button class="btn btn--wide" type="submit">Review your entry</button></div></form>';
+        var f = view.querySelector('#h-pay');
+        f.addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          var sel = f.querySelector('input[name=pay]:checked'); if (!sel) return stepPay('Choose how you will pay.');
+          data.method = sel.value; step = 3; stepReview();
+        });
+      }
+      function stepReview() {
+        var live = e.livestreamNotice;
+        view.innerHTML = head(3) + '<h1 class="signin__h">Check your entry</h1>' +
+          '<section class="block"><h2>' + esc(x.short) + '</h2><p>' + esc(e.date || '') + '</p><ul class="rows">' + data.players.map(function (p, i) {
+            return '<li><div class="row"><span class="row__main"><span class="row__title"><b>' + esc(roles[i]) + '</b>: ' + esc(p.name) + '</span>' + (p.club ? '<span class="row__meta">' + esc(p.club) + '</span>' : '') + '</span></div></li>'; }).join('') + '</ul></section>' +
+          '<section class="block"><h2>Payment</h2><p>' + esc(e.fee || '') + ' · ' + (data.method === 'online' ? 'Pay now online' : data.method === 'check' ? 'Pay by check' : 'Pay cash at the green') + '</p></section>' +
+          '<section class="block"><h2>Contact</h2><p>' + esc(data.email) + (data.phone ? ' · ' + esc(data.phone) : '') + '</p></section>' +
+          (live ? '<p class="footnote">' + esc(live) + '</p>' : '') +
+          '<div class="actions"><button class="btn btn--wide" type="button" id="h-go">' + (data.method === 'online' ? 'Continue to payment' : 'Send my entry') + '</button></div>' +
+          '<p class="footnote"><button class="textlink" type="button" id="h-edit">Change something</button></p>';
+        view.querySelector('#h-edit').addEventListener('click', function () { step = 1; stepTeam(); });
+        view.querySelector('#h-go').addEventListener('click', function () {
+          var ref = 'ENT-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+          var entry = { id: ref, eventId: id, title: x.short, date: e.date || '', players: data.players.map(function (p, i) { return { role: roles[i], name: p.name, club: p.club }; }), email: data.email, phone: data.phone, method: data.method,
+            status: data.method === 'online' ? 'paid' : 'pending_payment', created: todayISO() };
+          var list = hubEntries(); list.unshift(entry); hubSave(list);
+          done(entry);
+        });
+      }
+      function done(en) {
+        var paid = en.status === 'paid';
+        view.innerHTML = hubBanner() + '<div class="signin"><svg class="signin__art" viewBox="0 0 120 90" aria-hidden="true" focusable="false"><circle cx="60" cy="45" r="36" class="sa-dot"/><path d="m44 46 12 12 22-26" class="sa-tick"/></svg>' +
+          '<h1 class="signin__h">' + (paid ? 'You’re entered' : 'Entry received') + '</h1>' +
+          '<p class="signin__sub">' + (paid ? 'Payment received for ' : 'We’ve told the tournament organizer. Your place is held for ') + '<b>' + esc(en.title) + '</b>.' +
+            (paid ? '' : (en.method === 'check' ? ' Mail your check to: ' + esc(c.mailTo || 'the organizer') + '. ' : ' Bring cash to the green. ') + 'You’ll show as paid once it arrives.') + '</p>' +
+          '<ul class="rows rows--cards"><li><div class="row"><span class="row__main"><span class="row__title">Reference ' + esc(en.id) + '</span><span class="row__meta">A confirmation email would go to ' + esc(en.email) + '</span></span>' + statusChip(en.status) + '</div></li></ul>' +
+          '<div class="actions"><a class="btn btn--wide" href="/app/my">See my entries</a></div><p class="signin__foot"><a class="textlink" href="/app/events">Back to events</a></p></div>';
+      }
+      stepTeam();
+    });
+  }
+  // My entries (on My SWD): what I entered, its status, and a withdrawal request
+  function myEntriesHtml() {
+    var list = hubEntries(); if (!hubOn()) return '';
+    return '<section class="section mysec" aria-labelledby="h-ent"><div class="section__head"><h2 class="section__title" id="h-ent">My entries</h2><span class="tag tag--preview">Preview</span></div>' +
+      (list.length ? '<ul class="list list--plain">' + list.map(function (en) {
+        return '<li><div class="rcard rcard--col"><span class="rcard__body"><span class="rcard__title">' + esc(en.title) + '</span><span class="rcard__meta">' + esc(en.players.map(function (p) { return p.name; }).join(', ')) + '</span></span>' + statusChip(en.status) +
+          (en.status === 'paid' || en.status === 'pending_payment' ? '<button class="btn btn--ghost btn--sm" type="button" data-withdraw="' + esc(en.id) + '">Request withdrawal</button>' : '') + '</div></li>'; }).join('') + '</ul>'
+        : '<p class="muted">No entries yet. Open an event and tap Enter.</p>') + '<p class="footnote">Preview only. Withdrawals are approved and refunded by the tournament organizer.</p></section>';
+  }
+  // Tournament director console (preview with made-up demo teams)
+  function demoEntries(eventId) {
+    var key = 'hubTd:' + eventId, saved = store(key); if (saved) return saved;
+    var names = ['Demo Team A', 'Demo Team B', 'Demo Team C', 'Demo Team D', 'Demo Team E', 'Demo Team F'], st = ['paid', 'paid', 'pending_payment', 'pending_payment', 'withdraw_requested', 'paid'];
+    var m = ['online', 'online', 'check', 'cash', 'online', 'online'];
+    var list = names.map(function (n, i) { return { id: 'DEMO-' + (i + 1), team: n, status: st[i], method: m[i] }; }); store(key, list); return list;
+  }
+  function tdScreen(params) {
+    setTitle('Director console');
+    if (!hubOn()) return go('/app/more', true);
+    return loadEvents().then(function (events) {
+      var live = events.filter(function (x) { var p = eventPhase(x, todayISO()); return p === 'upcoming' || p === 'now'; }).slice(0, 12);
+      var cur = params.get('event') || (live[0] && live[0].id); if (!cur) { view.innerHTML = backLink('/app/more', 'More') + state('empty', 'No upcoming events', ''); return; }
+      var x = events.filter(function (y) { return y.id === cur; })[0] || live[0];
+      var list = demoEntries(cur), mine = hubEntries().filter(function (en) { return en.eventId === cur; }).map(function (en) { return { id: en.id, team: en.players.map(function (p) { return p.name; }).join(' / '), status: en.status, method: en.method, real: true }; });
+      var rows = mine.concat(list);
+      function count(s) { return rows.filter(function (r) { return r.status === s; }).length; }
+      view.innerHTML = backLink('/app/more', 'More') + hubBanner() + '<h1 class="mtitle">Director console</h1>' +
+        '<label class="mfield"><span class="sr-only">Event</span><select id="td-ev">' + live.map(function (y) { return '<option value="' + esc(y.id) + '"' + (y.id === cur ? ' selected' : '') + '>' + esc(y.short) + '</option>'; }).join('') + '</select></label>' +
+        '<div class="hub__stats tdstats"><span class="hub__stat"><b>' + rows.length + '</b><span>Entered</span></span><span class="hub__stat"><b>' + (count('paid') + count('checked_in')) + '</b><span>Paid</span></span><span class="hub__stat"><b>' + count('pending_payment') + '</b><span>To collect</span></span></div>' +
+        '<ul class="list list--plain">' + rows.map(function (r, i) {
+          var act = r.status === 'pending_payment' ? '<button class="btn btn--sm" type="button" data-td="paid" data-i="' + i + '">Mark ' + esc(r.method === 'check' ? 'check' : 'cash') + ' received</button>'
+            : r.status === 'withdraw_requested' ? '<button class="btn btn--sm" type="button" data-td="refunded" data-i="' + i + '">Approve and refund</button>'
+            : r.status === 'paid' ? '<button class="btn btn--ghost btn--sm" type="button" data-td="checked_in" data-i="' + i + '">Check in</button>' : '';
+          return '<li><div class="rcard rcard--col"><span class="rcard__body"><span class="rcard__title">' + esc(r.team) + (r.real ? ' (your entry)' : '') + '</span><span class="rcard__meta">' + esc(r.id) + ' · ' + esc(r.method) + '</span></span>' + statusChip(r.status) + act + '</div></li>'; }).join('') + '</ul>' +
+        '<p class="footnote">Made-up teams for the preview. Changes stay on this phone.</p>';
+      view.querySelector('#td-ev').addEventListener('change', function (ev) { go('/app/td?event=' + encodeURIComponent(ev.target.value), true); });
+      view.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-td]'); if (!b) return;
+        var r = rows[+b.getAttribute('data-i')]; r.status = b.getAttribute('data-td');
+        if (r.real) { var all = hubEntries(); all.forEach(function (en) { if (en.id === r.id) en.status = r.status; }); hubSave(all); } else { store('hubTd:' + cur, list); }
+        toast(r.status === 'refunded' ? 'Refund approved (preview)' : 'Updated (preview)'); tdScreen(params);
+      });
+    });
+  }
+
   // Identity header: everyone can use the app without an account, including
   // players from other divisions and other countries. The optional details
   // behind it stay on this phone; nothing is sent anywhere.
@@ -2378,7 +2546,7 @@
     var today = todayISO();
 
     view.innerHTML = profileHeader() +
-      '<div id="my-res"></div>' +
+      '<div id="my-res"></div>' + myEntriesHtml() +
       (memberSession() ? '' : '<a class="btn btn--wide signin__cta" href="/app/signin">Sign in or create an account</a>') +
       (preview ? '<section class="section mysec" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
         '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + loading() + '</div></section>' : '') +
@@ -2391,6 +2559,11 @@
         '<ul class="rows rows--cards">' + linkRow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline copies') + '</ul></section>';
     var box = view.querySelector('#m-box');
     wireProfile();
+    view.addEventListener('click', function (ev) {
+      var w = ev.target.closest('[data-withdraw]'); if (!w) return;
+      var all = hubEntries(); all.forEach(function (en) { if (en.id === w.getAttribute('data-withdraw')) en.status = 'withdraw_requested'; }); hubSave(all);
+      toast('Withdrawal requested (preview)'); mySwd(params);
+    });
     // My results: from the published results, matched by the name entered on this phone
     var prof0 = store('profile') || {};
     if (prof0.name) loadResults().then(function (list) {
@@ -2614,6 +2787,8 @@
     [/^\/app\/?$/, home, 'home'],
     [/^\/app\/events\/?$/, eventsList, 'events'],
     [/^\/app\/events\/([^/]+)\/?$/, eventDetail, 'events'],
+    [/^\/app\/events\/([^/]+)\/enter\/?$/, enterScreen, 'events'],
+    [/^\/app\/td\/?$/, tdScreen, 'more'],
     [/^\/app\/results\/?$/, resultsList, 'results'],
     [/^\/app\/standings\/?$/, standings, 'results'],
     [/^\/app\/page\/standings\/?$/, standings, 'results'],
@@ -2781,6 +2956,8 @@
     img.src = '/photos/home/livestream-tv-logo.png'; img.classList.add('poster__img--logo');
   }, true);
   captureSignIn();
+  if (/[?&]hub=1\b/.test(location.search)) { store('hubPreview', true); history.replaceState(history.state, '', location.pathname); }
+  if (/[?&]hub=0\b/.test(location.search)) { try { localStorage.removeItem('swd:hubPreview'); } catch (e) {} history.replaceState(history.state, '', location.pathname); }
   if (!history.state) history.replaceState({ depth: 0 }, '');
   render();
 

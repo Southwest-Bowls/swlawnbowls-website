@@ -1362,3 +1362,22 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .stand--3 .stand__rank { background: #e0a56b; color: #231120; }
 :root[data-theme="dark"] .stand--2 .stand__rank, :root[data-theme="dark"] .stand--3 .stand__rank { color: #231120; }
 .stand--1 .stand__rank, .stand--2 .stand__rank, .stand--3 .stand__rank { box-shadow: inset 0 0 0 2px rgba(35, 17, 32, .18); }
+
+/* Hub preview */
+.hubbanner { background: var(--tint-orange); border-radius: var(--r-control); padding: 10px var(--s3); margin: 0 0 var(--s3); font-size: var(--fs-s, .95rem); }
+.hplayer { border: 0; padding: 0; margin: var(--s4) 0 0; display: grid; gap: var(--s2); }
+.hplayer legend { font-weight: 800; color: var(--heading); margin-bottom: 6px; padding: 0; }
+.payopts { display: grid; gap: var(--s3); margin: var(--s3) 0; }
+.payopt { display: block; cursor: pointer; }
+.payopt input { position: absolute; opacity: 0; }
+.payopt__box { display: flex; gap: var(--s3); align-items: flex-start; padding: var(--s4); border-radius: var(--r-card); background: var(--surface); border: 2px solid var(--line); }
+.payopt input:checked + .payopt__box { border-color: var(--primary); background: var(--tint-blush); }
+.payopt input:focus-visible + .payopt__box { outline: 3px solid var(--accent); outline-offset: 2px; }
+.payopt__ic { flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--tint-blue); display: grid; place-items: center; }
+.payopt__main { display: flex; flex-direction: column; gap: 2px; }
+.payopt__main span { color: var(--text-2); }
+.schip { display: inline-block; padding: 4px 10px; border-radius: var(--r-pill); font-size: var(--fs-xs); font-weight: 800; white-space: nowrap; }
+.schip--ok { background: #cdeed7; color: #12361e; } .schip--warn { background: #ffe3a8; color: #3a2800; } .schip--mute { background: var(--subtle); color: var(--heading); }
+.rcard--col { flex-wrap: wrap; align-items: center; }
+.rcard--col .btn { width: 100%; margin-top: var(--s2); }
+.tdstats { margin: var(--s3) 0; }
