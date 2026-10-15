@@ -537,6 +537,21 @@
     return '<section class="lcard' + (big ? ' lcard--big' : '') + '" aria-label="Partners and memberships">' + row('Our partners', pd.partners) + row('Proud member of', pd.memberOf) +
       (big && notes.length ? '<p class="lcard__note">' + notes.map(function (o) { return esc(o.note); }).join(' ') + '</p>' : '') + '</section>';
   }
+  // Photo for an event: its host club's own photo (never a doubtful or hotlinked one)
+  function eventPhoto(x, clubs) {
+    var c = (clubs || []).filter(function (k) { return (x.clubIds || []).indexOf(k.id) >= 0; })[0];
+    return c && c.image && /^\/photos\//.test(c.image) && !c.imageNeedsReview ? c.image : '';
+  }
+  // Photo card: full-bleed picture, dark gradient for legibility, big title, glass status chip
+  function photoCard(x, clubs, today, opts) {
+    opts = opts || {};
+    var ph = eventPhoto(x, clubs), st = entryStatus(x, today), saved0 = isSaved(x.id);
+    return '<a class="pcard ' + catClass(x) + (opts.big ? ' pcard--big' : '') + '" href="/app/events/' + encodeURIComponent(x.id) + '"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '>' +
+      '<span class="pcard__cat">' + esc(x.cat || 'Open') + '</span>' + (saved0 ? '<span class="pcard__saved" aria-label="Saved">' + icon('bookmark') + '</span>' : '') +
+      '<span class="pcard__body"><span class="pcard__date">' + esc(dateRangeLabel(x.dates, true)) + '</span><span class="pcard__title">' + esc(x.short) + '</span>' +
+      '<span class="pcard__meta">' + esc([x.clubLabel, x.e.format && cap(x.e.format)].filter(Boolean).join(' · ')) + '</span>' +
+      (st ? '<span class="pcard__status">' + icon(st.icon) + esc(st.label) + '</span>' : '') + '</span></a>';
+  }
   // Calendar view: a month grid with tournament days marked; tap a day to see what is on.
   function addMonths(ym, n) {
     var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + n;
@@ -752,9 +767,10 @@
     var today = todayISO();
     return Promise.all([
       loadEvents(),
-      getJSON('/app-home-data.json').catch(function () { return {}; })
+      getJSON('/app-home-data.json').catch(function () { return {}; }),
+      getJSON('/clubs-data.json').catch(function () { return {}; })
     ]).then(function (all) {
-      var data = { events: all[0], story: all[1].feature || null, today: today };
+      var data = { events: all[0], story: all[1].feature || null, today: today, clubs: all[2].clubs || [] };
       drawHome(data);
       // Saving or unsaving on Home redraws it straight away
       view.addEventListener('saved-change', function (ev) {
@@ -805,16 +821,8 @@
     var shownIds = {}; heroEvs.forEach(function (x) { shownIds[x.id] = true; });
     if (heroEvs.length) {
       var headLabel = underway.length && !sameDay.length ? 'On now' : underway.length ? 'On now and next' : (heroEvs.length > 1 ? 'Next up · ' + fmt(nextStart, { weekday: 'long', month: 'long', day: 'numeric' }) : 'Next event');
-      html += '<section aria-labelledby="h-next"><h2 class="hero-label" id="h-next" tabindex="-1">' + esc(headLabel) + '</h2><div class="herostack">' +
-        heroEvs.map(function (heroEv) {
-          var hst = entryStatus(heroEv, today), isMine = ids.indexOf(heroEv.id) >= 0;
-          return '<a class="herocard ' + catClass(heroEv) + '" href="/app/events/' + encodeURIComponent(heroEv.id) + '">' + dateBlock(heroEv, false, true) +
-            '<span class="herocard__main">' + (isMine ? '<span class="herocard__kicker">Saved</span>' : '') +
-            '<span class="herocard__title">' + esc(heroEv.short) + '</span>' +
-            '<span class="herocard__meta">' + esc([dateRangeLabel(heroEv.dates), heroEv.clubLabel].filter(Boolean).join(' · ')) + '</span>' +
-            (hst ? statusLine(hst) : '') + '</span>' + CHEV + '</a>';
-        }).join('') + '</div>' +
-        (future.length > sameDay.length && sameDay.length >= 4 ? '' : '') + '</section>';
+      html += '<section aria-labelledby="h-next"><h2 class="hero-label" id="h-next" tabindex="-1">' + esc(headLabel) + '</h2><ul class="stage">' +
+        heroEvs.map(function (heroEv) { return '<li>' + photoCard(heroEv, d.clubs, today, { big: true }) + '</li>'; }).join('') + '</ul></section>';
     }
 
     // 3. Four quick links as round shortcuts
@@ -830,11 +838,7 @@
     if (more.length) {
       html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head"><h2 class="section__title" id="h-up">Coming up</h2>' +
         '<a class="section__more" href="/app/events">See all' + icon('chev', 'i--sm') + '</a></div><ul class="hscroll">' +
-        more.map(function (x, i) {
-          var st = entryStatus(x, today);
-          return '<li><a class="mini ' + catClass(x) + '" href="/app/events/' + encodeURIComponent(x.id) + '"><span class="mini__date">' + esc(dateRangeLabel(x.dates, true)) + '</span>' +
-            '<span class="mini__title">' + esc(x.short) + '</span><span class="mini__meta">' + esc(x.clubLabel || '') + '</span>' + (st ? statusLine(st) : '') + '</a></li>';
-        }).join('') + '</ul></section>';
+        more.map(function (x) { return '<li>' + photoCard(x, d.clubs, today) + '</li>'; }).join('') + '</ul></section>';
     }
 
     html += '<div class="tagline"><span class="art-plate"><img src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls — A Sport for Life!" width="341" height="160" decoding="async" loading="lazy"></span></div>';
