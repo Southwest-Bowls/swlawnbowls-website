@@ -1527,6 +1527,48 @@
       (kind === 'form' ? '<p class="ecard__note">No Google account needed. If the form says “Sign in to Google to save your progress”, ignore it: fill it in and press Submit.</p>' : '') +
       '<div id="' + key + '"></div></div>';
   }
+  // Our own version of the Division's Google Forms: same questions, same responses sheet,
+  // but no Google page, sign-in text or extra steps. Field ids come from each form's public page.
+  var NATIVE_FORMS = {
+    '1FAIpQLSckmJjRIoUNxocttOTJYxivCPQYIFsfdrVy8wn1ppg7dlaEQg': {
+      title: 'Send us a message', intro: 'Questions or comments about the site or about lawn bowling go to the Southwest Division.', button: 'Send message', thanks: 'Thank you. Your message has been sent to the Southwest Division.',
+      fields: [{ id: 'entry.1963690784', label: 'Name', type: 'text', ac: 'name', req: true }, { id: 'entry.1742168176', label: 'Email', type: 'email', ac: 'email', req: true }, { id: 'entry.1665584687', label: 'Message', type: 'textarea', req: true }]
+    }
+  };
+  function nativeForm(url) {
+    var m = /\/forms\/d\/e\/([A-Za-z0-9_-]+)\//.exec(url), f = m && NATIVE_FORMS[m[1]]; if (!f) return '';
+    var key = 'nf-' + m[1].slice(-6);
+    return '<form class="nform" data-nform="' + esc(m[1]) + '" novalidate><h2 class="nform__t">' + esc(f.title) + '</h2><p class="muted">' + esc(f.intro) + '</p>' +
+      f.fields.map(function (fl, i) {
+        var idf = key + '-' + i;
+        return '<label class="mfield" for="' + idf + '"><span>' + esc(fl.label) + (fl.req ? '' : ' (optional)') + '</span>' +
+          (fl.type === 'textarea' ? '<textarea id="' + idf + '" name="' + esc(fl.id) + '" rows="5" ' + (fl.req ? 'required' : '') + '></textarea>'
+            : '<input id="' + idf + '" name="' + esc(fl.id) + '" type="' + fl.type + '" ' + (fl.ac ? 'autocomplete="' + fl.ac + '" ' : '') + (fl.type === 'email' ? 'inputmode="email" ' : '') + (fl.req ? 'required' : '') + '>') + '</label>';
+      }).join('') +
+      '<input class="nform__hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">' +
+      '<p class="mform__err" role="alert" data-nerr></p><div class="actions"><button class="btn btn--wide btn--dark" type="submit">' + esc(f.button) + '</button></div></form>';
+  }
+  document.addEventListener('submit', function (ev) {
+    var form = ev.target.closest && ev.target.closest('[data-nform]'); if (!form) return;
+    ev.preventDefault();
+    var f = NATIVE_FORMS[form.getAttribute('data-nform')], err = form.querySelector('[data-nerr]'), btn = form.querySelector('button[type=submit]');
+    if (form.querySelector('.nform__hp').value) return;   // bots fill the hidden field
+    var body = new URLSearchParams(), bad = '';
+    f.fields.forEach(function (fl) {
+      var el = form.querySelector('[name="' + fl.id + '"]'), v = el.value.trim();
+      if (fl.req && !v && !bad) bad = 'Please fill in ' + fl.label.toLowerCase() + '.';
+      if (fl.type === 'email' && v && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v) && !bad) bad = 'Enter a valid email address.';
+      body.append(fl.id, v);
+    });
+    if (bad) { err.textContent = bad; return; }
+    var last = +(store('lastForm') || 0); if (Date.now() - last < 20000) { err.textContent = 'Please wait a moment before sending again.'; return; }
+    err.textContent = ''; btn.disabled = true; btn.textContent = 'Sending…';
+    fetch('https://docs.google.com/forms/d/e/' + form.getAttribute('data-nform') + '/formResponse', { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
+      .then(function () {
+        store('lastForm', Date.now()); haptic('medium');
+        form.innerHTML = '<div class="nform__done"><span class="illo illo--teal" aria-hidden="true"><i class="illo__a"></i><i class="illo__b"></i><i class="illo__c"></i><span class="illo__card">' + icon('check') + '</span></span><h2 class="nform__t">Sent</h2><p>' + esc(f.thanks) + '</p></div>';
+      }, function () { btn.disabled = false; btn.textContent = f.button; err.textContent = 'This needs a connection. Check your signal and try again.'; });
+  });
   function entriesPanel(e) {
     return '<section class="block" style="margin-top:8px">' +
       embedCard('Teams entered', '', e.entries.pubUrl, e.entries.height, 'list') +
@@ -3305,6 +3347,7 @@
         embed: function (s) {
           var url = safeUrl(s.url); if (!url) return '';
           var form = /docs\.google\.com\/forms/.test(url);
+          var nf = form && nativeForm(url); if (nf) return nf;
           return embedCard(s.heading || (form ? 'Form' : 'Embedded content'), form ? 'A Google Form. Needs a connection.' : 'From Google. Needs a connection.', url, s.height, form ? 'form' : 'content');
         },
         buttons: function (s) {

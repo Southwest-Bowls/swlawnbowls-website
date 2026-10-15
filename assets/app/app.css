@@ -2192,3 +2192,10 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .cstrip__n { color: var(--text-2); font-size: .7rem; font-weight: 500; }
 .ecard__note { margin: 10px 4px 0; color: var(--text-2); font-size: var(--fs-xs); }
 .ecard .embed { padding-bottom: 96px; }
+
+.nform { padding: 4px 0 96px; } .nform__t { font-family: var(--font-display); font-size: 1.25rem; margin: 0 0 4px; }
+.nform .mfield { display: block; margin-top: 14px; } .nform .mfield > span { display: block; font-weight: 560; margin-bottom: 6px; }
+.nform input[type=text], .nform input[type=email], .nform textarea { width: 100%; min-height: 52px; padding: 12px 18px; border-radius: 26px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; }
+.nform textarea { border-radius: 24px; resize: vertical; }
+.nform__hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.nform .actions { margin-top: 18px; } .nform__done { text-align: center; padding: 24px 0; }
