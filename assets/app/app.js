@@ -798,11 +798,15 @@
       img.addEventListener('error', function () { img.hidden = true; });
     });
     getJSON('/partners-data.json').then(function (pd) {
-      var all = (pd.partners || []).concat(pd.memberOf || []), el = view.querySelector('#home-partners'); if (!el || !all.length) return;
-      el.innerHTML = '<section class="hsec" aria-labelledby="h-par"><div class="section__head"><h2 class="section__title" id="h-par">Our partners</h2></div><ul class="logostrip">' + all.map(function (o) {
-        var img = '<img src="' + esc(o.logo) + '" alt="' + esc(o.name) + '" loading="lazy" decoding="async">';
-        return '<li>' + (safeUrl(o.url) ? '<a class="logochip" href="' + esc(o.url) + '" target="_blank" rel="noopener" aria-label="' + esc(o.name) + ', opens their website">' + img + '</a>' : '<span class="logochip">' + img + '</span>') + '</li>';
-      }).join('') + '</ul></section>';
+      var el = view.querySelector('#home-partners'); if (!el) return;
+      function strip(id, title, list) {
+        if (!list.length) return '';
+        return '<section class="hsec" aria-labelledby="' + id + '"><div class="section__head"><h2 class="section__title" id="' + id + '">' + esc(title) + '</h2></div><ul class="logostrip">' + list.map(function (o) {
+          var img = '<img src="' + esc(o.logo) + '" alt="' + esc(o.name) + '" loading="lazy" decoding="async">';
+          return '<li>' + (safeUrl(o.url) ? '<a class="logochip" href="' + esc(o.url) + '" target="_blank" rel="noopener" aria-label="' + esc(o.name) + ', opens their website">' + img + '</a>' : '<span class="logochip">' + img + '</span>') + '</li>';
+        }).join('') + '</ul></section>';
+      }
+      el.innerHTML = strip('h-par', 'Our partners', pd.partners || []) + strip('h-mem', 'Proud member of', pd.memberOf || []);
     }).catch(function () {});
     var sb = view.querySelector('[data-story]');
     if (sb) sb.addEventListener('click', function () { storyDialog(d.story); });
@@ -2454,7 +2458,12 @@
       function byHead(h) { return secs.filter(function (x) { return x.heading === h; })[0]; }
       var what = byHead('What SWD Does'), board = byHead('Board of Directors'), intro = byHead('About the Southwest Bowls Division');
       var lead = intro && intro.body && intro.body[0] || '';
-      var logos = (pd.partners || []).concat(pd.memberOf || []);
+      function logoGroup(title, list) {
+        if (!list.length) return '';
+        return '<section class="mgroup"' + (title === 'Our partners' ? ' id="partners"' : '') + '><h2 class="mgroup__label">' + esc(title) + '</h2><ul class="logogrid">' + list.map(function (o) {
+          var img = '<img src="' + esc(o.logo) + '" alt="' + esc(o.name) + '" loading="lazy" decoding="async">';
+          return '<li>' + (safeUrl(o.url) ? '<a class="logochip" href="' + esc(o.url) + '" target="_blank" rel="noopener" aria-label="' + esc(o.name) + ', opens their website">' + img + '</a>' : '<span class="logochip">' + img + '</span>') + '</li>'; }).join('') + '</ul></section>';
+      }
       view.innerHTML = backLink('/app/more', 'More') +
         '<section class="hub" aria-label="Southwest Bowls Division"><span class="logo-plate hub__logo"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75"></span>' +
         '<div class="hub__text"><h1 class="hub__name">About Southwest</h1><span class="hub__sub">A volunteer-led division</span></div>' + (lead ? '<p class="about__lead">' + esc(lead) + '</p>' : '') + '</section>' +
@@ -2463,11 +2472,9 @@
           var em = /^mailto:/.test(m.link || '') ? m.link : '';
           var inner = '<span class="mrow__ic mrow__ic--blush">' + esc(initials(m.title)) + '</span><span class="mrow__main"><span class="mrow__title">' + esc(m.title) + '</span><span class="mrow__meta">' + esc(m.meta || '') + '</span></span>' + (em ? '<span class="mrow__end" aria-hidden="true">' + icon('mail', 'i--sm') + '</span>' : '');
           return '<li>' + (em ? '<a class="mrow" href="' + esc(em) + '" aria-label="Email ' + esc(m.title) + ', ' + esc(m.meta || '') + '">' + inner + '</a>' : '<div class="mrow">' + inner + '</div>') + '</li>'; }).join('') + '</ul></section>' : '') +
-        (logos.length ? '<section class="mgroup"><h2 class="mgroup__label">Partners and affiliations</h2><ul class="logogrid">' + logos.map(function (o) {
-          var img = '<img src="' + esc(o.logo) + '" alt="' + esc(o.name) + '" loading="lazy" decoding="async">';
-          return '<li>' + (safeUrl(o.url) ? '<a class="logochip" href="' + esc(o.url) + '" target="_blank" rel="noopener" aria-label="' + esc(o.name) + ', opens their website">' + img + '</a>' : '<span class="logochip">' + img + '</span>') + '</li>'; }).join('') + '</ul></section>' : '') +
+        logoGroup('Our partners', pd.partners || []) + logoGroup('Proud member of', pd.memberOf || []) +
         '<div class="actions"><a class="btn btn--wide" href="/app/page/contact-us">Contact Southwest</a></div>';
-      if (location.hash === '#partners') { var g = view.querySelector('.logogrid'); if (g) g.scrollIntoView(); }
+      if (location.hash === '#partners') { var g = view.querySelector('#partners'); if (g) g.scrollIntoView(); }
     });
   }
 
