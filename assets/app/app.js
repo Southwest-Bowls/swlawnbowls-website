@@ -569,6 +569,17 @@
       : '<span class="dateblock" aria-hidden="true">' + icon('trophy') + '</span>';
   }
   // The latest champions: warm orange card; a photo only when it is of these winners
+  // Latest champions: three small cards you swipe, instead of one tall panel
+  function champStrip(list) {
+    var items = list.filter(function (r) { return firsts(r).length; }).slice(0, 4);
+    if (!items.length) return '';
+    return '<section class="hsec" aria-labelledby="h-champ"><div class="section__head"><h2 class="section__title" id="h-champ">Latest champions</h2></div><ul class="hscroll">' +
+      items.map(function (r, i) {
+        var w = firsts(r)[0];
+        return '<li><a class="mini mini--' + (i % 3) + '" href="/app/results/' + encodeURIComponent(r.id) + '"><span class="mini__date">' + icon('trophy', 'i--sm') + esc(shortTitle(r.t.title)) + '</span>' +
+          '<span class="mini__title">' + esc(w.who) + '</span><span class="mini__meta">' + esc(r.t.meta || '') + '</span></a></li>';
+      }).join('') + '</ul></section>';
+  }
   function championPanel(r) {
     var f = firsts(r);
     if (!f.length) return '';
@@ -1257,19 +1268,20 @@
       view.innerHTML = pageHead('The people. The wins.', 'Results', 'trophy') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search results or players</span>' +
         '<input type="search" id="q" placeholder="Search results or players" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
-        (list.length ? championPanel(list[0]) : '') + standLink +
+        champStrip(list) + standLink +
         '<section class="section" aria-labelledby="h-latest">' + sectionHead('h-latest', 'Recent results') +
-        '<div class="filters filters--quiet">' +
-        '<label><span class="sr-only">Category</span><select id="f-cat">' + opt('', 'All categories', f.cat) + CATS.map(function (c) { return opt(c, c, f.cat); }).join('') + '</select></label>' +
-        '<label><span class="sr-only">Year</span><select id="f-year">' + opt('', 'All years', f.year) + Object.keys(years).sort().reverse().map(function (y) { return opt(y, y, f.year); }).join('') + '</select></label>' +
-        '</div><div id="res-list"></div></section>' +
+        '<div class="chips" role="group" aria-label="Filter results">' + [['', 'All']].concat(CATS.map(function (c) { return [c, c]; })).map(function (c) {
+          return '<button type="button" class="chip" data-cat="' + esc(c[0]) + '" aria-pressed="' + (c[0] === f.cat) + '">' + esc(c[1]) + '</button>';
+        }).join('') + (Object.keys(years).length > 1 ? '<label class="chip chip--select"><span class="sr-only">Year</span><select id="f-year">' + opt('', 'All years', f.year) + Object.keys(years).sort().reverse().map(function (y) { return opt(y, y, f.year); }).join('') + '</select></label>' : '<input type="hidden" id="f-year" value="">') + '</div>' +
+        '<input type="hidden" id="f-cat" value="' + esc(f.cat) + '">' +
+        '<div id="res-list"></div></section>' +
         '<ul class="rows" style="margin-top:24px">' + linkRow('/archive', 'doc', '2022–2025 results', 'The results archive', { ext: true }) + '</ul>' +
         '<p class="footnote">Find a result. Celebrate your club.</p>';
       view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
       function apply() {
         var qRaw = document.getElementById('q').value.trim(), q = qRaw.toLowerCase();
         var cat = document.getElementById('f-cat').value, year = document.getElementById('f-year').value;
-        ['f-cat', 'f-year'].forEach(function (id) { var el = document.getElementById(id); el.classList.toggle('is-set', !!el.value); });
+        view.querySelectorAll('[data-cat]').forEach(function (c) { c.setAttribute('aria-pressed', c.getAttribute('data-cat') === cat); });
         var out = list.filter(function (r) {
           if (cat && r.cat !== cat) return false;
           if (year && r.year !== year) return false;
@@ -1277,20 +1289,25 @@
           return true;
         });
         var filtered = q || cat || year;
+        var cap = (filtered || showAll) ? out.length : 8, shown = out.slice(0, cap);
         document.getElementById('res-list').innerHTML = out.length
-          ? '<p class="count" aria-live="polite">' + out.length + ' tournament' + (out.length === 1 ? '' : 's') + (filtered ? ' <button class="clear" type="button" data-clear>Clear filters</button>' : '') + '</p><ul class="list list--plain">' + out.map(resultRow).join('') + '</ul>'
+          ? '<ul class="list list--plain">' + shown.map(resultRow).join('') + '</ul>' +
+            (out.length > cap ? '<button class="btn btn--ghost btn--wide" type="button" data-showall>Show all ' + out.length + ' results</button>'
+              : filtered ? '<p class="count">' + out.length + ' result' + (out.length === 1 ? '' : 's') + ' <button class="clear" type="button" data-clear>Clear filters</button></p>' : '')
           : state('empty', 'No results match', 'Try a different name or clear the filters.', '<button class="btn btn--ghost" type="button" data-clear>Clear filters</button>');
         var u = new URLSearchParams();
         if (q) u.set('q', qRaw); if (cat) u.set('cat', cat); if (year) u.set('year', year);
         history.replaceState(history.state, '', '/app/results' + (u.toString() ? '?' + u : ''));
       }
-      var t;
+      var t, showAll = false;
       document.getElementById('q').addEventListener('input', function () { clearTimeout(t); t = setTimeout(apply, 150); });
-      document.getElementById('f-cat').addEventListener('change', apply);
-      document.getElementById('f-year').addEventListener('change', apply);
+      var yr = document.getElementById('f-year'); if (yr) yr.addEventListener('change', apply);
       view.addEventListener('click', function (ev) {
+        var ch = ev.target.closest('[data-cat]');
+        if (ch) { document.getElementById('f-cat').value = ch.getAttribute('data-cat'); apply(); return; }
+        if (ev.target.closest('[data-showall]')) { showAll = true; apply(); return; }
         if (ev.target.closest('[data-clear]')) {
-          document.getElementById('q').value = ''; document.getElementById('f-cat').value = ''; document.getElementById('f-year').value = ''; apply();
+          document.getElementById('q').value = ''; document.getElementById('f-cat').value = ''; document.getElementById('f-year').value = ''; showAll = false; apply();
         }
       });
       apply();
