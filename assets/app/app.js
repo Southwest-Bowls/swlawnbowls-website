@@ -300,9 +300,10 @@
 
   var EVENTS = null;
   var CLUB_ALIASES = {};
+  var CLUBS_LIST = [];
   function loadEvents() {
     return Promise.all([getJSON('/events-data.json'), getJSON('/clubs-data.json').catch(function () { return { clubs: [] }; })]).then(function (all) {
-      var d = all[0];
+      var d = all[0]; CLUBS_LIST = all[1].clubs || [];
       if (EVENTS && EVENTS.src === d) return EVENTS.list;
       CLUB_ALIASES = Logic.aliasMapFrom(all[1].clubs);
       var list = (d.events || []).filter(function (e) { return e.id && e.title && !/^paypal-test/.test(e.id); })
@@ -572,27 +573,30 @@
       if (on(iso0).length) { anyThisMonth = true; if (!firstDay) firstDay = iso0; if (!nextDay && iso0 >= today) nextDay = iso0; }
     }
     var showDay = selDay && selDay.slice(0, 7) === ym ? selDay : (nextDay || firstDay);
-    var cells = '';
-    for (var i = 0; i < lead; i++) cells += '<span class="cal__blank"></span>';
+    var strip = '';
     for (var d = 1; d <= n; d++) {
       var iso = ym + '-' + String(d).padStart(2, '0'), ev = on(iso);
       var kinds = {}; ev.forEach(function (e0) { kinds[catClass(e0)] = 1; });
-      var kc = Object.keys(kinds).length === 1 ? ' ' + Object.keys(kinds)[0] : '';
-      var LET = { 'cat--w': 'W', 'cat--m': 'M', 'cat--x': 'X', 'cat--o': 'O' }, tag = Object.keys(kinds).length === 1 ? LET[Object.keys(kinds)[0]] : '+';
-      var catNames = ev.map(function (e0) { return e0.cat || 'Open'; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(', ');
-      cells += ev.length
-        ? '<button type="button" class="cal__day cal__day--has' + kc + (iso === today ? ' cal__day--today' : '') + (iso === showDay ? ' cal__day--sel' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === showDay) +
-          '" aria-label="' + esc(fmt(iso, { weekday: 'long', month: 'long', day: 'numeric' }) + ', ' + ev.length + (ev.length === 1 ? ' event' : ' events') + ': ' + catNames) + '"><span class="cal__n">' + d + '</span><small class="cal__tag" aria-hidden="true">' + tag + '</small></button>'
-        : '<span class="cal__day' + (iso === today ? ' cal__day--today' : '') + '">' + d + '</span>';
+      var kc = Object.keys(kinds).length === 1 ? Object.keys(kinds)[0] : (ev.length ? 'cat--o' : '');
+      strip += '<button type="button" class="wday ' + kc + (iso === showDay ? ' wday--sel' : '') + (iso === today ? ' wday--today' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === showDay) + '" aria-label="' +
+        esc(fmt(iso, { weekday: 'long', month: 'long', day: 'numeric' }) + (ev.length ? ', ' + ev.length + (ev.length === 1 ? ' event' : ' events') : ', no events')) + '">' +
+        '<span class="wday__l" aria-hidden="true">' + esc(fmt(iso, { weekday: 'narrow' })) + '</span><b class="wday__n" aria-hidden="true">' + d + '</b><i class="wday__dot' + (ev.length ? ' wday__dot--on' : '') + '" aria-hidden="true"></i></button>';
     }
     var dayEv = showDay ? on(showDay) : [];
-    var html = '<div class="cal"><div class="cal__head"><button class="circbtn" type="button" data-cal-nav="-1" aria-label="Previous month">' + icon('back') + '</button>' +
-      '<h2 class="cal__title" aria-live="polite">' + esc(fmt(first, { month: 'long', year: 'numeric' })) + '</h2>' +
+    var html = '<div class="cal"><div class="cal__head"><h2 class="cal__title" aria-live="polite">' + esc(fmt(first, { month: 'long', year: 'numeric' })) + '</h2>' +
+      '<button class="circbtn" type="button" data-cal-nav="-1" aria-label="Previous month">' + icon('back') + '</button>' +
       '<button class="circbtn" type="button" data-cal-nav="1" aria-label="Next month">' + icon('chev') + '</button></div>' +
-      '<div class="cal__grid" role="group" aria-label="Days with events"><span class="cal__dow" aria-hidden="true">Sun</span><span class="cal__dow" aria-hidden="true">Mon</span><span class="cal__dow" aria-hidden="true">Tue</span><span class="cal__dow" aria-hidden="true">Wed</span><span class="cal__dow" aria-hidden="true">Thu</span><span class="cal__dow" aria-hidden="true">Fri</span><span class="cal__dow" aria-hidden="true">Sat</span>' + cells + '</div><ul class="legend" aria-label="Colours"><li><span class="legend__dot cat--w"></span>W Women’s</li><li><span class="legend__dot cat--m"></span>M Men’s</li><li><span class="legend__dot cat--x"></span>X Mixed</li><li><span class="legend__dot cat--o"></span>O Open</li></ul></div>';
+      '<div class="wstrip" role="group" aria-label="Days of the month">' + strip + '</div>';
+    var tl = dayEv.map(function (x, i) {
+      var e = x.e, phase = eventPhase(x, today), ph = eventPhoto(x, CLUBS_LIST), st = entryStatus(x, today);
+      return '<li class="tl__item' + (phase === 'past' ? ' tl__item--done' : '') + '"><span class="tl__node" aria-hidden="true">' + (phase === 'past' ? icon('check') : '') + '</span>' +
+        '<a class="tcard ' + catClass(x) + (i === 0 ? ' tcard--lead' : '') + '" href="/app/events/' + encodeURIComponent(x.id) + '">' +
+        '<span class="tcard__who"><span class="tcard__av"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '></span><span class="tcard__wt"><b>' + esc(x.clubLabel || 'Southwest Bowls') + '</b><small>' + esc(x.cat || 'Open') + (e.format ? ' · ' + esc(cap(e.format)) : '') + '</small></span></span>' +
+        (e.time ? '<span class="tcard__time">' + esc(e.time) + '</span>' : '') +
+        '<span class="tcard__title">' + esc(x.short) + '</span>' + (st ? '<span class="tcard__st">' + icon(st.icon) + esc(st.label) + '</span>' : '') + '</a></li>';
+    }).join('');
     html += '<div id="cal-day-list" tabindex="-1">' + (!anyThisMonth ? state('empty', 'No events this month', 'Use the arrows to look at another month.')
-      : '<h2 class="section__title list-title">' + esc(fmt(showDay, { weekday: 'long', month: 'long', day: 'numeric' })) + '</h2>' +
-        (dayEv.length ? '<ul class="list list--cards">' + dayEv.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '<p class="muted">Nothing scheduled this day.</p>')) + '</div>';
+      : (dayEv.length ? '<ol class="tl">' + tl + '</ol>' : '<p class="muted tl__none">Nothing scheduled this day. Days with a coloured dot have events.</p>')) + '</div></div>';
     return html;
   }
   function eventRow(x, today) {
@@ -1023,6 +1027,7 @@
         var mb = view.querySelector('.monthbar'); if (mb) mb.classList.toggle('monthbar--cal', show === 'calendar');
         if (show === 'calendar') {
           out.innerHTML = calendarHtml(list, calMonth, calDay, today);
+          var wsel = out.querySelector('.wday--sel'); if (wsel && wsel.parentNode) wsel.parentNode.scrollLeft = Math.max(0, wsel.offsetLeft - 140);
           var cu = new URLSearchParams(); cu.set('show', 'calendar');
           if (q) cu.set('q', qRaw); if (cat) cu.set('cat', cat); if (club) cu.set('club', club);
           history.replaceState(history.state, '', '/app/events?' + cu.toString());
