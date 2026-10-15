@@ -2203,3 +2203,6 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 /* Text size: four equal buttons, two by two */
 .choices[aria-label="Text size"], .choices:has(button[data-size]) { display: grid; grid-template-columns: 1fr 1fr; }
 .choices button[data-size] { width: 100%; }
+
+.signin__hint { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 var(--s3); color: var(--text-2); font-size: var(--fs-sm); text-align: left; }
+.signin__hint .i { flex: none; margin-top: 2px; }

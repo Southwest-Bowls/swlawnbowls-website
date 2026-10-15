@@ -2657,12 +2657,12 @@
     }
     function emailStep(msg) {
       clearInterval(timer);
-      shell(1, '<h1 class="signin__h">Log in or create an account</h1><p class="signin__sub">Enter your email and we’ll send you a code.</p>' +
+      shell(1, '<h1 class="signin__h">Log in or create an account</h1><p class="signin__sub">Enter your email and we’ll send you a code.</p><p class="signin__hint">' + icon('info', 'i--sm') + '<span>Use the email your club gave the Division. If you’re not sure which, try your main one, then your others.</span></p>' +
         (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
         '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
         '<input id="s-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="' + esc(email) + '" required></span></label>' +
         '<p class="mform__err" id="s-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Send me a code</button></div></form>' +
-        '<p class="signin__foot">No account needed to browse. <a class="textlink" href="/app">Continue as a guest</a></p>');
+        '<p class="signin__foot">No account needed to browse. <a class="textlink" href="/app">Continue as a guest</a></p>' + memberHelpHtml(false));
       var f = view.querySelector('#s-form');
       f.addEventListener('submit', function (ev) {
         ev.preventDefault();
@@ -2683,7 +2683,7 @@
         '<span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span></div>' +
         '<p class="mform__err" id="c-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Confirm</button></div></form>' +
         '<p class="signin__again"><span id="c-timer"></span></p>' +
-        '<div class="signin__nocode"><b>No email after a minute?</b><ul><li>Look in your spam or promotions folder.</li><li>Sign-in works only with the email the Division has on your membership. If you use a different one, use “Change it” below.</li><li>Not a member yet, or still stuck? You can keep browsing as a guest.</li></ul></div>' +
+        '<div class="signin__nocode"><b>No email after a minute?</b><ul><li>Look in your spam or promotions folder.</li><li>Sign-in works only with the email the Division has on your membership. Try another address you may have used, like an old or work email, with “Change it” below.</li><li>Not a member yet, or still stuck? You can keep browsing as a guest.</li></ul></div>' +
         '<p class="signin__foot">Wrong email? <button class="textlink" type="button" id="c-edit">Change it</button> · <a class="textlink" href="/app">Continue as a guest</a></p>' + memberHelpHtml(false), emailStep);
       var f = view.querySelector('#c-form'), tm = view.querySelector('#c-timer'), inp = f.querySelector('#c-code'), boxes = f.querySelectorAll('.otp__box');
       function paint() {
