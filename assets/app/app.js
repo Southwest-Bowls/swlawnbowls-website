@@ -97,6 +97,7 @@
     trophy: '<path d="M8 3h8v6a4 4 0 0 1-8 0ZM8 5H4v3a4 4 0 0 0 4 4m8-7h4v3a4 4 0 0 1-4 4M12 13v6m-4 2h8"/>',
     tv: '<rect x="3" y="4" width="18" height="14" rx="3"/><path d="m10 8 5 3-5 3Zm-3 8h10"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10 2.1 2.1M4.9 19.1 7 17m10-10 2.1-2.1"/>',
     sliders: '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="9" cy="18" r="2"/>',
     news: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>',
     flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
@@ -153,11 +154,11 @@
     return radioGroup('Appearance', 'data-theme-choice', [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], themePref());
   }
   function textChoices() {
-    return radioGroup('Text size', 'data-size', [['standard', 'Standard'], ['large', 'Large'], ['xlarge', 'Extra large']], store('text') || 'standard');
+    return radioGroup('Text size', 'data-size', [['standard', 'Standard'], ['large', 'Large'], ['xlarge', 'Extra large'], ['xxlarge', 'Largest']], store('text') || 'standard');
   }
   function applyTextSize() {
     var v = store('text');
-    if (v === 'large' || v === 'xlarge') document.documentElement.setAttribute('data-text', v);
+    if (v === 'large' || v === 'xlarge' || v === 'xxlarge') document.documentElement.setAttribute('data-text', v);
     else document.documentElement.removeAttribute('data-text');
   }
 
@@ -575,16 +576,18 @@
       var iso = ym + '-' + String(d).padStart(2, '0'), ev = on(iso);
       var kinds = {}; ev.forEach(function (e0) { kinds[catClass(e0)] = 1; });
       var kc = Object.keys(kinds).length === 1 ? ' ' + Object.keys(kinds)[0] : '';
+      var LET = { 'cat--w': 'W', 'cat--m': 'M', 'cat--x': 'X', 'cat--o': 'O' }, tag = Object.keys(kinds).length === 1 ? LET[Object.keys(kinds)[0]] : '+';
+      var catNames = ev.map(function (e0) { return e0.cat || 'Open'; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(', ');
       cells += ev.length
         ? '<button type="button" class="cal__day cal__day--has' + kc + (iso === today ? ' cal__day--today' : '') + (iso === showDay ? ' cal__day--sel' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === showDay) +
-          '" aria-label="' + esc(fmt(iso, { weekday: 'long', month: 'long', day: 'numeric' }) + ', ' + ev.length + (ev.length === 1 ? ' event' : ' events')) + '">' + d + '</button>'
+          '" aria-label="' + esc(fmt(iso, { weekday: 'long', month: 'long', day: 'numeric' }) + ', ' + ev.length + (ev.length === 1 ? ' event' : ' events') + ': ' + catNames) + '"><span class="cal__n">' + d + '</span><small class="cal__tag" aria-hidden="true">' + tag + '</small></button>'
         : '<span class="cal__day' + (iso === today ? ' cal__day--today' : '') + '">' + d + '</span>';
     }
     var dayEv = showDay ? on(showDay) : [];
     var html = '<div class="cal"><div class="cal__head"><button class="circbtn" type="button" data-cal-nav="-1" aria-label="Previous month">' + icon('back') + '</button>' +
       '<h2 class="cal__title" aria-live="polite">' + esc(fmt(first, { month: 'long', year: 'numeric' })) + '</h2>' +
       '<button class="circbtn" type="button" data-cal-nav="1" aria-label="Next month">' + icon('chev') + '</button></div>' +
-      '<div class="cal__grid" role="group" aria-label="Days with events"><span class="cal__dow" aria-hidden="true">Sun</span><span class="cal__dow" aria-hidden="true">Mon</span><span class="cal__dow" aria-hidden="true">Tue</span><span class="cal__dow" aria-hidden="true">Wed</span><span class="cal__dow" aria-hidden="true">Thu</span><span class="cal__dow" aria-hidden="true">Fri</span><span class="cal__dow" aria-hidden="true">Sat</span>' + cells + '</div><ul class="legend" aria-label="Colours"><li><span class="legend__dot cat--w"></span>Women’s</li><li><span class="legend__dot cat--m"></span>Men’s</li><li><span class="legend__dot cat--x"></span>Mixed</li><li><span class="legend__dot cat--o"></span>Open</li></ul></div>';
+      '<div class="cal__grid" role="group" aria-label="Days with events"><span class="cal__dow" aria-hidden="true">Sun</span><span class="cal__dow" aria-hidden="true">Mon</span><span class="cal__dow" aria-hidden="true">Tue</span><span class="cal__dow" aria-hidden="true">Wed</span><span class="cal__dow" aria-hidden="true">Thu</span><span class="cal__dow" aria-hidden="true">Fri</span><span class="cal__dow" aria-hidden="true">Sat</span>' + cells + '</div><ul class="legend" aria-label="Colours"><li><span class="legend__dot cat--w"></span>W Women’s</li><li><span class="legend__dot cat--m"></span>M Men’s</li><li><span class="legend__dot cat--x"></span>X Mixed</li><li><span class="legend__dot cat--o"></span>O Open</li></ul></div>';
     html += '<div id="cal-day-list" tabindex="-1">' + (!anyThisMonth ? state('empty', 'No events this month', 'Use the arrows to look at another month.')
       : '<h2 class="section__title list-title">' + esc(fmt(showDay, { weekday: 'long', month: 'long', day: 'numeric' })) + '</h2>' +
         (dayEv.length ? '<ul class="list list--cards">' + dayEv.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '<p class="muted">Nothing scheduled this day.</p>')) + '</div>';
@@ -801,8 +804,7 @@
       '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Hi, Guest') + '</h1></div>' +
       '<a class="circbtn" id="hq" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
-      '<a class="circbtn" href="/app/more/settings" aria-label="App settings">' + icon('sliders') + '</a>' +
-      '<a class="circbtn circbtn--me" href="/app/my" aria-label="My SWD">' + (initials(prof.name) ? esc(initials(prof.name)) : icon('person')) + '</a></header>';
+      '<a class="circbtn" href="/app/more/settings" aria-label="App settings">' + icon('gear') + '</a></header>';
 
     // Urgent: a change to a saved event
     var myAlerts = mineNext.filter(isCritical);
@@ -1016,7 +1018,7 @@
         if (show === 'past') list = list.slice().reverse();
         var filtered = q || month || cat || club;
         var out = document.getElementById('ev-results');
-        var mb = view.querySelector('.monthbar__month'); if (mb) mb.hidden = show === 'calendar';
+        var mb = view.querySelector('.monthbar'); if (mb) mb.classList.toggle('monthbar--cal', show === 'calendar');
         if (show === 'calendar') {
           out.innerHTML = calendarHtml(list, calMonth, calDay, today);
           var cu = new URLSearchParams(); cu.set('show', 'calendar');
@@ -1142,11 +1144,11 @@
         : '';
       var onNow = isSaved(x.id);
       var html = backLink('/app/events', 'Events') +
-        (hostPhoto ? '<div class="chero"><img class="chero__img chero__img--wide" src="' + esc(hostPhoto) + '" alt="" loading="lazy" data-hide-on-error>' + (st ? '<span class="chero__tag ' + catClass(x) + '">' + esc(st.label) + '</span>' : '') + '</div>' : '') +
+        (hostPhoto ? '<div class="chero"><img class="chero__img chero__img--wide" src="' + esc(hostPhoto) + '" alt="" loading="lazy" data-hide-on-error>' + '' + '</div>' : '') +
         '<div class="eband ' + catClass(x) + '">' + saveBtn(x.id, x.short) + '<p class="eyebrow">' + esc(String(e.subtitle || '').toLowerCase().indexOf(String(x.cat || '').toLowerCase().replace(/'s$/, '')) === 0 ? e.subtitle : (x.cat || 'Open') + ' · ' + (e.subtitle || season)) + '</p>' +
         '<h1 class="detail-title">' + esc(e.title) + '</h1>' +
         (x.club ? '<p>' + esc(x.club) + '</p>' : '') + '</div>' +
-        '<div class="detail-date">' + dateBlock(x, true) + '<div><b>' + esc(e.date || 'Date to be announced') + '</b>' + statusLine(st) + '</div></div>';
+        '<div class="detail-date detail-date--plain"><div><b>' + esc(e.date || 'Date to be announced') + '</b>' + statusLine(st) + '</div></div>';
       if (e.alert) html += '<div class="note" role="note"><b>' + esc(e.alertLabel || 'Update') + '</b>' + esc(e.alert) + '</div>';
 
       html += '<div class="segmented segmented--cat ' + catClass(x) + '" role="tablist" aria-label="Event sections">' + tabs.map(function (t) {
@@ -1914,7 +1916,7 @@
     return '<div class="cmap" role="group" aria-label="Map of clubs">' + svg + pts.map(function (c) {
       var id = c.id || slugify(c.name), on = isFollowing(id);
       return '<button type="button" class="cmap__pin' + (on ? ' cmap__pin--on' : '') + (id === selId ? ' cmap__pin--sel' : '') + '" data-pin="' + esc(id) + '" style="left:' +
-        (X(+c.lng) / W * 100).toFixed(2) + '%;top:' + (Y(+c.lat) / H * 100).toFixed(2) + '%" aria-label="' + esc(c.name + ', ' + c.city) + '"><span></span></button>';
+        (X(+c.lng) / W * 100).toFixed(2) + '%;top:' + (Y(+c.lat) / H * 100).toFixed(2) + '%" aria-label="' + esc(c.name + ', ' + c.city + (on ? ', following' : '')) + '"><span>' + (on ? '★' : '') + '</span></button>';
     }).join('') + '</div>';
   }
   function clubCard(c) {
@@ -2412,6 +2414,16 @@
           '<div class="actions"><button class="btn btn--wide" type="submit">Continue</button></div></form>';
         var f = view.querySelector('#h-form');
         if (err && focusSel) { var bad = f.querySelector(focusSel); if (bad) { bad.setAttribute('aria-invalid', 'true'); bad.focus(); } } else if (!err) arrived();
+        f.addEventListener('focusout', function (ev) {
+          var t0 = ev.target; if (!t0.matches || !t0.matches('[data-name], #h-email')) return;
+          var bad = t0.id === 'h-email' ? !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t0.value.trim()) : !t0.value.trim();
+          var box = t0.closest('label'), m = box.querySelector('.fielderr');
+          if (bad && (t0.value !== '' || t0.dataset.touched)) {
+            if (!m) { m = document.createElement('span'); m.className = 'fielderr'; m.id = t0.id + '-err'; m.setAttribute('role', 'alert'); box.appendChild(m); }
+            m.textContent = t0.id === 'h-email' ? 'Check the email address.' : 'Enter a name.'; t0.setAttribute('aria-invalid', 'true'); t0.setAttribute('aria-describedby', m.id);
+          } else { if (m) m.remove(); t0.removeAttribute('aria-invalid'); }
+          t0.dataset.touched = '1';
+        });
         f.addEventListener('change', function (ev) {
           var sIdx = ev.target.getAttribute('data-club'); if (sIdx === null) return;
           f.querySelector('[data-other="' + sIdx + '"]').hidden = ev.target.value !== '__other';
@@ -2482,7 +2494,7 @@
     setTitle('Receipt');
     if (!hubOn()) return go('/app', true);
     var en = hubEntries().filter(function (x) { return x.id === ref; })[0];
-    if (!en) { view.innerHTML = backLink('/app/my', 'My SWD') + state('empty', 'We couldn’t find that receipt', '<a class="btn" href="/app/my">My SWD</a>'); return Promise.resolve(); }
+    if (!en) { view.innerHTML = backLink('/app/my', 'My SWD') + state('empty', 'We couldn’t find that receipt', 'It may have been cleared from this phone.', '<a class="btn" href="/app/my">See my entries</a>'); return Promise.resolve(); }
     return Promise.all([loadEvents(), getJSON('/clubs-data.json').catch(function () { return {}; })]).then(function (all) {
       var x = all[0].filter(function (y) { return y.id === en.eventId; })[0], e = x ? x.e : {};
       var club = e.club && e.club.name || '', addr = e.club && e.club.address || '';
@@ -2542,9 +2554,15 @@
       view.querySelector('#td-ev').addEventListener('change', function (ev) { go('/app/td?event=' + encodeURIComponent(ev.target.value), true); });
       view.onclick = function (ev) {
         var b = ev.target.closest('[data-td]'); if (!b) return;
-        var r = rows[+b.getAttribute('data-i')]; r.status = b.getAttribute('data-td');
+        var r = rows[+b.getAttribute('data-i')], next = b.getAttribute('data-td'), prev = r.status;
+        if (next === 'refunded' && b.getAttribute('data-sure') !== '1') { b.setAttribute('data-sure', '1'); b.textContent = 'Tap again: approve withdrawal for ' + r.team; return; }
+        r.status = next;
         if (r.real) { var all = hubEntries(); all.forEach(function (en) { if (en.id === r.id) en.status = r.status; }); hubSave(all); } else { store('hubTd:' + cur, list); }
-        toast(r.status === 'refunded' ? 'Withdrawal approved. Refund it in PayPal, then it is done (practice)' : 'Updated (practice)'); tdScreen(params);
+        toast(r.status === 'refunded' ? 'Withdrawal approved. Refund it in PayPal, then it is done (practice)' : 'Updated (practice)', r.team, function () {
+          r.status = prev;
+          if (r.real) { var all2 = hubEntries(); all2.forEach(function (en) { if (en.id === r.id) en.status = prev; }); hubSave(all2); } else { store('hubTd:' + cur, list); }
+          tdScreen(params);
+        }); tdScreen(params);
       };
     });
   }

@@ -58,8 +58,8 @@
 
   /* Type: Arial is the official typeface */
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --fs-xs: .75rem;     /* 12px — eyebrows only */
-  --fs-sm: .875rem;    /* 14px — secondary labels */
+  --fs-xs: .8125rem;   /* 13px — eyebrows only */
+  --fs-sm: .9375rem;   /* 15px — secondary labels */
   --fs-md: 1rem;       /* 16px — body */
   --fs-lg: 1.1875rem;  /* 19px */
   --fs-xl: 1.375rem;   /* 22px — section headings */
@@ -114,6 +114,7 @@
 html { font-size: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html[data-text="large"]  { font-size: 112.5%; }
 html[data-text="xlarge"] { font-size: 125%; }
+html[data-text="xxlarge"] { font-size: 150%; }
 
 * { box-sizing: border-box; }
 /* Never put overflow on html/body: on iPhone Safari that detaches the fixed
@@ -1535,3 +1536,27 @@ h1 { font-weight: 800; }
 .stage { padding-top: 6px; padding-bottom: 34px; margin-bottom: -18px; }
 .hscroll:has(.pcard) { padding-top: 6px; padding-bottom: 34px; margin-bottom: -18px; }
 .pcard { box-shadow: 0 2px 4px rgba(35, 17, 32, .10), 0 10px 22px rgba(35, 17, 32, .16); }
+
+/* ===== HIG review fixes ===== */
+.hbar { gap: 12px; }
+.dateblock small { font-size: .75rem; }
+.hub__label { text-transform: none; letter-spacing: .01em; font-size: var(--fs-sm); font-weight: 700; }
+.chip[aria-pressed="true"] { background: var(--heading); color: var(--surface); border-color: transparent; }
+:root[data-theme="dark"] .chip[aria-pressed="true"] { background: #fff; color: #231120; }
+.chip[aria-pressed="true"] .chip__dot { border-color: currentColor; }
+.segmented button[aria-pressed="true"], .segmented button[aria-selected="true"] { background: var(--heading); color: var(--surface); }
+:root[data-theme="dark"] .segmented button[aria-pressed="true"], :root[data-theme="dark"] .segmented button[aria-selected="true"] { background: #fff; color: #231120; }
+.segmented--cat [role="tab"][aria-selected="true"] { background: var(--cat-solid); color: #231120; }
+.cal__day { width: 44px; height: 44px; }
+button.cal__day { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.cal__n { font-size: 1rem; line-height: 1; } .cal__tag { font-size: .625rem; font-weight: 800; line-height: 1; margin-top: 2px; opacity: .8; }
+.monthbar--cal > .i, .monthbar--cal .monthbar__month { display: none; }
+.monthbar--cal { justify-content: flex-end; }
+.cmap__pin--on span { display: grid; place-items: center; width: 22px; height: 22px; font-size: 13px; line-height: 1; color: #231120; }
+.detail-date--plain { margin: var(--s2) 0 var(--s3); }
+.chero__img--wide { aspect-ratio: 2 / 1; }
+.rcard__meta { -webkit-line-clamp: 2; }
+.chips { -webkit-mask-image: linear-gradient(90deg, #000 90%, transparent); mask-image: linear-gradient(90deg, #000 90%, transparent); }
+.fielderr { display: block; color: var(--brand-red); font-weight: 700; font-size: var(--fs-sm); margin-top: 4px; }
+html[data-text="xxlarge"] .tabbar a { font-size: .6875rem; }
+html[data-text="xxlarge"] .hub__stats { grid-template-columns: repeat(2, 1fr); }
