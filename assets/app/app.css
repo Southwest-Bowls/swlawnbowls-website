@@ -2130,3 +2130,7 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 .welcome__brand { color: #14101a; text-shadow: none; background: linear-gradient(145deg, rgba(255,255,255,.85), rgba(255,255,255,.5)) !important; }
 .clcard__tag--open, .pcard__cat { color: #14101a; text-shadow: none; }
 .clcard__tag--open { background: linear-gradient(145deg, rgba(228,245,138,.85), rgba(228,245,138,.5)) !important; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,.6); }
+
+.hbar__logo { flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,.6), 0 6px 16px rgba(35,17,32,.18); margin-right: 4px; }
+.hbar__logo img { width: 28px; height: auto; }
+.hbar__text { flex: 1; min-width: 0; }
