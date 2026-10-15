@@ -1987,3 +1987,12 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 .signin .mfield__box { border-radius: 999px; min-height: 54px; background: var(--surface); border: 1px solid var(--line); }
 .signin__foot { font-size: var(--fs-sm); }
 .signin .btn--wide { background: var(--heading); color: var(--bg); }
+
+.sbrand { position: relative; margin: 0 0 46px; }
+.sbrand__photo { height: 150px; border-radius: 28px; background: var(--subtle) var(--ph) center / cover no-repeat; }
+.sbrand__logo { position: absolute; left: 50%; bottom: -38px; margin-left: -41px; width: 82px; height: 82px; display: grid; place-items: center; border-radius: 26px; background: #fff; box-shadow: 0 10px 26px rgba(35,17,32,.18); }
+.sbrand__logo img { width: 54px; height: auto; }
+.signin .signin__h, .signin .signin__sub { text-align: center; }
+.signin__tagline { align-self: center; width: 140px; height: auto; margin-top: var(--s5); opacity: .9; }
+.signin__top { position: absolute; top: calc(var(--safe-t) + 20px); left: calc(var(--gutter) + 10px); z-index: 2; margin: 0; }
+.signin { padding-top: calc(var(--safe-t) + var(--s2)); }

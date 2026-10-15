@@ -2440,7 +2440,9 @@
       '<path d="M18 28 60 58l42-30" class="sa-flap"/><circle cx="96" cy="22" r="11" class="sa-dot"/><path d="m91 22 4 4 7-8" class="sa-tick"/></svg>';
     function shell(step, inner, backTo) {
       view.innerHTML = '<div class="signin"><div class="signin__top"><button class="circbtn" type="button" data-sback aria-label="Back">' + icon('back') + '</button>' +
-        '<span class="signin__step">Step ' + step + ' of 2</span></div>' + inner + '</div>';
+        '<span class="signin__step">Step ' + step + ' of 2</span></div>' +
+        '<div class="sbrand"><div class="sbrand__photo" style="--ph:url(\'/photos/clubs/long-beach.jpg\')"></div><span class="sbrand__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls Division" width="56" height="66"></span></div>' +
+        inner + '<img class="signin__tagline" src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls: A Sport for Life!" width="140" height="66" loading="lazy"></div>';
       view.querySelector('[data-sback]').addEventListener('click', function () {
         if (backTo) { backTo(); return; }
         if (step === 1 && !params.get('step')) { landingStep(); return; }
@@ -2455,7 +2457,7 @@
     }
     function emailStep(msg) {
       clearInterval(timer);
-      shell(1, '<h1 class="signin__h">Log in or create an account</h1><p class="signin__sub">Enter your email and we’ll send you a code. No password to remember.</p>' +
+      shell(1, '<h1 class="signin__h">Log in or create an account</h1><p class="signin__sub">Enter your email and we’ll send you a code.</p>' +
         (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
         '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
         '<input id="s-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="' + esc(email) + '" required></span></label>' +
@@ -2978,7 +2980,7 @@
 
     function signInForm(msg) {
       box.innerHTML =
-        '<h3 class="signin__title">Sign in</h3><p class="signin__sub">We’ll email you a link. No password needed.</p>' +
+        '<h3 class="signin__title">Sign in</h3><p class="signin__sub">We’ll email you a link.</p>' +
         (msg ? '<div class="note" role="alert"><b>Sign-in didn’t work</b>' + esc(msg) + '</div>' : '') +
         '<form class="mform" id="m-signin" novalidate>' +
           '<label class="mfield mfield--icon"><span>Email</span><span class="mfield__box">' + icon('mail') + '<input id="m-email" type="email" autocomplete="email" inputmode="email" required></span></label>' +
