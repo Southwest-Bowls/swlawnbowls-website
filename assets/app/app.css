@@ -1470,3 +1470,7 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--br
 .eband > .iconbtn { position: absolute; top: 10px; right: 10px; }
 .hub__stat > b span, .hub__stat > b .roll span { font-size: inherit; color: inherit; font-weight: inherit; }
 .hub__stat > b .roll { vertical-align: top; }
+
+.settings--danger { border-color: var(--brand-red); }
+.btn--danger { background: var(--brand-red); color: #fff; }
+.btn--ghost.btn--danger { background: transparent; color: var(--brand-red); border: 2px solid var(--brand-red); }

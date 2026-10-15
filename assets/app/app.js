@@ -2003,6 +2003,10 @@
       '<section class="settings" aria-labelledby="h-sv"><h2 id="h-sv">Saved events</h2><p>' + (n ? n + ' event' + (n === 1 ? '' : 's') + ' saved on this phone. Saving an event doesn’t enter you in it.' : 'No events saved yet.') + '</p>' +
       (n ? '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-saved>Clear saved events</button></div>' : '') + '</section>' +
       '<section class="settings" aria-labelledby="h-fc"><h2 id="h-fc">Followed clubs</h2><div id="fc-list"></div></section>' +
+      '<section class="settings settings--danger" aria-labelledby="h-del"><h2 id="h-del">Delete my account and data</h2>' +
+        '<p>' + (memberSession() ? 'This deletes your sign-in account and everything kept for it, and clears this phone. It cannot be undone.' : 'You are using the app without an account. This clears your saved events, followed clubs, profile and photo from this phone. It cannot be undone.') + '</p>' +
+        '<div id="del-box"><div class="actions"><button class="btn btn--ghost btn--danger" type="button" data-del-start>Delete my ' + (memberSession() ? 'account and data' : 'data from this phone') + '</button></div></div>' +
+        '<p class="footnote">Published tournament results stay public. They are the Division’s record and are not part of your account.</p></section>' +
       (!standalone ? '<section class="settings" aria-labelledby="h-inst"><h2 id="h-inst">Add to your home screen</h2><p>Get the Southwest Bowls icon on your phone.</p><div class="actions"><a class="btn" href="/get-the-app" target="_blank" rel="noopener">How to add it</a></div></section>' : '') +
       '<p class="footnote">Southwest Bowls app · information from swlawnbowls.org</p>';
     // Followed clubs list (names from clubs-data.json); unfollow in place
@@ -2023,6 +2027,27 @@
     }).catch(function () {});
     view.addEventListener('click', function (ev) {
       if (ev.target.closest('[data-clear-saved]')) { store('saved', []); toast('Saved events cleared'); render(); }
+      if (ev.target.closest('[data-del-start]')) {
+        var db = document.getElementById('del-box');
+        db.innerHTML = '<p role="alert"><b>Are you sure?</b> ' + (memberSession() ? 'Your account will be deleted.' : 'Your data on this phone will be cleared.') + '</p><div class="actions"><button class="btn btn--danger" type="button" data-del-go>Yes, delete</button><button class="btn btn--ghost" type="button" data-del-cancel>Keep my data</button></div>';
+        db.querySelector('[data-del-cancel]').focus(); return;
+      }
+      if (ev.target.closest('[data-del-cancel]')) { settings(); return; }
+      if (ev.target.closest('[data-del-go]')) {
+        var wipe = function () {
+          try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('swd:') === 0) localStorage.removeItem(k); }); sessionStorage.clear(); } catch (e) {}
+          (window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve()).then(function () {
+            toast('Deleted'); go('/app', true);
+          });
+        };
+        if (!memberSession()) { wipe(); return; }
+        // Signed in: ask the server to delete the account first; only then clear the phone
+        memberRpc('delete_my_account').then(wipe, function () {
+          var db2 = document.getElementById('del-box');
+          db2.innerHTML = '<div class="note" role="alert"><b>We couldn’t delete the account just now.</b>Try again in a minute. If it keeps failing, email apps@giuliagallo.com from your sign-in address and we will delete it for you.</div><div class="actions"><button class="btn btn--ghost" type="button" data-del-start>Try again</button></div>';
+        });
+        return;
+      }
       if (ev.target.closest('[data-clear-cache]')) {
         (window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve())
           .then(function () { toast('Offline copies cleared'); });
