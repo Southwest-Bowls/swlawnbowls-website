@@ -2257,33 +2257,70 @@
     var p = store('profile') || {};
     var first = String(p.name || '').trim().split(/\s+/)[0];
     var chips = [p.division, p.club].filter(Boolean).map(function (c) { return '<span class="idhead__chip">' + esc(c) + '</span>'; }).join('');
-    return '<button class="idhead" type="button" data-edit-profile aria-label="Edit your details">' +
+    return '<a class="idhead" href="/app/my/profile" aria-label="Open my profile">' +
       '<span class="idhead__avatar" aria-hidden="true">' + (initials(p.name) ? esc(initials(p.name)) : icon('person')) + '</span>' +
       '<span class="idhead__text"><span class="idhead__name">' + (first ? 'Hi, ' + esc(first) : 'Welcome to Southwest Bowls') + '</span>' +
       (chips ? '<span class="idhead__chips">' + chips + '</span>' : '<span class="idhead__meta">Guest · Tap to add details</span>') + '</span>' +
-      icon('chev', 'i--sm') + '</button>';
+      icon('chev', 'i--sm') + '</a>';
   }
-  function wireProfile() {
-    var b = view.querySelector('[data-edit-profile]'); if (!b) return;
-    b.addEventListener('click', function () {
-      var p = store('profile') || {};
-      openDialog('Your details',
-        '<p class="muted">Optional, and kept on this phone only. You never need to be an SWD member to use the app or to enter an event.</p>' +
-        '<form class="mform" id="g-form" novalidate>' +
-          '<label class="mfield mfield--icon"><span>Your name</span><span class="mfield__box">' + icon('person') + '<input id="g-name" type="text" autocomplete="name" value="' + esc(p.name || '') + '"></span></label>' +
-          '<label class="mfield mfield--icon"><span>Home division or country</span><span class="mfield__box">' + icon('pin') + '<input id="g-div" type="text" list="g-div-list" value="' + esc(p.division || '') + '"></span>' +
-            '<datalist id="g-div-list">' + DIVISION_HINTS.map(function (d) { return '<option value="' + esc(d) + '">'; }).join('') + '</datalist></label>' +
-          '<label class="mfield mfield--icon"><span>Home club</span><span class="mfield__box">' + icon('people') + '<input id="g-club" type="text" value="' + esc(p.club || '') + '"></span></label>' +
-          '<div class="actions"><button class="btn" type="submit">Save</button></div></form>');
-      document.getElementById('g-form').addEventListener('submit', function (ev) {
-        ev.preventDefault();
-        var f = ev.target;
-        store('profile', { name: f.querySelector('#g-name').value.trim(), division: f.querySelector('#g-div').value.trim(), club: f.querySelector('#g-club').value.trim() });
-        closeDialog(); toast('Saved');
-        var h = view.querySelector('[data-edit-profile]'); if (h) { h.outerHTML = profileHeader(); wireProfile(); }
-      });
+  // My profile page: all on this phone. Bio and honours are typed by the player; the season numbers and
+  // timeline come from the published results; the photo is resized and kept here, never uploaded.
+  function profilePage() {
+    setTitle('My profile');
+    var p = store('profile') || {};
+    return loadResults().catch(function () { return []; }).then(function (list) {
+      var mine = p.name ? myResults(list, p.name) : [];
+      var tourns = new Set(mine.map(function (m) { return m.r.id; })).size;
+      var pod = mine.filter(function (m) { return +m.rank >= 1 && +m.rank <= 3; }).length, wins = mine.filter(function (m) { return +m.rank === 1; }).length;
+      var photo = store('memberPhoto:self');
+      var honours = (p.honours || []).slice().sort(function (a, b) { return String(b.year) > String(a.year) ? 1 : -1; });
+      // Partners played with most
+      var pc = {}; mine.forEach(function (m) { m.partners.forEach(function (n) { n = n.trim(); if (n) pc[n] = (pc[n] || 0) + 1; }); });
+      var partners = Object.keys(pc).sort(function (a, b) { return pc[b] - pc[a]; }).filter(function (n) { return pc[n] > 1; }).slice(0, 5);
+      view.innerHTML = backLink('/app/my', 'My SWD') +
+        '<section class="pro"><button class="pro__photo" type="button" data-photo aria-label="' + (photo ? 'Change photo' : 'Add a photo') + '">' +
+          (photo ? '<img src="' + esc(photo) + '" alt="" width="96" height="120">' : (initials(p.name) ? esc(initials(p.name)) : icon('person'))) + '</button>' +
+          '<input type="file" id="pro-photo" accept="image/*" hidden>' +
+          '<div class="pro__text"><h1 class="pro__name">' + esc(p.name || 'Your name') + '</h1>' +
+          '<div class="idhead__chips">' + [p.division, p.club].filter(Boolean).map(function (c) { return '<span class="idhead__chip">' + esc(c) + '</span>'; }).join('') + '</div></div>' +
+          '<button class="btn btn--ghost btn--sm pro__edit" type="button" data-edit-profile>Edit</button></section>' +
+        '<p class="pro__bio">' + (p.bio ? esc(p.bio).replace(/\n/g, '<br>') : '<span class="muted">Add a short bio with Edit.</span>') + '</p>' +
+        (p.name ? '<div class="hub__stats mystats"><span class="hub__stat"><b>' + tourns + '</b><span>Tournaments</span></span><span class="hub__stat"><b>' + pod + '</b><span>Podiums</span></span><span class="hub__stat"><b>' + wins + '</b><span>Wins</span></span></div>' : '') +
+        '<section class="block"><h2>Honours</h2>' + (honours.length ? '<ul class="honours">' + honours.map(function (h) { return '<li><span class="honours__yr">' + esc(h.year || '') + '</span><span>' + esc(h.text) + '</span></li>'; }).join('') + '</ul>'
+          : '<p class="muted">Titles, selections and roles that the published results don’t show. Add them with Edit.</p>') + '</section>' +
+        (partners.length ? '<section class="block"><h2>Played most with</h2><p>' + partners.map(esc).join(' · ') + '</p></section>' : '') +
+        '<section class="block"><h2>Results' + (mine.length ? ' (' + mine.length + ')' : '') + '</h2>' +
+          (mine.length ? '<ul class="list list--plain">' + mine.map(function (m) {
+            return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(m.r.id) + '">' + resultBlock(m.r) + '<span class="rcard__body"><span class="rcard__title">' + esc(shortTitle(m.r.t.title)) + '</span>' +
+              '<span class="rcard__meta">' + esc([placeWord(m.rank) || m.rankLabel, m.div, m.partners.length ? 'with ' + m.partners.join(', ') : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>'; }).join('') + '</ul>'
+            : '<p class="muted">' + (p.name ? 'No published results under “' + esc(p.name) + '”. Results match the full name exactly as the Division published it.' : 'Add your name with Edit to see your published results.') + '</p>') + '</section>' +
+        '<p class="footnote">Everything on this page is kept on this phone only. Results come from the Division’s published results and are matched by name.</p>';
+      var inp = view.querySelector('#pro-photo');
+      view.querySelector('[data-photo]').addEventListener('click', function () { inp.click(); });
+      inp.addEventListener('change', function () { if (!inp.files[0]) return; savePhoto(inp.files[0], 'self').then(function () { profilePage(); toast('Photo saved on this phone'); }, function () { toast('That photo couldn’t be used. Try another.'); }); });
+      view.querySelector('[data-edit-profile]').addEventListener('click', function () { editProfileSheet(function () { profilePage(); }); });
     });
   }
+  function editProfileSheet(done) {
+    var p = store('profile') || {};
+    var hon = (p.honours || []).map(function (h) { return (h.year ? h.year + ' ' : '') + h.text; }).join('\n');
+    openDialog('Edit profile',
+      '<p class="muted">Kept on this phone only.</p><form class="mform" id="g-form" novalidate>' +
+      '<label class="mfield mfield--icon"><span>Your name</span><span class="mfield__box">' + icon('person') + '<input id="g-name" type="text" autocomplete="name" value="' + esc(p.name || '') + '"></span></label>' +
+      '<label class="mfield mfield--icon"><span>Home division or country</span><span class="mfield__box">' + icon('pin') + '<input id="g-div" type="text" list="g-div-list" value="' + esc(p.division || '') + '"></span><datalist id="g-div-list">' + DIVISION_HINTS.map(function (d) { return '<option value="' + esc(d) + '">'; }).join('') + '</datalist></label>' +
+      '<label class="mfield mfield--icon"><span>Home club</span><span class="mfield__box">' + icon('people') + '<input id="g-club" type="text" value="' + esc(p.club || '') + '"></span></label>' +
+      '<label class="mfield"><span>Bio</span><textarea id="g-bio" rows="4" maxlength="600">' + esc(p.bio || '') + '</textarea></label>' +
+      '<label class="mfield"><span>Honours (one per line, start with the year)</span><textarea id="g-hon" rows="5" maxlength="1500" placeholder="2024 Team USA, ...">' + esc(hon) + '</textarea></label>' +
+      '<div class="actions"><button class="btn btn--wide" type="submit">Save</button></div></form>');
+    document.getElementById('g-form').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var f = ev.target;
+      var honours = f.querySelector('#g-hon').value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) { var m = /^((?:19|20)\d{2})\b[\s:,.\-–—]*(.*)$/.exec(l); return m && m[2] ? { year: m[1], text: m[2] } : { year: '', text: l }; });
+      store('profile', { name: f.querySelector('#g-name').value.trim(), division: f.querySelector('#g-div').value.trim(), club: f.querySelector('#g-club').value.trim(), bio: f.querySelector('#g-bio').value.trim(), honours: honours });
+      closeDialog(); toast('Saved'); if (done) done();
+    });
+  }
+  function wireProfile() {}
   // My SWD: membership (sign-in, preview while testing), then the things
   // kept on this phone — saved events and followed clubs — which never need
   // an account. Entries and personal results appear here once they exist.
@@ -2315,10 +2352,10 @@
       var gold = mine.filter(function (m) { return +m.rank === 1; }).length, pod = mine.filter(function (m) { return +m.rank >= 1 && +m.rank <= 3; }).length;
       el.innerHTML = '<section class="section mysec" aria-labelledby="h-myres"><div class="section__head"><h2 class="section__title" id="h-myres">My results</h2></div>' +
         (mine.length ? '<div class="hub__stats mystats">' + '<span class="hub__stat"><b>' + new Set(mine.map(function (m) { return m.r.id; })).size + '</b><span>Tournaments</span></span><span class="hub__stat"><b>' + pod + '</b><span>Podiums</span></span><span class="hub__stat"><b>' + gold + '</b><span>Wins</span></span></div>' +
-          '<ul class="list list--plain">' + mine.slice(0, 5).map(function (m) {
+          '<ul class="list list--plain">' + mine.slice(0, 3).map(function (m) {
             return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(m.r.id) + '">' + resultBlock(m.r) + '<span class="rcard__body"><span class="rcard__title">' + esc(shortTitle(m.r.t.title)) + '</span>' +
               '<span class="rcard__meta">' + esc([placeWord(m.rank) || m.rankLabel, m.div, m.partners.length ? 'with ' + m.partners.join(', ') : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>';
-          }).join('') + '</ul>' + (mine.length > 5 ? '<p class="count">+ ' + (mine.length - 5) + ' more on the Results tab</p>' : '')
+          }).join('') + '</ul>' + '<a class="textlink" href="/app/my/profile">See all ' + mine.length + ' on my profile' + icon('chev', 'i--sm') + '</a>'
           : '<p class="muted">No published results under “' + esc(prof0.name) + '” yet. Results match the full name exactly as the Division published it.</p>') +
         '<p class="footnote">Matched on this phone from published results. Nothing is sent anywhere.</p></section>';
     }).catch(function () {});
@@ -2549,6 +2586,7 @@
     [/^\/app\/more\/membership\/?$/, mySwd, 'my'],   // earlier preview address
     [/^\/app\/more\/(play|division|ladies-day|archives|follow|resources)\/?$/, subsection, 'more'],
     [/^\/app\/signin\/?$/, signInScreen, 'my'],
+    [/^\/app\/my\/profile\/?$/, profilePage, 'my'],
     [/^\/app\/search\/?$/, searchScreen, 'home'],
     [/^\/app\/page\/([a-z0-9-]+)\/?$/, infoPage, 'more']
   ];

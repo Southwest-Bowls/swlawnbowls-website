@@ -1293,3 +1293,16 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .step__body .actions { margin-top: var(--s2); }
 .facts--entry { margin: var(--s2) 0 var(--s3); }
 .block .steps { padding-left: 0; }
+
+/* Profile page */
+.pro { display: grid; grid-template-columns: auto 1fr auto; gap: var(--s3); align-items: center; margin: var(--s2) 0 var(--s3); }
+.pro__photo { width: 84px; height: 105px; border-radius: 18px; border: 0; overflow: hidden; background: var(--tint-blue); color: var(--heading); font: inherit; font-weight: 800; font-size: 1.6rem; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.pro__photo img { width: 100%; height: 100%; object-fit: cover; }
+.pro__photo .i { width: 36px; height: 36px; }
+.pro__name { font-size: 1.5rem; line-height: 1.15; margin-bottom: 6px; }
+.pro__bio { margin: 0 0 var(--s3); }
+.honours { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); }
+.honours li { display: grid; grid-template-columns: 56px 1fr; gap: var(--s3); }
+.honours__yr { font-weight: 800; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.mfield textarea { width: 100%; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); color: var(--text); font: inherit; font-size: max(16px, 1rem); resize: vertical; }
+.block .list--plain, .block .honours { padding-left: 0; }
