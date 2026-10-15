@@ -2457,7 +2457,7 @@
     }
     function emailStep(msg) {
       clearInterval(timer);
-      shell(1, '<h1 class="signin__h">Welcome to Southwest Bowls</h1><p class="signin__sub">Enter your email and we’ll send you a code.</p>' +
+      shell(1, '<h1 class="signin__h">Welcome to Southwest Bowls</h1><p class="signin__sub"><b class="signin__lead">Log in or create an account</b>Enter your email and we’ll send you a code.</p>' +
         (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
         '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
         '<input id="s-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="' + esc(email) + '" required></span></label>' +
