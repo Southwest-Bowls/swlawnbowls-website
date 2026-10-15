@@ -800,6 +800,89 @@
   var CRITICAL = /cancel|postpon|venue|reschedul|new date|moved/i;
   function isCritical(x) { return !!x.e.alert && CRITICAL.test((x.e.alertLabel || '') + ' ' + x.e.alert); }
 
+
+  /* ---------------------------------------------------------------
+     Personalization: what you are here for, setup progress, smart defaults.
+     Kept on this phone. Used only to put things in a better order.
+     --------------------------------------------------------------- */
+  var TOPICS = [['tournaments', 'cal', 'Tournaments and entries'], ['results', 'trophy', 'Results and champions'], ['standings', 'medal', 'Standings'],
+    ['clubs', 'pin', 'Clubs near me'], ['watch', 'tv', 'Southwest TV'], ['news', 'news', 'News']];
+  var CAT_PICKS = ["Women's", "Men's", 'Mixed', 'Open'];
+  function interests() { var v = store('interests'); return v && typeof v === 'object' ? v : null; }
+  function wantsTopic(t) { var v = interests(); return !!(v && (v.topics || []).indexOf(t) >= 0); }
+  function interestCats() { var v = interests(); return (v && v.cats) || []; }
+  function interestsForm() {
+    var v = interests() || { topics: [], cats: [] };
+    return '<div class="ichips" role="group" aria-label="What you are here for">' + TOPICS.map(function (t) {
+      return '<button type="button" class="ichip" data-itopic="' + t[0] + '" aria-pressed="' + ((v.topics || []).indexOf(t[0]) >= 0) + '">' + icon(t[1], 'i--sm') + '<span>' + esc(t[2]) + '</span></button>'; }).join('') + '</div>' +
+      '<h3 class="ichips__h">Which events?</h3><div class="ichips" role="group" aria-label="Which events">' + CAT_PICKS.map(function (c) {
+      return '<button type="button" class="ichip" data-icat="' + esc(c) + '" aria-pressed="' + ((v.cats || []).indexOf(c) >= 0) + '"><i class="chip__dot ' + CAT_DOT[c] + '" aria-hidden="true"></i><span>' + esc(c) + '</span></button>'; }).join('') + '</div>';
+  }
+  function readInterests(root) {
+    var o = { topics: [], cats: [], at: Date.now() };
+    root.querySelectorAll('[data-itopic][aria-pressed="true"]').forEach(function (b) { o.topics.push(b.getAttribute('data-itopic')); });
+    root.querySelectorAll('[data-icat][aria-pressed="true"]').forEach(function (b) { o.cats.push(b.getAttribute('data-icat')); });
+    return o;
+  }
+  function openInterests(after) {
+    openDialog('Make it yours', '<p class="muted">Pick what matters to you and we’ll put it first, and choose how your profile card looks. It stays on your phone.</p>' + interestsForm() +
+      '<h3 class="ichips__h">Your profile card</h3>' + lookForm(look(), (store('profile') || {}).name) +
+      '<div class="actions"><button class="btn btn--wide btn--dark" type="button" data-int-save>Save</button></div>');
+    var box = document.getElementById('dlg-body'); wireLook(box);
+    box.querySelector('[data-int-save]').addEventListener('click', function () { store('interests', readInterests(box)); store('look', readLook(box)); closeDialog(); toast('Saved. Your app is now more yours.'); if (after) after(); });
+  }
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-itopic], [data-icat]'); if (!b) return;
+    b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); haptic();
+  });
+  // Five steps to a set-up app; each links to where it is done
+  function setupSteps() {
+    var p = store('profile') || {};
+    return [
+      { k: 'signin', label: 'Sign in', done: !!memberSession(), href: '/app/signin' },
+      { k: 'profile', label: 'Profile', done: !!(p.name && p.division), href: '/app/my/profile' },
+      { k: 'club', label: 'Club', done: !!(p.club || followed().length), href: '/app/more/clubs' },
+      { k: 'photo', label: 'Photo', done: !!store('memberPhoto:self'), href: '/app/my/profile' },
+      { k: 'interests', label: 'Interests', done: !!interests(), href: '' }
+    ];
+  }
+  function setupCard() {
+    if (store('setupDone')) return '';
+    var st = setupSteps(), n = st.filter(function (x) { return x.done; }).length, pct = Math.round(n / st.length * 100);
+    if (n === st.length) {
+      store('setupDone', true);
+      var conf = ''; for (var i = 0; i < 22; i++) conf += '<i style="--x:' + ((i * 37) % 100) + '%;--d:' + ((i * 53) % 900) + 'ms;--c:' + ['#6a50d6', '#f2a43a', '#2a8fa0', '#e5484d', '#a6d63a'][i % 5] + '"></i>';
+      return '<section class="setup setup--done" aria-label="Setup complete"><div class="confetti" aria-hidden="true">' + conf + '</div><b class="setup__t">You’re all set!</b><p>Your profile is complete. The app now puts what you care about first.</p></section>';
+    }
+    return '<section class="setup" aria-labelledby="h-setup"><div class="setup__head"><b id="h-setup" class="setup__t">Finish setting up</b><span class="setup__pct">' + pct + '%</span></div>' +
+      '<div class="setup__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-label="Setup progress"><i style="width:' + pct + '%"></i></div>' +
+      '<ol class="setup__steps">' + st.map(function (x, i) {
+        var inner = '<span class="setup__dot' + (x.done ? ' is-done' : '') + '" aria-hidden="true">' + (x.done ? icon('check') : (i + 1)) + '</span><span class="setup__l">' + esc(x.label) + (x.done ? '<span class="sr-only"> done</span>' : '') + '</span>';
+        return '<li>' + (x.k === 'interests' && !x.done ? '<button type="button" class="setup__s" data-open-interests>' + inner + '</button>' : x.done ? '<span class="setup__s">' + inner + '</span>' : '<a class="setup__s" href="' + esc(x.href) + '">' + inner + '</a>') + '</li>';
+      }).join('') + '</ol></section>';
+  }
+
+  // "Make it yours": a palette and a card style for your profile card
+  var PALETTES = [['lilac', 'Lilac'], ['sky', 'Sky'], ['mint', 'Mint'], ['rose', 'Rose']];
+  var STYLES = [['soft', 'Soft'], ['dark', 'Dark'], ['minimal', 'Minimal']];
+  function look() { var v = store('look'); return v && v.palette ? v : { palette: 'lilac', style: 'soft' }; }
+  function lookForm(l, name) {
+    return '<div class="lookcard" data-pal="' + l.palette + '" data-sty="' + l.style + '" data-lookcard><span class="lookcard__av" aria-hidden="true">' + icon('person') + '</span><b class="lookcard__n">' + (name ? esc(name) : 'Your name') + '</b><span class="lookcard__s">Southwest Bowls</span></div>' +
+      '<h3 class="ichips__h">Color palette</h3><div class="swatches" role="radiogroup" aria-label="Color palette">' + PALETTES.map(function (c) {
+        return '<button type="button" class="swatch" data-pal-pick="' + c[0] + '" data-pal="' + c[0] + '" role="radio" aria-checked="' + (l.palette === c[0]) + '" aria-label="' + c[1] + '"></button>'; }).join('') + '</div>' +
+      '<h3 class="ichips__h">Card style</h3><div class="swatches swatches--sty" role="radiogroup" aria-label="Card style">' + STYLES.map(function (c) {
+        return '<button type="button" class="swatch swatch--sty" data-sty-pick="' + c[0] + '" data-sty="' + c[0] + '" data-pal="' + l.palette + '" role="radio" aria-checked="' + (l.style === c[0]) + '"><span>' + c[1] + '</span></button>'; }).join('') + '</div>';
+  }
+  function wireLook(root) {
+    root.addEventListener('click', function (ev) {
+      var pb = ev.target.closest('[data-pal-pick]'), sb = ev.target.closest('[data-sty-pick]'); if (!pb && !sb) return;
+      var card = root.querySelector('[data-lookcard]'); haptic();
+      if (pb) { root.querySelectorAll('[data-pal-pick]').forEach(function (b) { b.setAttribute('aria-checked', b === pb); }); card.setAttribute('data-pal', pb.getAttribute('data-pal-pick')); root.querySelectorAll('.swatch--sty').forEach(function (b) { b.setAttribute('data-pal', pb.getAttribute('data-pal-pick')); }); }
+      if (sb) { root.querySelectorAll('[data-sty-pick]').forEach(function (b) { b.setAttribute('aria-checked', b === sb); }); card.setAttribute('data-sty', sb.getAttribute('data-sty-pick')); }
+    });
+  }
+  function readLook(root) { var c = root.querySelector('[data-lookcard]'); return c ? { palette: c.getAttribute('data-pal'), style: c.getAttribute('data-sty') } : null; }
+
   function home() {
     setTitle('');
     var today = todayISO(), root = view;
@@ -888,9 +971,9 @@
 
     // 3. Four quick links as round shortcuts
     html += '<nav class="shortcuts" aria-label="Sections">' + [
-      ['/app/events?show=calendar', 'cal', 'Calendar', 'blue'], ['/app/results', 'trophy', 'Results', 'orange'],
-      ['/app/more/clubs', 'pin', 'Clubs', 'blush'], ['/app/watch', 'tv', 'Watch', 'ink']
-    ].map(function (t) {
+      ['/app/events?show=calendar', 'cal', 'Calendar', 'blue', 'tournaments'], ['/app/results', 'trophy', 'Results', 'orange', 'results'],
+      ['/app/more/clubs', 'pin', 'Clubs', 'blush', 'clubs'], ['/app/watch', 'tv', 'Watch', 'ink', 'watch']
+    ].sort(function (a, b) { return (wantsTopic(b[4]) ? 1 : 0) - (wantsTopic(a[4]) ? 1 : 0); }).map(function (t) {
       return '<a class="shortcut shortcut--' + t[3] + '" href="' + t[0] + '"><span class="shortcut__dot">' + icon(t[1]) + '</span><span class="shortcut__label">' + t[2] + '</span></a>';
     }).join('') + '</nav>';
 
@@ -907,13 +990,16 @@
 
     // 4. Upcoming events: a row of cards you swipe sideways
     var more = live.filter(function (x) { return !shownIds[x.id]; }).slice(0, 8);
+    var icats = interestCats(); if (icats.length) more = more.filter(function (x) { return icats.indexOf(x.cat || 'Open') >= 0; }).concat(more.filter(function (x) { return icats.indexOf(x.cat || 'Open') < 0; }));
+    var champFirst = wantsTopic('results') && !wantsTopic('tournaments');
+    if (champFirst) html += '<div id="home-champ"></div>';
     if (more.length) {
       html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head"><h2 class="section__title" id="h-up">Coming up</h2>' +
         '<a class="section__more" href="/app/events">See all' + icon('chev', 'i--sm') + '</a></div><ul class="hscroll">' +
         more.map(function (x) { return '<li>' + photoCard(x, d.clubs, today) + '</li>'; }).join('') + '</ul></section>';
     }
 
-    html += '<div id="home-champ"></div>';
+    if (!champFirst) html += '<div id="home-champ"></div>';
     html += '<div class="tagline"><span class="art-plate"><img src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls — A Sport for Life!" width="341" height="160" decoding="async" loading="lazy"></span></div>';
     html += '<div id="home-partners"></div>';
 
@@ -1088,7 +1174,7 @@
         var oldEv = events.filter(function (x) { return x.clubId === clubKey(clubParam) && x.clubIds && x.clubIds.length; })[0];
         clubParam = oldEv ? oldEv.clubIds[0] : '';
       }
-      var f = { q: params.get('q') || '', month: params.get('month') || '', cat: params.get('cat') || '', club: clubParam };
+      var f = { q: params.get('q') || '', month: params.get('month') || '', cat: params.has('cat') ? params.get('cat') : (interestCats().length === 1 && CATS.indexOf(interestCats()[0]) >= 0 ? interestCats()[0] : ''), club: clubParam };
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
       var segs = [['calendar', 'Calendar'], ['upcoming', 'Upcoming'], ['saved', 'Saved']].concat(hasPast ? [['past', 'Completed']] : []);
       var calMonth = (f.month || today.slice(0, 7)), calDay = (/^\d{4}-\d{2}-\d{2}$/.test(params.get('day') || '') && params.get('day').slice(0, 7) === (f.month || today.slice(0, 7))) ? params.get('day') : '', evLimit = 10, evLastKey = '';
@@ -3086,7 +3172,10 @@
     });
   }
   function openProfileSheet(done, clubNames) {
-    var p = store('profile') || {};
+    var p = Object.assign({}, store('profile') || {}), mc = store('memberCache') || {};
+    if (!p.name && mc.name) p.name = mc.name;
+    if (!p.club && mc.club) p.club = mc.club;
+    if (!p.division && p.club && clubNames.indexOf(p.club) >= 0) p.division = 'Southwest (SWD)';
     var hon = (p.honours || []).map(function (h) { return (h.year ? h.year + ' ' : '') + h.text; }).join('\n');
     openDialog('Edit profile',
       '<p class="muted">Kept on this phone only.</p><form class="mform" id="g-form" novalidate>' +
@@ -3126,20 +3215,22 @@
 
     var pf = store('profile') || {}, pphoto = store('memberPhoto:self'), nSaved = saved().length, nFol = followed().length;
     function prow(href, ic, title, meta) { return '<a class="prow" href="' + href + '"><span class="prow__ic" aria-hidden="true">' + icon(ic) + '</span><span class="prow__t"><b>' + esc(title) + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a>'; }
-    view.innerHTML = '<header class="phero"><span class="phero__brand"><img src="/assets/app/swd-logo.png" alt="" width="22" height="26">Southwest Bowls Division</span><a class="phero__av" href="/app/my/profile" aria-label="Open my profile">' + (pphoto ? '<img src="' + esc(pphoto) + '" alt="">' : (initials(pf.name) ? esc(initials(pf.name)) : icon('person'))) + '</a>' +
+    view.innerHTML = '<header class="phero' + (store('look') ? ' phero--card' : '') + '"' + (store('look') ? ' data-pal="' + look().palette + '" data-sty="' + look().style + '"' : '') + '><span class="phero__brand"><img src="/assets/app/swd-logo.png" alt="" width="22" height="26">Southwest Bowls Division</span><a class="phero__av" href="/app/my/profile" aria-label="Open my profile">' + (pphoto ? '<img src="' + esc(pphoto) + '" alt="">' : (initials(pf.name) ? esc(initials(pf.name)) : icon('person'))) + '</a>' +
         '<h1 class="phero__name">' + (pf.name ? esc(pf.name) : 'Welcome') + '</h1>' +
         '<p class="phero__sub">' + (memberSession() ? 'Signed in' + ([pf.division, pf.club].filter(Boolean).length ? ' · ' : '') : (pf.name ? '' : 'Guest') ) + ([pf.division, pf.club].filter(Boolean).length ? [pf.division, pf.club].filter(Boolean).map(esc).join(' · ') : (memberSession() || pf.name ? '' : ' · Tap the circle to add your details')) + '</p></header>' +
+      setupCard() +
       (preview ? '<section class="section mysec mysec--top" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
         (memberSession() ? '' : '<span class="tag tag--preview">Preview</span>') + '</div><div id="m-box">' + loading() + '</div></section>' : '') +
       '<div class="psheet">' +
         (memberSession() ? '' : '<a class="pbanner" href="/app/signin"><span class="pbanner__t"><b>Sign in or create an account</b><small>Enter tournaments and keep your details</small></span><span class="pbanner__art" aria-hidden="true">' + icon('person') + '</span></a>') +
         '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honors and results' : 'Add your name and bio') + prow('/app/events?show=saved', 'bookmark', 'Saved events', nSaved ? nSaved + ' saved' : 'Nothing saved yet') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + '</div>' +
-        '<div class="pgroup">' + prow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline') + '</div>' +
+        '<div class="pgroup"><button type="button" class="prow prow--btn" data-open-interests><span class="prow__ic" aria-hidden="true">' + icon('star') + '</span><span class="prow__t"><b>My interests</b><small>' + (interests() && (interests().topics || []).length ? (interests().topics.length + ' picked') : 'Choose what you want first') + '</small></span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></button>' + prow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline') + '</div>' +
       '</div>' +
       '<div id="my-res"></div>' + myEntriesHtml();
     var box = view.querySelector('#m-box');
     wireProfile();
     view.onclick = function (ev) {
+      if (ev.target.closest('[data-open-interests]')) { openInterests(function () { render(); }); return; }
       var w = ev.target.closest('[data-withdraw]'); if (!w) return;
       if (w.getAttribute('data-sure') !== '1') { w.setAttribute('data-sure', '1'); w.textContent = 'Tap again to confirm'; return; }
       var all = hubEntries(); all.forEach(function (en) { if (en.id === w.getAttribute('data-withdraw')) en.status = 'withdraw_requested'; }); hubSave(all);
@@ -3230,6 +3321,15 @@
       if (res.state === 'linked') {
         return getJSON('/clubs-data.json').catch(function () { return { clubs: [] }; }).then(function (cd) {
           var m = res.member, club = m.club && (cd.clubs || []).filter(function (c) { return c.id === m.club.id; })[0];
+          try {
+            var mcName = m.club && (club && club.name || m.club.name) || '';
+            store('memberCache', { name: m.name || '', club: mcName });
+            var pr0 = store('profile');
+            if ((!pr0 || !pr0.name) && m.name) {   // smart default: your own name and club from your membership, if you have not typed a profile yet
+              store('profile', { name: m.name, division: 'Southwest (SWD)', country: '', club: mcName, bio: '', badges: [], honours: [] });
+              toast('We added your name and club from your membership.');
+            }
+          } catch (e) {}
           box.innerHTML = memberCardHtml(m, club) + foot; wireChange();
           box.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.parentNode.hidden = true; }); });
           var input = box.querySelector('#m-photo');
@@ -3751,8 +3851,29 @@
       ['/photos/clubs/the-groves.jpg', 'Follow your clubs', 'Save events and follow clubs. It stays on your phone, no account needed.'],
       ['/photos/bill-hiscock-mixed-triples-2026/1th-kindorf-mar-bell.jpg', 'Results and champions', 'Browse past results, podiums and the Division standings.']
     ], i = 0, el = document.createElement('div'); el.className = 'welcome'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Welcome');
+    var wizState = { topics: (interests() || {}).topics || [], cats: (interests() || {}).cats || [], name: (store('profile') || {}).name || '', look: look() };
+    function wizCollect(step) {
+      if (step === 0) wizState.topics = readInterests(el).topics;
+      if (step === 1) wizState.cats = readInterests(el).cats;
+      if (step === 2) { var nm = el.querySelector('#wz-name'); wizState.name = nm ? nm.value.trim() : ''; wizState.look = readLook(el) || wizState.look; }
+    }
+    function drawWiz(step) {
+      el.className = 'welcome welcome--wiz';
+      var top = '<div class="wiz__top"><button class="wiz__back" type="button" data-w-prev aria-label="Back">' + icon('back') + '</button><div class="wiz__bar" role="progressbar" aria-valuemin="0" aria-valuemax="3" aria-valuenow="' + (step + 1) + '" aria-label="Step ' + (step + 1) + ' of 3"><i style="width:' + Math.round((step + 1) / 3 * 100) + '%"></i></div><button class="wiz__skip" type="button" data-w-skip>Skip</button></div>';
+      var rows = function (list, attr) { return '<div class="wrows">' + list.join('') + '</div>'; };
+      var body;
+      if (step === 0) body = '<h1 class="wiz__h" tabindex="-1">What are you here for?</h1><p class="wiz__s">Pick all that apply. We’ll put these first.</p>' + rows(TOPICS.map(function (t) {
+        return '<button type="button" class="wrow" data-itopic="' + t[0] + '" aria-pressed="' + (wizState.topics.indexOf(t[0]) >= 0) + '"><span class="wrow__ic" aria-hidden="true">' + icon(t[1]) + '</span><span class="wrow__l">' + esc(t[2]) + '</span><span class="wrow__ck" aria-hidden="true">' + icon('check', 'i--sm') + '</span></button>'; }));
+      else if (step === 1) body = '<h1 class="wiz__h" tabindex="-1">Which events?</h1><p class="wiz__s">Choose the ones you follow most.</p>' + rows(CAT_PICKS.map(function (c) {
+        return '<button type="button" class="wrow" data-icat="' + esc(c) + '" aria-pressed="' + (wizState.cats.indexOf(c) >= 0) + '"><span class="wrow__ic" aria-hidden="true"><i class="chip__dot ' + CAT_DOT[c] + '"></i></span><span class="wrow__l">' + esc(c) + '</span><span class="wrow__ck" aria-hidden="true">' + icon('check', 'i--sm') + '</span></button>'; }));
+      else body = '<h1 class="wiz__h" tabindex="-1">Design your profile</h1><p class="wiz__s">Make the app yours. You can change it later.</p>' + lookForm(wizState.look, wizState.name) +
+        '<label class="mfield" style="margin-top:14px"><span>Your name (optional)</span><input id="wz-name" type="text" autocomplete="name" value="' + esc(wizState.name) + '" placeholder="Your name"></label>';
+      el.innerHTML = top + '<div class="wiz__body">' + body + '</div><div class="wiz__foot"><button class="btn btn--wide btn--dark" type="button" data-w-int>' + (step === 2 ? 'Finish' : 'Continue') + '</button></div>';
+      if (step === 2) { var nm = el.querySelector('#wz-name'), card = el.querySelector('[data-lookcard] .lookcard__n'); nm.addEventListener('input', function () { card.textContent = nm.value.trim() || 'Your name'; }); }
+    }
     function draw() {
-      if (i >= pages.length) { el.className = 'welcome welcome--auth'; el.innerHTML = authLanding('/photos/clubs/long-beach.jpg', false); return; }
+      if (i >= pages.length && i < pages.length + 3) { drawWiz(i - pages.length); return; }
+      if (i >= pages.length + 3) { el.className = 'welcome welcome--auth'; el.innerHTML = authLanding('/photos/clubs/long-beach.jpg', false); return; }
       var p = pages[i];
       el.className = 'welcome';
       el.innerHTML = '<div class="welcome__photo" style="--ph:url(\'' + p[0] + '\')"></div><span class="welcome__brand"><img src="/assets/app/swd-logo.png" alt="" width="30" height="35"><b>Southwest Bowls</b></span><button class="welcome__skip" type="button" data-w-skip>Skip</button>' +
@@ -3783,12 +3904,22 @@
     el.addEventListener('click', function (ev) {
       if (ev.target.closest('[data-w-skip]')) { done(); return; }
       if (ev.target.closest('[data-w-next]')) { haptic(); i++; draw(); focusIn(); return; }
+      if (ev.target.closest('[data-w-prev]')) { haptic(); wizCollect(i - pages.length); i = Math.max(pages.length - 1, i - 1); draw(); focusIn(); return; }
+      if (ev.target.closest('[data-w-int]')) {
+        haptic(); var stp = i - pages.length; wizCollect(stp);
+        if (stp === 2) {   // finished: keep the choices on this phone, nothing is sent anywhere
+          if (wizState.topics.length || wizState.cats.length) store('interests', { topics: wizState.topics, cats: wizState.cats, at: Date.now() });
+          store('look', wizState.look);
+          if (wizState.name) store('profile', Object.assign({}, store('profile') || {}, { name: wizState.name }));
+        }
+        i++; draw(); focusIn(); return;
+      }
       var b = ev.target.closest('[data-auth]'); if (!b) return; var k = b.getAttribute('data-auth'); haptic();
       if (k === 'guest') done();
       else if (k === 'email') { done(); go('/app/signin?step=email'); }
       else toast((k === 'apple' ? 'Continue with Apple' : 'Continue with Google') + ' switches on with the store release.');
     });
-    document.body.appendChild(el); draw();
+    wireLook(el); document.body.appendChild(el); draw();
     behind.forEach(function (n) { n.setAttribute('inert', ''); n.setAttribute('aria-hidden', 'true'); });
     document.addEventListener('keydown', onKey, true);
     focusIn();
