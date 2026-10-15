@@ -2429,7 +2429,7 @@
           '<h2 class="rcpt__sub">Team</h2><ul class="rcpt__team">' + en.players.map(function (p) { return '<li><b>' + esc(p.role) + '</b> ' + esc(p.name) + (p.club ? ' <span class="muted">· ' + esc(p.club) + '</span>' : '') + '</li>'; }).join('') + '</ul>' +
           (en.method !== 'online' ? '<p class="rcpt__note">' + (en.method === 'check' ? 'Mail your check to: ' + esc((e.contact && e.contact.mailTo) || 'the tournament organizer') + '. ' : 'Bring cash to the green. ') + 'Your place is held. You will show as paid once the organizer receives it.</p>' : '') +
           '<p class="rcpt__foot">Keep this page for your records: take a screenshot or use Share. A confirmation would also be emailed to ' + esc(en.email) + '.</p></article>' +
-        '<div class="actions">' + (x ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '">View the tournament</a>' : '') + shareBtn(en.title + ' receipt ' + en.id, '/app/my') + '</div>';
+        '<div class="actions"><a class="btn btn--wide" href="/app">Back to the app</a>' + (x ? '<a class="btn btn--ghost btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '">View the tournament</a>' : '') + shareBtn(en.title + ' receipt ' + en.id, '/app/my') + '</div>';
       window.scrollTo(0, 0);
     });
   }
