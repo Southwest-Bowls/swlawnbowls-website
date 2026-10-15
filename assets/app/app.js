@@ -868,7 +868,7 @@
       var pc = '';
       if (underway.length) {
         var ue = underway[0], ls = ue.e.liveScoring || {}, hasDraw = (ls.sheets && ls.sheets.length) || ls.pubUrl;
-        pc = '<a class="pulse pulse--live" href="/app/events/' + encodeURIComponent(ue.id) + (hasDraw ? '?tab=draw' : '') + '"><span class="pulse__dot" aria-hidden="true"></span><span class="pulse__t"><small>Happening now</small><b>' + esc(ue.short) + '</b><span>' + esc(ue.clubLabel) + (underway.length > 1 ? ' · +' + (underway.length - 1) + ' more' : '') + '</span></span>' + (hasDraw ? '<span class="pulse__go">Draw & scores' + icon('chev', 'i--sm') + '</span>' : '') + '</a>';
+        pc = '<a class="pulse pulse--live" href="/app/events/' + encodeURIComponent(ue.id) + (hasDraw ? '?tab=draw' : '') + '"><span class="pulse__dot" aria-hidden="true"></span><span class="pulse__t"><small>Happening now</small><b>' + esc(ue.short) + '</b><span>' + esc(ue.clubLabel) + (underway.length > 1 ? ' · +' + (underway.length - 1) + ' more' : '') + '</span></span>' + (hasDraw ? '<span class="pulse__go">Draw' + icon('chev', 'i--sm') + '</span>' : '') + '</a>';
       } else if (future.length) {
         var dd = daysBetween(today, nextStart);
         pc = '<div class="pulse"><b class="pulse__n rollnum" data-roll="' + dd + '" data-roll-key="home-pulse-' + today + '-' + dd + '">' + dd + '</b><div class="pulse__t"><small>' + (dd === 1 ? 'day to go' : 'days to go') + ' · ' + esc(fmt(nextStart, { weekday: 'short', month: 'short', day: 'numeric' })) + '</small>' +
@@ -1247,7 +1247,7 @@
       var isClosed = !!(st && (st.kind === 'closed' || st.kind === 'cancelled'));
       if (phase !== 'past' && !isClosed) tabs.push(['entry', 'Entry details']);
       if (hasEntries) tabs.push(['entries', 'Entries']);
-      if (hasDraw) tabs.push(['draw', 'Draw & scores']);
+      if (hasDraw) tabs.push(['draw', 'Draw']);
       if (result) tabs.push(['results', 'Results']);
       var tab = params.get('tab');
       if (!tabs.some(function (t) { return t[0] === tab; })) tab = 'overview';
@@ -1533,12 +1533,12 @@
   }
   function drawPanel(e) {
     var ls = e.liveScoring || {};
-    var h = '<section class="block" style="margin-top:8px"><h2>Draw & scores</h2>';
+    var h = '<section class="block" style="margin-top:8px"><h2>Draw</h2>';
     if (ls.gated) return h + '<div id="gated">' + loading() + '</div></section>';
     if (ls.sheets && ls.sheets.length) {
-      h += ls.sheets.map(function (s) { return embedCard(s.label || 'Draw & scores', 'Draw and scores from the tournament’s Google Sheet. Needs a connection.', s.url, s.height, 'draw'); }).join('');
+      h += ls.sheets.map(function (s) { return embedCard(s.label || 'Draw', 'The draw from the tournament’s Google Sheet. Needs a connection.', s.url, s.height, 'draw'); }).join('');
     } else {
-      h += embedCard('Draw & scores', 'Draw and scores from the tournament’s Google Sheet. Needs a connection.', ls.pubUrl, ls.height, 'draw');
+      h += embedCard('Draw', 'The draw from the tournament’s Google Sheet. Needs a connection.', ls.pubUrl, ls.height, 'draw');
     }
     return h + '</section>';
   }
@@ -1546,13 +1546,13 @@
     fetch('/api/live-scoring?id=' + encodeURIComponent(id), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
       var box = document.getElementById('gated'); if (!box) return;
       if (d && d.sheets && d.sheets.length) {
-        box.innerHTML = d.sheets.map(function (s) { return embedCard(s.label || 'Draw & scores', 'Draw and scores from the tournament’s Google Sheet.', s.url, s.height, 'draw'); }).join('');
+        box.innerHTML = d.sheets.map(function (s) { return embedCard(s.label || 'Draw', 'The draw from the tournament’s Google Sheet.', s.url, s.height, 'draw'); }).join('');
       } else {
-        box.innerHTML = '<p>The draw and scores will appear here once the tournament starts.</p>';
+        box.innerHTML = '<p>The draw will appear here once it is published.</p>';
       }
     }).catch(function () {
       var box = document.getElementById('gated');
-      if (box) box.innerHTML = '<p>The draw and scores need a connection. Try again when you have a signal.</p>';
+      if (box) box.innerHTML = '<p>The draw needs a connection. Try again when you have a signal.</p>';
     });
   }
   function resultsPanel(r) {
