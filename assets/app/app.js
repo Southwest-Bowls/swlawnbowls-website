@@ -679,8 +679,14 @@
       '<span class="rcard__meta">' + esc(who) + '</span></span>' + CHEV + '</a></li>';
   }
 
+  // Empty states get a small drawn illustration: soft brand-coloured discs behind a card with a line icon
+  function illo(kind, title) {
+    var t = String(title || '').toLowerCase(), ic = kind === 'error' ? 'alert' : /saved|bookmark/.test(t) ? 'bookmark' : /club/.test(t) ? 'pin' : /result|podium|champion/.test(t) ? 'trophy' : /event|month|day|match/.test(t) ? 'cal' : /search|found|match/.test(t) ? 'search' : 'bowl';
+    var tone = ic === 'trophy' ? 'sun' : ic === 'pin' || ic === 'cal' ? 'teal' : ic === 'alert' ? 'red' : 'blush';
+    return '<span class="illo illo--' + tone + '" aria-hidden="true"><i class="illo__a"></i><i class="illo__b"></i><i class="illo__c"></i><span class="illo__card">' + icon(ic) + '</span></span>';
+  }
   function state(kind, title, body, action) {
-    return '<div class="' + kind + '" role="status"><b>' + esc(title) + '</b>' + (body ? '<p>' + esc(body) + '</p>' : '') + (action || '') + '</div>';
+    return '<div class="' + kind + '" role="status">' + illo(kind, title) + '<b>' + esc(title) + '</b>' + (body ? '<p>' + esc(body) + '</p>' : '') + (action || '') + '</div>';
   }
   function errorState() {
     return state('error', navigator.onLine ? 'This didn’t load' : 'You’re offline',
