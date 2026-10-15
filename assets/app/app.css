@@ -2284,3 +2284,17 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .welcome--wiz .wiz__top, .welcome--wiz .wiz__body, .welcome--wiz .wiz__foot { width: 100%; box-sizing: border-box; }
 .wiz__h:focus, .wiz__h:focus-visible { outline: none; }
 .wiz__foot { display: flex; justify-content: center; } .wiz__foot .btn { width: 100%; max-width: 480px; }
+
+/* Club detail: label + badge, quiet icon row, follow beside the main action */
+.dlabel { margin: 16px 0 2px; font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #2a8fa0; }
+.dtitle { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; } .dtitle h1 { margin: 0; }
+.dbadge { flex: none; margin-top: 4px; padding: 5px 12px; border-radius: 999px; background: #e5484d; color: #fff; font-size: .8rem; font-weight: 600; }
+.dfacts { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 4px; margin: 14px 0 10px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.dfact { display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 44px; text-decoration: none; color: var(--text-2); font-size: var(--fs-xs); }
+.dfact__ic { width: 28px; height: 28px; display: grid; place-items: center; color: var(--heading); } .dfact__ic .i { width: 24px; height: 24px; stroke-width: 1.5; }
+.actionbar--club { gap: 10px; } .actionbar--club .btn--follow { flex: none; min-height: 52px; padding: 0 18px; border-radius: 999px; } .actionbar--club .btn--wide { flex: 1; }
+.actionbar--club .btn--follow { width: 52px; height: 52px; min-height: 52px; padding: 0; border-radius: 50%; display: grid; place-items: center; }
+.actionbar--club .btn--follow span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.actionbar--club .btn--follow[aria-pressed="true"] .i { fill: #f2a43a; stroke: #f2a43a; }
+.actionbar--club .btn--follow { flex: 0 0 52px !important; width: 52px !important; max-width: 52px !important; }
+.actionbar--club .btn--wide { flex: 1 1 auto !important; min-width: 0; width: auto !important; }

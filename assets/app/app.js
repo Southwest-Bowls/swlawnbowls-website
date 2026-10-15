@@ -2485,12 +2485,12 @@
         '<div class="dframe"><div class="dframe__ph' + (photo ? '' : ' dframe__ph--none') + '"' + (photo ? ' style="--ph:url(\'' + esc(photo) + '\')" role="img" aria-label="' + esc(c.name) + ' lawn bowling club"' : '') + '>' + (photo ? '' : '<span class="ph__mark ph__mark--lg" aria-hidden="true">' + esc(String(c.name || '?').charAt(0).toUpperCase()) + '</span>') +
           '<button class="iconbtn gbtn dframe__fav" type="button" data-follow="' + esc(cid) + '" data-name="' + esc(c.name) + '" aria-pressed="' + fon + '" aria-label="Follow ' + esc(c.name) + '">' + icon('star') + '</button>' +
           '<span class="clcard__tag' + (c.status === 'private' ? '' : ' clcard__tag--open') + '">' + (c.status === 'private' ? 'Private club' : 'Open club') + '</span></div></div>' +
-        '<div class="dtitle"><h1>' + esc(c.name) + '</h1></div>' +
-        '<p class="dmeta">' + icon('pin', 'i--sm') + esc(c.city) + (up.length ? '<span class="dmeta__s">' + up.length + ' upcoming</span>' : '') + '</p>' +
-        (tiles.length ? '<h2 class="dh2">Get in touch</h2><div class="dtiles2">' + tiles.map(function (t) { return '<a class="dt2" href="' + esc(t[2]) + '"' + (t[3] ? ' target="_blank" rel="noopener"' : '') + '><span class="dt2__ic" aria-hidden="true">' + icon(t[0]) + '</span>' + t[1] + '</a>'; }).join('') + '</div>' : '') +
+        '<p class="dlabel">' + esc(c.city) + ' · ' + (c.status === 'private' ? 'Private club' : 'Open club') + '</p>' +
+        '<div class="dtitle"><h1>' + esc(c.name) + '</h1>' + (up.length ? '<span class="dbadge">' + up.length + ' upcoming</span>' : '') + '</div>' +
+        (tiles.length ? '<div class="dfacts" role="list">' + tiles.map(function (t) { return '<a role="listitem" class="dfact" href="' + esc(t[2]) + '"' + (t[3] ? ' target="_blank" rel="noopener"' : '') + '><span class="dfact__ic" aria-hidden="true">' + icon(t[0]) + '</span><span class="dfact__l">' + t[1] + '</span></a>'; }).join('') + '</div>' : '') +
         ((c.details || c.summary) ? '<h2 class="dh2">About</h2><p class="dtext">' + esc(c.details || c.summary) + '</p>' : '') +
         (up.length ? '<h2 class="dh2">Upcoming events</h2><ul class="list list--cards">' + up.slice(0, 4).map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '') +
-        (primary ? '<div class="actionbar">' + primary + '</div>' : '');
+        '<div class="actionbar actionbar--club">' + followBtn(cid, c.name) + (primary || '') + '</div>';
       view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
     });
   }
