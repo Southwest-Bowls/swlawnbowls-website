@@ -1,0 +1,137 @@
+{
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Draft, October 2026",
+    "sections": [
+      {
+        "h": "Who we are",
+        "p": [
+          "This app is run by the Southwest Bowls Division (“SWD”, “we”), the lawn bowls division covering Southern California. Questions about your privacy: webmaster@swlawnbowls.org."
+        ]
+      },
+      {
+        "h": "If you use the app without an account",
+        "p": [
+          "We do not ask for or store anything about you. Your saved events, followed clubs, interests, text size and theme stay on your phone only. Like any website, our hosting provider (Vercel) sees your IP address in routine server logs."
+        ]
+      },
+      {
+        "h": "If you create an account",
+        "p": [
+          "We keep your email address. If you choose to add them, we also keep your name, club, phone number and profile photo. If your email matches the SWD membership roster, we show you your own membership details (club, dues status, novice date). Nobody else sees them in the app.",
+          "Your email is used to send you a sign-in code. We do not send marketing or newsletters from the app."
+        ]
+      },
+      {
+        "h": "What stays on your phone",
+        "p": [
+          "Your profile text, honors, saved events, followed clubs, interests, profile design and the photo on your membership card are kept on your phone, not on our servers."
+        ]
+      },
+      {
+        "h": "Where member data is kept",
+        "p": [
+          "Member data is held in a private database run for SWD (Supabase, United States). SWD administrators who maintain the roster can see it. Our service providers that run the database and send sign-in emails process it for us under contract."
+        ]
+      },
+      {
+        "h": "Public results",
+        "p": [
+          "Names of players already appear in published tournament results, as they always have. Deleting your account does not remove published results, which are the Division’s record."
+        ]
+      },
+      {
+        "h": "Maps",
+        "p": [
+          "The clubs map uses free OpenFreeMap tiles (data from OpenStreetMap). Opening the map sends the area you are viewing, and your IP address as for any web request, to OpenFreeMap. No personal details are sent."
+        ]
+      },
+      {
+        "h": "No tracking, no ads",
+        "p": [
+          "We do not use advertising or analytics trackers, and we do not sell personal information."
+        ]
+      },
+      {
+        "h": "Your choices",
+        "p": [
+          "You can edit your profile in the app. You can delete your account and data in the app (More, then Settings, then Delete my account), or by emailing webmaster@swlawnbowls.org. We delete the account within 30 days. Deleted data may remain in backups for up to 7 days.",
+          "California residents may ask to know, correct or delete their personal information using the same contact."
+        ]
+      },
+      {
+        "h": "Children",
+        "p": [
+          "The app is for adults and is not directed at children under 13. We do not ask for ages. If we learn that a child under 13 has an account, we delete it."
+        ]
+      },
+      {
+        "h": "Changes",
+        "p": [
+          "We will update this page and its date if anything changes."
+        ]
+      }
+    ]
+  },
+  "terms": {
+    "title": "Terms of Use",
+    "updated": "Draft, October 2026",
+    "sections": [
+      {
+        "h": "About these terms",
+        "p": [
+          "These terms cover your use of the Southwest Bowls app, run by the Southwest Bowls Division (“SWD”, “we”). By creating an account you agree to them. You can use the app as a guest without an account."
+        ]
+      },
+      {
+        "h": "What the app is for",
+        "p": [
+          "The app shows tournament dates, entry details, flyers, results, clubs and news for the Southwest Division, and, for members, your own membership details. It is an information service for the lawn bowls community."
+        ]
+      },
+      {
+        "h": "Information may change",
+        "p": [
+          "Tournament details are provided by tournament organizers and can change. The flyer and the organizer’s instructions are the official source. Please check them before you travel or pay."
+        ]
+      },
+      {
+        "h": "Your account",
+        "p": [
+          "Sign in with the email address the Division has on file for you. Keep your sign-in codes private. Tell us if you think someone else has used your account.",
+          "You may delete your account at any time in Settings."
+        ]
+      },
+      {
+        "h": "Being a good member of the community",
+        "p": [
+          "Please use the app respectfully and honestly. Do not try to access other people’s information, disrupt the service, or use it for anything unlawful."
+        ]
+      },
+      {
+        "h": "Entries and payments",
+        "p": [
+          "Online tournament entry and payment are not available in the app yet. When they are, the entry fee, refund and withdrawal rules for each tournament will be shown before you pay."
+        ]
+      },
+      {
+        "h": "Content",
+        "p": [
+          "Photos, names and results in the app belong to the Division, its clubs and the people who provided them. Please do not copy them for commercial use."
+        ]
+      },
+      {
+        "h": "No guarantees",
+        "p": [
+          "We work to keep the app accurate and available, but we cannot promise it will always be error-free or uninterrupted. To the extent the law allows, SWD is not liable for losses from relying on information in the app."
+        ]
+      },
+      {
+        "h": "Changes and contact",
+        "p": [
+          "We may update these terms and will change the date above when we do. Questions: webmaster@swlawnbowls.org."
+        ]
+      }
+    ]
+  }
+}

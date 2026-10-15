@@ -924,6 +924,10 @@
   function drawHome(d) {
     var today = d.today;
     var live = d.events.filter(function (x) { var p = eventPhase(x, today); return p === 'upcoming' || p === 'now'; });
+    // Personal focus: with interests picked, Home shows only what you chose. "Show everything" brings the full Home back.
+    var ivx = interests() || {}, focusTopics = !ivx.all && (ivx.topics || []).length > 0, focusCats = !ivx.all && (ivx.cats || []).length > 0;
+    function showT(t) { return !focusTopics || (ivx.topics || []).indexOf(t) >= 0; }
+    if (focusCats) live = live.filter(function (x) { return ivx.cats.indexOf(x.cat || 'Open') >= 0; });
     var ids = saved();
     var mine = d.events.filter(function (x) { return ids.indexOf(x.id) >= 0; });
     var mineNext = mine.filter(function (x) { return live.indexOf(x) >= 0; });   // already in date order
@@ -968,12 +972,12 @@
       (iv.topics || []).forEach(function (t) { if (T[t]) links.push('<a class="fy__i" href="' + T[t][0] + '"><span class="fy__ic" aria-hidden="true">' + icon(T[t][1]) + '</span><span>' + T[t][2] + '</span></a>'); });
       (iv.cats || []).forEach(function (c) { links.push('<a class="fy__i" href="/app/events?cat=' + encodeURIComponent(c) + '"><span class="fy__ic" aria-hidden="true"><i class="chip__dot ' + CAT_DOT[c] + '"></i></span><span>' + esc(c) + '</span></a>'); });
       var nextFor = live.filter(function (x) { return !(iv.cats || []).length || (iv.cats || []).indexOf(x.cat || 'Open') >= 0; })[0];
-      html += '<section class="fy" aria-labelledby="h-fy"><div class="section__head"><h2 class="section__title" id="h-fy">For you</h2><button class="section__more" type="button" data-open-interests>Edit' + icon('chev', 'i--sm') + '</button></div>' +
+      html += '<section class="fy" aria-labelledby="h-fy"><div class="section__head"><h2 class="section__title" id="h-fy">For you</h2><span class="fy__acts"><button class="section__more" type="button" data-toggle-all>' + (iv.all ? 'Only my picks' : 'Show everything') + '</button><button class="section__more" type="button" data-open-interests>Edit' + icon('chev', 'i--sm') + '</button></span></div>' +
         (nextFor ? '<a class="fy__next ' + catClass(nextFor) + '" href="/app/events/' + encodeURIComponent(nextFor.id) + '"><small>Next for you</small><b>' + esc(nextFor.short) + '</b><span>' + esc(dateRangeLabel(nextFor.dates, true)) + ' · ' + esc(nextFor.clubLabel) + '</span></a>' : '') +
         '<div class="fy__row">' + links.join('') + '</div></section>';
     })();
     // Live pulse: what is on right now, or a countdown to the next event with a nudge for closing entries
-    (function () {
+    if (showT('tournaments')) (function () {
       var pc = '';
       if (underway.length) {
         var ue = underway[0], ls = ue.e.liveScoring || {}, hasDraw = (ls.sheets && ls.sheets.length) || ls.pubUrl;
@@ -989,24 +993,26 @@
       if (urg) pc += '<a class="pulse__nudge' + (urg.st.urgent ? ' pulse__nudge--hot' : '') + '" href="/app/events/' + encodeURIComponent(urg.x.id) + '">' + icon('hourglass', 'i--sm') + '<span><b>' + (urg.st.left === 0 ? 'Entries close today' : urg.st.left === 1 ? 'Entries close tomorrow' : 'Entries close in ' + urg.st.left + ' days') + '</b> · ' + esc(urg.x.short) + '</span></a>';
       html += pc ? '<div class="pulsewrap">' + pc + '</div>' : '';
     })();
-    if (heroEvs.length) {
+    if (heroEvs.length && showT('tournaments')) {
       var headLabel = underway.length && !sameDay.length ? 'On now' : underway.length ? 'On now and next' : (heroEvs.length > 1 ? 'Next up · ' + fmt(nextStart, { weekday: 'long', month: 'long', day: 'numeric' }) : 'Next event');
       html += '<section aria-labelledby="h-next"><h2 class="hero-label" id="h-next" tabindex="-1">' + esc(headLabel) + '</h2><ul class="stage">' +
         heroEvs.map(function (heroEv) { return '<li>' + photoCard(heroEv, d.clubs, today, { big: true }) + '</li>'; }).join('') + '</ul></section>';
     }
 
     // 3. Four quick links as round shortcuts
-    html += '<nav class="shortcuts" aria-label="Sections">' + [
-      ['/app/events?show=calendar', 'cal', 'Calendar', 'blue', 'tournaments'], ['/app/results', 'trophy', 'Results', 'orange', 'results'],
-      ['/app/more/clubs', 'pin', 'Clubs', 'blush', 'clubs'], ['/app/watch', 'tv', 'Watch', 'ink', 'watch']
-    ].sort(function (a, b) { return (wantsTopic(b[4]) ? 1 : 0) - (wantsTopic(a[4]) ? 1 : 0); }).map(function (t) {
+    var SC = [
+      ['/app/events?show=calendar', 'cal', 'Calendar', 'blue', 'tournaments', 1], ['/app/results', 'trophy', 'Results', 'orange', 'results', 1],
+      ['/app/more/clubs', 'pin', 'Clubs', 'blush', 'clubs', 1], ['/app/watch', 'tv', 'Watch', 'ink', 'watch', 1],
+      ['/app/standings', 'medal', 'Standings', 'orange', 'standings', 0], ['/app/more/news', 'news', 'News', 'blue', 'news', 0]];
+    var scList = SC.filter(function (t) { return focusTopics ? (ivx.topics || []).indexOf(t[4]) >= 0 : t[5] === 1; });
+    if (scList.length) html += '<nav class="shortcuts" aria-label="Sections">' + scList.sort(function (a, b) { return (wantsTopic(b[4]) ? 1 : 0) - (wantsTopic(a[4]) ? 1 : 0); }).map(function (t) {
       return '<a class="shortcut shortcut--' + t[3] + '" href="' + t[0] + '"><span class="shortcut__dot">' + icon(t[1]) + '</span><span class="shortcut__label">' + t[2] + '</span></a>';
     }).join('') + '</nav>';
 
     // Your clubs: the clubs you follow, one tap to each (shown only when you follow some)
     (function () {
       var fol = followed(), mineC = (d.clubs || []).filter(function (c) { return fol.indexOf(c.id || slugify(c.name)) >= 0; });
-      if (!mineC.length) return;
+      if (!mineC.length || !showT('clubs')) return;
       html += '<section class="hsec" aria-labelledby="h-yc"><div class="section__head"><h2 class="section__title" id="h-yc">Your clubs</h2><a class="section__more" href="/app/more/clubs?view=cards">All clubs' + icon('chev', 'i--sm') + '</a></div><ul class="cstrip">' +
         mineC.map(function (c) {
           var id = c.id || slugify(c.name), ph = clubPhotoOf(c), n = live.filter(function (x) { return (x.clubIds || []).indexOf(id) >= 0; }).length;
@@ -1017,9 +1023,9 @@
     // 4. Upcoming events: a row of cards you swipe sideways
     var more = live.filter(function (x) { return !shownIds[x.id]; }).slice(0, 8);
     var icats = interestCats(); if (icats.length) more = more.filter(function (x) { return icats.indexOf(x.cat || 'Open') >= 0; }).concat(more.filter(function (x) { return icats.indexOf(x.cat || 'Open') < 0; }));
-    var champFirst = wantsTopic('results') && !wantsTopic('tournaments');
-    if (champFirst) html += '<div id="home-champ"></div>';
-    if (more.length) {
+    var champFirst = focusTopics && showT('results') && !showT('tournaments');
+    if (champFirst && showT('results')) html += '<div id="home-champ"></div>';
+    if (more.length && showT('tournaments')) {
       var hview = store('homeView') === 'list' ? 'list' : 'cards';
       var totalMore = live.filter(function (x) { return !shownIds[x.id]; }).length;
       html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head section__head--count"><div class="hcount"><h2 class="section__title" id="h-up">Coming up</h2><span class="hcount__n">' + totalMore + ' tournament' + (totalMore === 1 ? '' : 's') + '</span></div>' +
@@ -1027,12 +1033,13 @@
         '<div id="home-up">' + upHtml(more, hview, d, today) + '</div><a class="btn btn--ghost btn--wide hmore" href="/app/events">See all tournaments' + icon('chev', 'i--sm') + '</a></section>';
     }
 
-    if (!champFirst) html += '<div id="home-champ"></div>';
+    if (!champFirst && showT('results')) html += '<div id="home-champ"></div>';
     html += '<div class="tagline"><span class="art-plate"><img src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls — A Sport for Life!" width="341" height="160" decoding="async" loading="lazy"></span></div>';
     html += '<div id="home-partners"></div>';
 
     view.innerHTML = html;
     var hv = view;
+    hv.querySelectorAll('[data-toggle-all]').forEach(function (b) { b.addEventListener('click', function () { var v = Object.assign({}, interests() || {}); v.all = !v.all; store('interests', v); haptic(); render(); }); });
     hv.querySelectorAll('[data-open-interests]').forEach(function (b) { b.addEventListener('click', function () { openInterests(function () { render(); }); }); });
     hv.querySelectorAll('[data-hview]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -2550,6 +2557,7 @@
         '<div id="del-box"><div class="actions"><button class="btn btn--ghost btn--danger" type="button" data-del-start>Delete my ' + (memberSession() ? 'account and data' : 'data from this phone') + '</button></div></div>' +
         '<p class="footnote">Published tournament results stay public. They are the Division’s record and are not part of your account.</p></section>' +
       (!standalone ? '<section class="settings" aria-labelledby="h-inst"><h2 id="h-inst">Add to your home screen</h2><p>Get the Southwest Bowls icon on your phone.</p><div class="actions"><a class="btn" href="/get-the-app" target="_blank" rel="noopener">How to add it</a></div></section>' : '') +
+      '<section class="settings" aria-labelledby="h-legal"><h2 id="h-legal">Privacy and terms</h2><ul class="rows rows--cards">' + linkRow('/app/privacy', 'lock', 'Privacy Policy', 'What we keep and why') + linkRow('/app/terms', 'doc', 'Terms of Use', 'The simple rules') + '</ul></section>' +
       '<p class="footnote">Southwest Bowls app · information from swlawnbowls.org</p>';
     // Followed clubs list (names from clubs-data.json); unfollow in place
     getJSON('/clubs-data.json').then(function (d) {
@@ -2848,8 +2856,9 @@
       view.innerHTML = authLanding('/photos/clubs/long-beach.jpg', true);
       view.querySelector('.auth').addEventListener('click', function (ev) {
         var b = ev.target.closest('[data-auth]'); if (!b) return; var k = b.getAttribute('data-auth'); haptic();
+        if (k === 'guest') { navDir = 'back'; go('/app', true); return; }
+        if ((k === 'email' || k === 'apple' || k === 'google') && !authGate(view.querySelector('.auth'))) return;
         if (k === 'email') emailStep();
-        else if (k === 'guest') { navDir = 'back'; go('/app', true); }
         else if (k === 'back') { if (history.state && history.state.from) history.back(); else { navDir = 'back'; go('/app/my', true); } }
         else toast((k === 'apple' ? 'Continue with Apple' : 'Continue with Google') + ' switches on with the store release.');
       });
@@ -3552,6 +3561,7 @@
     [/^\/app\/my\/profile\/?$/, profilePage, 'my'],
     [/^\/app\/search\/?$/, searchScreen, 'home'],
     [/^\/app\/page\/about-us\/?$/, aboutScreen, 'more'],
+    [/^\/app\/(privacy|terms)\/?$/, legalScreen, 'more'],
     [/^\/app\/page\/([a-z0-9-]+)\/?$/, infoPage, 'more']
   ];
   var scrollMemory = {};
@@ -3746,9 +3756,11 @@
       (back ? '<button class="iconbtn gbtn auth__back" type="button" data-auth="back" aria-label="Back">' + icon('back') + '</button>' : '') +
       '<div class="auth__body"><span class="auth__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls Division" width="64" height="75"></span><h1 class="auth__t">Welcome to Southwest Bowls</h1>' +
       '<p class="auth__s">Sign in to enter tournaments and keep your details. Browsing needs no account.</p>' +
-      '<button class="auth__apple" type="button" data-auth="apple">' + APPLE_SVG + 'Continue with Apple<small>Soon</small></button>' +
-      '<div class="auth__row"><button class="auth__alt" type="button" data-auth="google">' + GOOGLE_SVG + 'Google<small>Soon</small></button>' +
-      '<button class="auth__alt" type="button" data-auth="email">' + icon('mail') + 'Email</button></div>' +
+      '<label class="auth__terms"><input type="checkbox" data-terms' + (store('termsAccepted') ? ' checked' : '') + '><span>I’ve read and agree with the <button type="button" class="linkbtn" data-legal="terms">Terms</button> and <button type="button" class="linkbtn" data-legal="privacy">Privacy Policy</button>.</span></label>' +
+      '<button class="auth__apple" type="button" data-auth="apple" aria-disabled="' + (store('termsAccepted') ? 'false' : 'true') + '">' + APPLE_SVG + 'Continue with Apple<small>Soon</small></button>' +
+      '<div class="auth__row"><button class="auth__alt" type="button" data-auth="google" aria-disabled="' + (store('termsAccepted') ? 'false' : 'true') + '">' + GOOGLE_SVG + 'Google<small>Soon</small></button>' +
+      '<button class="auth__alt" type="button" data-auth="email" aria-disabled="' + (store('termsAccepted') ? 'false' : 'true') + '">' + icon('mail') + 'Email</button></div>' +
+      '<p class="auth__login">Already have an account? <button type="button" class="linkbtn" data-auth="email">Log in here</button></p>' +
       '<button class="auth__guest" type="button" data-auth="guest">Continue as a guest</button>' +
       '<p class="auth__fine">Your email is only used to sign you in.</p><img class="auth__tag" src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls: A Sport for Life!" width="150" height="70" loading="lazy"></div></section>';
   }
@@ -3881,23 +3893,100 @@
   })();
 
   // First run: three photo screens, then the sign-in choices
+  // Terms and Privacy: shown in a sheet (from the sign-up screen) or as pages
+  var LEGAL = null;
+  function legalHtml(kind) {
+    var d = LEGAL && LEGAL[kind]; if (!d) return '<p>This couldn’t load. Try again with a connection.</p>';
+    return '<p class="muted">' + esc(d.updated) + '. The Division is reviewing this text.</p>' + d.sections.map(function (sec) {
+      return '<section class="legal__s"><h2>' + esc(sec.h) + '</h2>' + sec.p.map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') + '</section>'; }).join('');
+  }
+  function loadLegal() { return LEGAL ? Promise.resolve(LEGAL) : getJSON('/legal-data.json').then(function (d) { LEGAL = d; return d; }); }
+  function legalScreen(params, id, kind) {
+    var k = id === 'terms' ? 'terms' : 'privacy', root = view;
+    return loadLegal().catch(function () {}).then(function () {
+      if (root !== view) return;
+      var t = (LEGAL && LEGAL[k] && LEGAL[k].title) || (k === 'terms' ? 'Terms of Use' : 'Privacy Policy'); setTitle(t);
+      view.innerHTML = backLink('/app/more/settings', 'Settings') + '<div class="intro"><h1>' + esc(t) + '</h1></div><div class="legal">' + legalHtml(k) + '</div>';
+    });
+  }
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-legal]'); if (!b) return;
+    ev.preventDefault(); var k = b.getAttribute('data-legal');
+    loadLegal().catch(function () {}).then(function () { openDialog((LEGAL && LEGAL[k] && LEGAL[k].title) || 'Details', legalHtml(k)); });
+  });
+  // The sign-up buttons need the box ticked. Tapping them without it explains why instead of doing nothing.
+  function termsOk() { return !!store('termsAccepted'); }
+  function authGate(root) {
+    if (termsOk()) return true;
+    var lab = root.querySelector('.auth__terms'); if (lab) { lab.classList.remove('is-nudge'); void lab.offsetWidth; lab.classList.add('is-nudge'); var cb = lab.querySelector('input'); if (cb) cb.focus(); }
+    toast('Please tick the box to agree to the Terms and Privacy Policy first.');
+    return false;
+  }
+  document.addEventListener('change', function (ev) {
+    var cb = ev.target.closest && ev.target.closest('[data-terms]'); if (!cb) return;
+    if (cb.checked) store('termsAccepted', new Date().toISOString().slice(0, 10)); else { try { localStorage.removeItem('swd:termsAccepted'); } catch (e) {} }
+    var root = cb.closest('.auth'); if (root) root.querySelectorAll('[data-auth="apple"], [data-auth="google"], [data-auth="email"]').forEach(function (b) { b.setAttribute('aria-disabled', cb.checked ? 'false' : 'true'); });
+    haptic();
+  });
+
   function welcome() {
     if (store('welcomed')) return;
-    var pages = [
-      ['/photos/clubs/coronado.jpg', 'Every tournament, in one place', 'Dates, entry details, schedules and flyers for Southwest Division events.'],
-      ['/photos/clubs/the-groves.jpg', 'Follow your clubs', 'Save events and follow clubs. It stays on your phone, no account needed.'],
-      ['/photos/bill-hiscock-mixed-triples-2026/1th-kindorf-mar-bell.jpg', 'Results and champions', 'Browse past results, podiums and the Division standings.']
-    ], i = 0, el = document.createElement('div'); el.className = 'welcome'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Welcome');
+    var SCENES = [
+      { k: 'details', h: 'Every tournament detail, one tap away', s: 'Dates, fees, deadlines and flyers for the whole Southwest Division.' },
+      { k: 'results', h: 'Results and champions, always at hand', s: 'Podiums, standings and winners from every tournament.' },
+      { k: 'follow', h: 'Follow your clubs', s: 'Their events come first. Kept on your phone, no account needed.' },
+      { k: 'calendar', h: 'Never miss a tournament day', s: 'A calendar of every event and a countdown to the next one.' }
+    ];
+    var steps = SCENES.map(function (sc) { return { t: 'scene', sc: sc }; }).concat([{ t: 'fact' }, { t: 'wiz', n: 0 }, { t: 'wiz', n: 1 }, { t: 'wiz', n: 2 }, { t: 'custom' }, { t: 'auth' }]);
+    var i = 0, timer = null, facts = [], reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var el = document.createElement('div'); el.className = 'welcome'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Welcome');
+    // Facts: two come from our own data (so they are always true), two are well-known
+    var HIST = 'The Old Bowling Green in Southampton, England, dates from 1299 and is believed to be the oldest in the world still in use.';
+    var WORLD = 'World Bowls, the sport’s world federation, has 67 member countries.';
+    facts = [HIST, WORLD];
+    Promise.all([getJSON('/clubs-data.json').catch(function () { return {}; }), getJSON('/events-data.json').catch(function () { return {}; })]).then(function (all) {
+      var nc = (all[0].clubs || []).length, ne = (all[1].events || []).filter(function (e) { return e.id && !/^paypal-test/.test(e.id); }).length;
+      if (nc) facts.unshift('The Southwest Division has ' + nc + ' clubs, from Cambria to Coronado.');
+      if (ne) facts.push('There are ' + ne + ' tournaments on the 2026 Southwest calendar.');
+    });
     var wizState = { topics: (interests() || {}).topics || [], cats: (interests() || {}).cats || [], name: (store('profile') || {}).name || '', look: look() };
     function wizCollect(step) {
       if (step === 0) wizState.topics = readInterests(el).topics;
       if (step === 1) wizState.cats = readInterests(el).cats;
       if (step === 2) { var nm = el.querySelector('#wz-name'); wizState.name = nm ? nm.value.trim() : ''; wizState.look = readLook(el) || wizState.look; }
     }
+    function bars() {
+      return '<div class="sc__bars" aria-hidden="true">' + steps.map(function (_, k) { return '<i class="' + (k < i ? 'is-done' : k === i ? 'is-now' : '') + '"' + (k === i && !reduce ? ' style="--dur:5200ms"' : '') + '></i>'; }).join('') + '</div>';
+    }
+    function mock(k) {
+      if (k === 'details') return '<div class="mk mk--details"><div class="mk__card cat--w"><b>Women’s Vet/Novice Pairs</b><span>Long Beach LBC · Sat, Oct 17</span></div>' +
+        '<div class="mk__chips"><span class="mk__chip" style="--n:0">' + icon('doc', 'i--sm') + 'Flyer</span><span class="mk__chip" style="--n:1">' + icon('clock', 'i--sm') + '8:15 AM</span><span class="mk__chip" style="--n:2"><b>$</b>Entry fee</span></div>' +
+        '<div class="mk__pill" style="--n:3">' + icon('hourglass', 'i--sm') + 'Entries close tomorrow</div></div>';
+      if (k === 'results') return '<div class="mk mk--results"><div class="mk__pod"><div class="mk__col mk__col--2" style="--n:1"><i>2</i></div><div class="mk__col mk__col--1" style="--n:0"><i>1</i></div><div class="mk__col mk__col--3" style="--n:2"><i>3</i></div></div>' +
+        '<div class="mk__names"><span style="--n:4">Silver</span><span style="--n:3">Gold</span><span style="--n:5">Bronze</span></div></div>';
+      if (k === 'follow') return '<div class="mk mk--follow"><div class="mk__club"><span class="mk__ph"></span><b>Coronado</b><span class="mk__star">' + icon('star') + '</span></div>' +
+        '<div class="mk__list"><div class="mk__row cat--m" style="--n:0"><b>Men’s Triples</b><small>Coronado · Sat</small></div><div class="mk__row cat--w" style="--n:1"><b>Women’s Pairs</b><small>Coronado · Sun</small></div></div></div>';
+      return '<div class="mk mk--cal"><div class="mk__week">' + ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(function (d, n) { return '<span class="' + (n === 5 ? 'is-pick' : '') + '"><small>' + d + '</small><b>' + (12 + n) + '</b>' + (n === 5 ? '<i></i>' : '') + '</span>'; }).join('') + '</div>' +
+        '<div class="mk__count"><span class="mk__num"><b>3</b><b>2</b></span><small>days to go</small></div></div>';
+    }
+    function drawScene(sc) {
+      el.className = 'welcome welcome--scene';
+      el.setAttribute('data-scene', sc.k);
+      el.innerHTML = '<div class="sc__top">' + bars() + '<button class="wiz__skip" type="button" data-w-skip>Skip</button></div><div class="sc__stage" data-w-next-tap>' + mock(sc.k) + '</div>' +
+        '<div class="sc__text"><h1 class="sc__h" tabindex="-1">' + esc(sc.h) + '</h1><p class="sc__s">' + esc(sc.s) + '</p></div><div class="wiz__foot"><button class="btn btn--wide btn--dark" type="button" data-w-next>Next</button></div>';
+      if (!reduce) timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); focusIn(); } }, 5200);
+    }
+    function drawFact() {
+      el.className = 'welcome welcome--scene welcome--fact'; el.setAttribute('data-scene', 'fact');
+      var f = facts[Math.floor(Date.now() / 86400000) % facts.length];
+      el.innerHTML = '<div class="sc__top">' + bars() + '<button class="wiz__skip" type="button" data-w-skip>Skip</button></div><div class="sc__stage"><div class="fact"><span class="fact__orb" aria-hidden="true">' + icon('bowl') + '</span><b class="fact__k">Did you know?</b><p class="fact__t">' + esc(f) + '</p></div></div>' +
+        '<div class="sc__text"><h1 class="sc__h" tabindex="-1">A little lawn bowls</h1><p class="sc__s">Now let’s make the app yours.</p></div><div class="wiz__foot"><button class="btn btn--wide btn--dark" type="button" data-w-next>Continue</button></div>';
+      if (!reduce) timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); focusIn(); } }, 7000);
+    }
     function drawWiz(step) {
-      el.className = 'welcome welcome--wiz';
+      el.className = 'welcome welcome--wiz'; el.removeAttribute('data-scene');
       var top = '<div class="wiz__top"><button class="wiz__back" type="button" data-w-prev aria-label="Back">' + icon('back') + '</button><div class="wiz__bar" role="progressbar" aria-valuemin="0" aria-valuemax="3" aria-valuenow="' + (step + 1) + '" aria-label="Step ' + (step + 1) + ' of 3"><i style="width:' + Math.round((step + 1) / 3 * 100) + '%"></i></div><button class="wiz__skip" type="button" data-w-skip>Skip</button></div>';
-      var rows = function (list, attr) { return '<div class="wrows">' + list.join('') + '</div>'; };
+      var rows = function (list) { return '<div class="wrows">' + list.join('') + '</div>'; };
       var body;
       if (step === 0) body = '<h1 class="wiz__h" tabindex="-1">What are you here for?</h1><p class="wiz__s">Pick all that apply. We’ll put these first.</p>' + rows(TOPICS.map(function (t) {
         return '<button type="button" class="wrow" data-itopic="' + t[0] + '" aria-pressed="' + (wizState.topics.indexOf(t[0]) >= 0) + '"><span class="wrow__ic" aria-hidden="true">' + icon(t[1]) + '</span><span class="wrow__l">' + esc(t[2]) + '</span><span class="wrow__ck" aria-hidden="true">' + icon('check', 'i--sm') + '</span></button>'; }));
@@ -3905,30 +3994,37 @@
         return '<button type="button" class="wrow" data-icat="' + esc(c) + '" aria-pressed="' + (wizState.cats.indexOf(c) >= 0) + '"><span class="wrow__ic" aria-hidden="true"><i class="chip__dot ' + CAT_DOT[c] + '"></i></span><span class="wrow__l">' + esc(c) + '</span><span class="wrow__ck" aria-hidden="true">' + icon('check', 'i--sm') + '</span></button>'; }));
       else body = '<h1 class="wiz__h" tabindex="-1">Design your profile</h1><p class="wiz__s">Make the app yours. You can change it later.</p>' + lookForm(wizState.look, wizState.name) +
         '<label class="mfield" style="margin-top:14px"><span>Your name (optional)</span><input id="wz-name" type="text" autocomplete="name" value="' + esc(wizState.name) + '" placeholder="Your name"></label>';
-      el.innerHTML = top + '<div class="wiz__body">' + body + '</div><div class="wiz__foot"><button class="btn btn--wide btn--dark" type="button" data-w-int>' + (step === 2 ? 'Finish' : 'Continue') + '</button></div>';
+      el.innerHTML = top + '<div class="wiz__body">' + body + '</div><div class="wiz__foot"><button class="btn btn--wide btn--dark" type="button" data-w-int>Continue</button></div>';
       if (step === 2) { var nm = el.querySelector('#wz-name'), card = el.querySelector('[data-lookcard] .lookcard__n'); nm.addEventListener('input', function () { card.textContent = nm.value.trim() || 'Your name'; }); }
     }
+    function drawCustom() {
+      el.className = 'welcome welcome--custom'; el.removeAttribute('data-scene');
+      var p = look().palette;
+      el.innerHTML = '<div class="cust" data-pal="' + p + '"><span class="cust__orb" aria-hidden="true"></span><h1 class="cust__t" tabindex="-1">Customizing your app…</h1><p class="cust__s" aria-live="polite">Putting your interests first</p></div>';
+      timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); focusIn(); } }, reduce ? 900 : 2200);
+    }
     function draw() {
-      if (i >= pages.length && i < pages.length + 3) { drawWiz(i - pages.length); return; }
-      if (i >= pages.length + 3) { el.className = 'welcome welcome--auth'; el.innerHTML = authLanding('/photos/clubs/long-beach.jpg', false); return; }
-      var p = pages[i];
-      el.className = 'welcome';
-      el.innerHTML = '<div class="welcome__photo" style="--ph:url(\'' + p[0] + '\')"></div><span class="welcome__brand"><img src="/assets/app/swd-logo.png" alt="" width="30" height="35"><b>Southwest Bowls</b></span><button class="welcome__skip" type="button" data-w-skip>Skip</button>' +
-        '<div class="welcome__sheet"><div class="welcome__dots" aria-hidden="true">' + pages.map(function (_, k) { return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
-        '<h1 class="welcome__t" tabindex="-1">' + p[1] + '</h1><p class="welcome__s">' + p[2] + '</p><button class="btn btn--wide btn--dark" type="button" data-w-next>' + (i === pages.length - 1 ? 'Get started' : 'Next') + '</button></div>';
+      clearTimeout(timer);
+      var st = steps[i]; if (!st) { done(); return; }
+      if (st.t === 'scene') drawScene(st.sc);
+      else if (st.t === 'fact') drawFact();
+      else if (st.t === 'wiz') drawWiz(st.n);
+      else if (st.t === 'custom') drawCustom();
+      else { el.className = 'welcome welcome--auth'; el.removeAttribute('data-scene'); el.innerHTML = authLanding('/photos/clubs/long-beach.jpg', false); }
     }
     // Modal behaviour: the page behind is inert, focus stays inside, Escape = skip, focus goes back when it closes
     var behind = Array.prototype.slice.call(document.querySelectorAll('#view, .tabbar, .skip'));
     function focusIn() {
-      var t = el.querySelector('[data-w-next], .auth__apple') || el.querySelector('h1') || el.querySelector('button');
-      if (t) { if (!t.hasAttribute('tabindex') && !/^(BUTTON|A)$/.test(t.tagName)) t.setAttribute('tabindex', '-1'); try { t.focus({ preventScroll: true }); } catch (e) { t.focus(); } }
+      var t = el.querySelector('.sc__h, .wiz__h, .cust__t, .auth__terms input') || el.querySelector('h1') || el.querySelector('button');
+      if (t) { if (!t.hasAttribute('tabindex') && !/^(BUTTON|A|INPUT)$/.test(t.tagName)) t.setAttribute('tabindex', '-1'); try { t.focus({ preventScroll: true }); } catch (e) { t.focus(); } }
     }
     function done() {
-      store('welcomed', true); el.remove(); document.removeEventListener('keydown', onKey, true);
+      clearTimeout(timer); store('welcomed', true); el.remove(); document.removeEventListener('keydown', onKey, true);
       behind.forEach(function (n) { n.removeAttribute('inert'); n.removeAttribute('aria-hidden'); });
       var back = document.getElementById('view'); if (back) back.focus({ preventScroll: true });
     }
     function onKey(ev) {
+      if (dlg.open) return;   // the Terms / Privacy sheet has its own focus
       if (ev.key === 'Escape') { ev.preventDefault(); done(); return; }
       if (ev.key !== 'Tab') return;
       var f = Array.prototype.slice.call(el.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(function (n) { return !n.disabled && n.offsetParent !== null; });
@@ -3940,11 +4036,11 @@
     }
     el.addEventListener('click', function (ev) {
       if (ev.target.closest('[data-w-skip]')) { done(); return; }
-      if (ev.target.closest('[data-w-next]')) { haptic(); i++; draw(); focusIn(); return; }
-      if (ev.target.closest('[data-w-prev]')) { haptic(); wizCollect(i - pages.length); i = Math.max(pages.length - 1, i - 1); draw(); focusIn(); return; }
+      if (ev.target.closest('[data-w-next], [data-w-next-tap]')) { haptic(); i++; draw(); focusIn(); return; }
+      if (ev.target.closest('[data-w-prev]')) { haptic(); var cs = steps[i]; if (cs && cs.t === 'wiz') wizCollect(cs.n); i = Math.max(0, i - 1); while (i > 0 && (steps[i].t === 'custom')) i--; draw(); focusIn(); return; }
       if (ev.target.closest('[data-w-int]')) {
-        haptic(); var stp = i - pages.length; wizCollect(stp);
-        if (stp === 2) {   // finished: keep the choices on this phone, nothing is sent anywhere
+        haptic(); var cur = steps[i]; wizCollect(cur.n);
+        if (cur.n === 2) {   // finished: keep the choices on this phone, nothing is sent anywhere
           if (wizState.topics.length || wizState.cats.length) store('interests', { topics: wizState.topics, cats: wizState.cats, at: Date.now() });
           store('look', wizState.look);
           if (wizState.name) store('profile', Object.assign({}, store('profile') || {}, { name: wizState.name }));
@@ -3952,8 +4048,9 @@
         i++; draw(); focusIn(); return;
       }
       var b = ev.target.closest('[data-auth]'); if (!b) return; var k = b.getAttribute('data-auth'); haptic();
-      if (k === 'guest') done();
-      else if (k === 'email') { done(); go('/app/signin?step=email'); }
+      if (k === 'guest') { done(); return; }
+      if (!authGate(el)) return;
+      if (k === 'email') { done(); go('/app/signin?step=email'); }
       else toast((k === 'apple' ? 'Continue with Apple' : 'Continue with Google') + ' switches on with the store release.');
     });
     wireLook(el); document.body.appendChild(el); draw();
