@@ -522,6 +522,21 @@
       return '<button type="button" class="chip" ' + attr + '="' + esc(c[0]) + '" aria-pressed="' + (c[0] === current) + '">' + (CAT_DOT[c[0]] ? '<i class="chip__dot ' + CAT_DOT[c[0]] + '" aria-hidden="true"></i>' : '') + esc(c[1]) + '</button>';
     }).join('');
   }
+  // Partner and membership logos: one calm card, logos in fixed slots (no tile borders), a note where a partner requires one
+  function logoCard(pd, big) {
+    function row(label, list) {
+      if (!list || !list.length) return '';
+      return '<div class="lcard__sec"><h3 class="lcard__label">' + esc(label) + '</h3><ul class="lcard__row lcard__row--' + list.length + '">' + list.map(function (o) {
+        var dark = /world bowls/i.test(o.name);
+        var img = '<img src="' + esc(o.logo) + '" alt="' + esc(o.name) + '" decoding="async">';
+        var cls = 'lcard__logo' + (dark ? ' lcard__logo--dark' : '');
+        return '<li>' + (safeUrl(o.url) ? '<a class="' + cls + '" href="' + esc(o.url) + '" target="_blank" rel="noopener" aria-label="' + esc(o.name) + ', opens their website">' + img + '</a>' : '<span class="' + cls + '">' + img + '</span>') + '</li>';
+      }).join('') + '</ul></div>';
+    }
+    var notes = (pd.partners || []).concat(pd.memberOf || []).filter(function (o) { return o.note; });
+    return '<section class="lcard' + (big ? ' lcard--big' : '') + '" aria-label="Partners and memberships">' + row('Our partners', pd.partners) + row('Proud member of', pd.memberOf) +
+      (big && notes.length ? '<p class="lcard__note">' + notes.map(function (o) { return esc(o.note); }).join(' ') + '</p>' : '') + '</section>';
+  }
   // Calendar view: a month grid with tournament days marked; tap a day to see what is on.
   function addMonths(ym, n) {
     var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + n;
@@ -830,15 +845,7 @@
       img.addEventListener('error', function () { img.hidden = true; });
     });
     getJSON('/partners-data.json').then(function (pd) {
-      var el = view.querySelector('#home-partners'); if (!el) return;
-      function strip(id, title, list) {
-        if (!list.length) return '';
-        return '<section class="hsec" aria-labelledby="' + id + '"><div class="section__head"><h2 class="section__title" id="' + id + '">' + esc(title) + '</h2></div><ul class="logostrip">' + list.map(function (o) {
-          var img = '<img src="' + esc(o.logo) + '" alt="' + esc(o.name) + '" decoding="async">';
-          return '<li>' + (safeUrl(o.url) ? '<a class="logochip' + (/world bowls/i.test(o.name) ? ' logochip--dark' : '') + '" href="' + esc(o.url) + '" target="_blank" rel="noopener" aria-label="' + esc(o.name) + ', opens their website">' + img + '</a>' : '<span class="logochip' + (/world bowls/i.test(o.name) ? ' logochip--dark' : '') + '">' + img + '</span>') + '</li>';
-        }).join('') + '</ul></section>';
-      }
-      el.innerHTML = strip('h-par', 'Our partners', pd.partners || []) + strip('h-mem', 'Proud member of', pd.memberOf || []);
+      var el = view.querySelector('#home-partners'); if (el) el.innerHTML = logoCard(pd, false);
     }).catch(function () {});
     var sb = view.querySelector('[data-story]');
     if (sb) sb.addEventListener('click', function () { storyDialog(d.story); });
@@ -2560,7 +2567,7 @@
           var em = /^mailto:/.test(m.link || '') ? m.link : '';
           var inner = '<span class="bgrid__av">' + esc(initials(m.title)) + '</span><span class="bgrid__name">' + esc(m.title) + '</span><span class="bgrid__role">' + esc(m.meta || '') + '</span>';
           return '<li>' + (em ? '<a class="bcard" href="' + esc(em) + '" aria-label="Email ' + esc(m.title) + ', ' + esc(m.meta || '') + '">' + inner + '</a>' : '<div class="bcard">' + inner + '</div>') + '</li>'; }).join('') + '</ul><p class="footnote">Tap a name to send an email.</p></section>' : '') +
-        logoGroup('Our partners', pd.partners || []) + logoGroup('Proud member of', pd.memberOf || []) +
+        '<div id="partners">' + logoCard(pd, true) + '</div>' +
         '<div class="actions"><a class="btn btn--wide" href="/app/page/contact-us">Contact Southwest</a></div>';
       if (location.hash === '#partners') { var g = view.querySelector('#partners'); if (g) g.scrollIntoView(); }
     });

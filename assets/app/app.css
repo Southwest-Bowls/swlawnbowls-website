@@ -1492,3 +1492,17 @@ h1 { font-weight: 800; }
   .btn, .herocard, .mini, .rcard, .mrow, .chip, .circbtn, .bcard, .shortcut__dot { transition: transform 220ms cubic-bezier(.2, .9, .3, 1.2), box-shadow 220ms ease, background-color 160ms ease; }
   .btn:active, .herocard:active, .mini:active, .rcard:active, .bcard:active, .chip:active { transform: scale(.975); }
 }
+
+/* Logo card: partners and memberships in one calm card */
+.lcard { background: #fff; border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s4); margin: var(--s4) 0; display: grid; gap: var(--s4); }
+.lcard__label { margin: 0 0 var(--s3); font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: #635861; }
+.lcard__row { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s4); align-items: center; }
+.lcard__row--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .lcard__row--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lcard__row--1 { grid-template-columns: 1fr; }
+.lcard__logo { display: grid; place-items: center; height: 56px; text-decoration: none; }
+.lcard--big .lcard__logo { height: 72px; }
+.lcard__logo img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+.lcard__logo--dark { background: #231120; border-radius: 14px; padding: 5px; width: 56px; justify-self: center; height: 56px; }
+.lcard--big .lcard__logo--dark { width: 72px; height: 72px; }
+.lcard__sec + .lcard__sec { border-top: 1px solid var(--line); padding-top: var(--s4); }
+.lcard__note { margin: 0; padding-top: var(--s3); border-top: 1px solid var(--line); color: #635861; font-size: var(--fs-xs); line-height: 1.4; }
+:root[data-theme="dark"] .lcard { background: #fff; }
