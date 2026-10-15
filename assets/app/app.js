@@ -2151,7 +2151,7 @@
           '<span class="cname__pill' + (c.status === 'private' ? '' : ' cname__pill--open') + '">' + (c.status === 'private' ? 'Private club' : 'Open club') + '</span></div>' +
           (tiles.length ? '<div class="ctiles">' + tiles.map(function (t) { return '<a class="ctile" href="' + esc(t[3]) + '"' + (t[0] === 'globe' ? ' target="_blank" rel="noopener"' : '') + '><span class="ctile__ic" aria-hidden="true">' + icon(t[0]) + '</span><b>' + t[1] + '</b><small>' + esc(t[2]) + '</small></a>'; }).join('') + '</div>' : '') +
           (c.summary ? '<p class="cinfo"><span class="cinfo__ic" aria-hidden="true">' + icon('star') + '</span><span>' + esc(c.summary) + '</span></p>' : '') +
-          (c.details ? '<details class="fold"><summary><span>About the club</span>' + CHEV + '</summary><p style="padding-bottom:16px">' + esc(c.details) + '</p></details>' : '') +
+          (c.details ? '<section class="cabout"><h2>About the club</h2><p>' + esc(c.details) + '</p></section>' : '') +
         '</div>' +
         (primary ? '<div class="actionbar">' + primary + '</div>' : '');
       view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
