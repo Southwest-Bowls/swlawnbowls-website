@@ -1313,3 +1313,11 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .ticks legend { font-weight: 700; margin-bottom: 6px; padding: 0; }
 .tick { display: flex; align-items: center; gap: var(--s3); min-height: 48px; padding: 0 var(--s3); border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); cursor: pointer; }
 .tick input { width: 22px; height: 22px; accent-color: var(--primary); flex: none; }
+
+/* Place chip: every result row has one; gold, silver, bronze, then neutral */
+.plc { flex: none; width: 56px; height: 56px; border-radius: 16px; display: grid; place-content: center; text-align: center; background: var(--subtle); color: #231120; line-height: 1; }
+.plc b { font-size: 1.5rem; } .plc small { font-size: .7rem; font-weight: 800; text-transform: uppercase; }
+.plc--1 { background: #f5c93a; } .plc--2 { background: #cfcbd2; } .plc--3 { background: #e0a56b; }
+.plc--n { background: var(--subtle); color: var(--heading); }
+.plc .i { width: 26px; height: 26px; margin: 0 auto; }
+.mfield--icon select { width: 100%; min-height: 52px; padding: 0 var(--s4) 0 46px; border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); color: var(--text); font-size: max(16px, 1rem); }

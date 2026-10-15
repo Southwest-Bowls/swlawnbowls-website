@@ -2244,11 +2244,20 @@
     out.sort(function (a, b) { var da = resultDate(a.r), db = resultDate(b.r); return da < db ? 1 : da > db ? -1 : 0; });
     return out;
   }
+  function placeChip(m) {
+    var n = +m.rank, cls = n === 1 ? 'plc--1' : n === 2 ? 'plc--2' : n === 3 ? 'plc--3' : 'plc--n';
+    return '<span class="plc ' + cls + '" aria-hidden="true">' + (n ? '<b>' + n + '</b><small>' + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th') + '</small>' : icon('trophy')) + '</span>';
+  }
+  function myResultRow(m) {
+    var d = resultDate(m.r);
+    return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(m.r.id) + '">' + placeChip(m) + '<span class="rcard__body"><span class="rcard__title">' + esc(shortTitle(m.r.t.title)) + '</span>' +
+      '<span class="rcard__meta">' + esc([d ? fmt(d, { month: 'short', day: 'numeric' }) : '', m.rankLabel && !+m.rank ? m.rankLabel : '', m.div, m.partners.length ? 'with ' + m.partners.join(', ') : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>';
+  }
   function placeWord(n) { n = +n; return n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : n ? n + 'th' : ''; }
   // Identity header: everyone can use the app without an account, including
   // players from other divisions and other countries. The optional details
   // behind it stay on this phone; nothing is sent anywhere.
-  var DIVISION_HINTS = ['Southwest (SWD)', 'Pacific Inter-Mountain (PIMD)', 'Arizona', 'Other U.S. division', 'Outside the United States'];
+  var DIVISIONS = ['Southwest (SWD)', 'Pacific Inter-Mountain (PIMD)', 'Northwest', 'South Central', 'Central', 'Northeast', 'Southeast', 'International (outside the U.S.)'];
   function initials(name) {
     var w = String(name || '').trim().split(/\s+/).filter(Boolean);
     return w.length ? (w[0].charAt(0) + (w.length > 1 ? w[w.length - 1].charAt(0) : '')).toUpperCase() : '';
@@ -2286,7 +2295,7 @@
           (photo ? '<img src="' + esc(photo) + '" alt="" width="96" height="120">' : (initials(p.name) ? esc(initials(p.name)) : icon('person'))) + '</button>' +
           '<input type="file" id="pro-photo" accept="image/*" hidden>' +
           '<div class="pro__text"><h1 class="pro__name">' + esc(p.name || 'Your name') + '</h1>' +
-          '<div class="idhead__chips">' + [p.division, p.club].filter(Boolean).map(function (c) { return '<span class="idhead__chip">' + esc(c) + '</span>'; }).join('') + '</div></div>' +
+          '<div class="idhead__chips">' + [p.country || p.division, p.club].filter(Boolean).map(function (c) { return '<span class="idhead__chip">' + esc(c) + '</span>'; }).join('') + '</div></div>' +
           '<button class="btn btn--ghost btn--sm pro__edit" type="button" data-edit-profile>Edit</button></section>' +
         ((p.badges || []).length ? '<ul class="badges" aria-label="About me">' + p.badges.map(function (b) { return '<li class="badge">' + icon('check', 'i--sm') + esc(badgeLabel(b)) + '</li>'; }).join('') + '</ul>' : '') +
         '<p class="pro__bio">' + (p.bio ? esc(p.bio).replace(/\n/g, '<br>') : '<span class="muted">Add a short bio with Edit.</span>') + '</p>' +
@@ -2295,9 +2304,7 @@
           : '<p class="muted">Anything else you want to list, such as a title from another division or year. Add it with Edit.</p>') + '</section>' +
         (partners.length ? '<section class="block"><h2>Played most with</h2><p>' + partners.map(esc).join(' · ') + '</p></section>' : '') +
         '<section class="block"><h2>Results' + (mine.length ? ' (' + mine.length + ')' : '') + '</h2>' +
-          (mine.length ? '<ul class="list list--plain">' + mine.map(function (m) {
-            return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(m.r.id) + '">' + resultBlock(m.r) + '<span class="rcard__body"><span class="rcard__title">' + esc(shortTitle(m.r.t.title)) + '</span>' +
-              '<span class="rcard__meta">' + esc([placeWord(m.rank) || m.rankLabel, m.div, m.partners.length ? 'with ' + m.partners.join(', ') : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>'; }).join('') + '</ul>'
+          (mine.length ? '<ul class="list list--plain">' + mine.map(myResultRow).join('') + '</ul>'
             : '<p class="muted">' + (p.name ? 'No published results under “' + esc(p.name) + '”. Results match the full name exactly as the Division published it.' : 'Add your name with Edit to see your published results.') + '</p>') + '</section>' +
         '<p class="footnote">Everything on this page is kept on this phone only. Results come from the Division’s published results and are matched by name.</p>';
       var inp = view.querySelector('#pro-photo');
@@ -2307,23 +2314,34 @@
     });
   }
   function editProfileSheet(done) {
+    getJSON('/clubs-data.json').catch(function () { return {}; }).then(function (cd) {
+      openProfileSheet(done, (cd.clubs || []).map(function (c) { return c.name; }).sort());
+    });
+  }
+  function openProfileSheet(done, clubNames) {
     var p = store('profile') || {};
     var hon = (p.honours || []).map(function (h) { return (h.year ? h.year + ' ' : '') + h.text; }).join('\n');
     openDialog('Edit profile',
       '<p class="muted">Kept on this phone only.</p><form class="mform" id="g-form" novalidate>' +
       '<label class="mfield mfield--icon"><span>Your name</span><span class="mfield__box">' + icon('person') + '<input id="g-name" type="text" autocomplete="name" value="' + esc(p.name || '') + '"></span></label>' +
-      '<label class="mfield mfield--icon"><span>Home division or country</span><span class="mfield__box">' + icon('pin') + '<input id="g-div" type="text" list="g-div-list" value="' + esc(p.division || '') + '"></span><datalist id="g-div-list">' + DIVISION_HINTS.map(function (d) { return '<option value="' + esc(d) + '">'; }).join('') + '</datalist></label>' +
-      '<label class="mfield mfield--icon"><span>Home club</span><span class="mfield__box">' + icon('people') + '<input id="g-club" type="text" value="' + esc(p.club || '') + '"></span></label>' +
+      '<label class="mfield mfield--icon"><span>Home division</span><span class="mfield__box">' + icon('pin') + '<select id="g-div"><option value="">Choose…</option>' + DIVISIONS.map(function (d) { return '<option' + (d === p.division ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select></span></label>' +
+      '<label class="mfield mfield--icon" id="g-country-row"' + (/^International/.test(p.division || '') ? '' : ' hidden') + '><span>Country</span><span class="mfield__box">' + icon('pin') + '<input id="g-country" type="text" autocomplete="country-name" value="' + esc(p.country || '') + '"></span></label>' +
+      '<label class="mfield mfield--icon"><span>Home club</span><span class="mfield__box">' + icon('people') + '<select id="g-club"><option value="">Choose…</option>' + clubNames.map(function (n) { return '<option' + (n === p.club ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '<option value="__other"' + (p.club && clubNames.indexOf(p.club) < 0 ? ' selected' : '') + '>Another club (not listed)</option></select></span></label>' +
+      '<label class="mfield mfield--icon" id="g-other-row"' + (p.club && clubNames.indexOf(p.club) < 0 ? '' : ' hidden') + '><span>Club name</span><span class="mfield__box">' + icon('people') + '<input id="g-other" type="text" value="' + esc(p.club && clubNames.indexOf(p.club) < 0 ? p.club : '') + '"></span></label>' +
       '<fieldset class="ticks"><legend>More about me</legend>' + BADGES.map(function (b) {
         return '<label class="tick"><input type="checkbox" name="badge" value="' + b[0] + '"' + ((p.badges || []).indexOf(b[0]) >= 0 ? ' checked' : '') + '><span>' + esc(b[1]) + '</span></label>'; }).join('') + '</fieldset>' +
       '<label class="mfield"><span>Bio</span><textarea id="g-bio" rows="4" maxlength="600">' + esc(p.bio || '') + '</textarea></label>' +
       '<label class="mfield"><span>Other honours (one per line, start with the year)</span><textarea id="g-hon" rows="5" maxlength="1500" placeholder="2024 Team USA, ...">' + esc(hon) + '</textarea></label>' +
       '<div class="actions"><button class="btn btn--wide" type="submit">Save</button></div></form>');
+    var gdiv = document.getElementById('g-div'), gclub = document.getElementById('g-club');
+    gdiv.addEventListener('change', function () { document.getElementById('g-country-row').hidden = !/^International/.test(gdiv.value); });
+    gclub.addEventListener('change', function () { document.getElementById('g-other-row').hidden = gclub.value !== '__other'; });
     document.getElementById('g-form').addEventListener('submit', function (ev) {
       ev.preventDefault();
       var f = ev.target;
+      var club = f.querySelector('#g-club').value === '__other' ? f.querySelector('#g-other').value.trim() : f.querySelector('#g-club').value;
       var honours = f.querySelector('#g-hon').value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) { var m = /^((?:19|20)\d{2})\b[\s:,.\-–—]*(.*)$/.exec(l); return m && m[2] ? { year: m[1], text: m[2] } : { year: '', text: l }; });
-      store('profile', { name: f.querySelector('#g-name').value.trim(), division: f.querySelector('#g-div').value.trim(), club: f.querySelector('#g-club').value.trim(), bio: f.querySelector('#g-bio').value.trim(), honours: honours,
+      store('profile', { name: f.querySelector('#g-name').value.trim(), division: f.querySelector('#g-div').value, country: /^International/.test(f.querySelector('#g-div').value) ? f.querySelector('#g-country').value.trim() : '', club: club, bio: f.querySelector('#g-bio').value.trim(), honours: honours,
         badges: Array.prototype.map.call(f.querySelectorAll('input[name=badge]:checked'), function (c) { return c.value; }) });
       closeDialog(); toast('Saved'); if (done) done();
     });
@@ -2360,10 +2378,7 @@
       var gold = mine.filter(function (m) { return +m.rank === 1; }).length, pod = mine.filter(function (m) { return +m.rank >= 1 && +m.rank <= 3; }).length;
       el.innerHTML = '<section class="section mysec" aria-labelledby="h-myres"><div class="section__head"><h2 class="section__title" id="h-myres">My results</h2></div>' +
         (mine.length ? '<div class="hub__stats mystats">' + '<span class="hub__stat"><b>' + new Set(mine.map(function (m) { return m.r.id; })).size + '</b><span>Tournaments</span></span><span class="hub__stat"><b>' + pod + '</b><span>Podiums</span></span><span class="hub__stat"><b>' + gold + '</b><span>Wins</span></span></div>' +
-          '<ul class="list list--plain">' + mine.slice(0, 3).map(function (m) {
-            return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(m.r.id) + '">' + resultBlock(m.r) + '<span class="rcard__body"><span class="rcard__title">' + esc(shortTitle(m.r.t.title)) + '</span>' +
-              '<span class="rcard__meta">' + esc([placeWord(m.rank) || m.rankLabel, m.div, m.partners.length ? 'with ' + m.partners.join(', ') : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>';
-          }).join('') + '</ul>' + '<a class="textlink" href="/app/my/profile">See all ' + mine.length + ' on my profile' + icon('chev', 'i--sm') + '</a>'
+          '<ul class="list list--plain">' + mine.slice(0, 3).map(myResultRow).join('') + '</ul>' + '<a class="textlink" href="/app/my/profile">See all ' + mine.length + ' on my profile' + icon('chev', 'i--sm') + '</a>'
           : '<p class="muted">No published results under “' + esc(prof0.name) + '” yet. Results match the full name exactly as the Division published it.</p>') +
         '<p class="footnote">Matched on this phone from published results. Nothing is sent anywhere.</p></section>';
     }).catch(function () {});
