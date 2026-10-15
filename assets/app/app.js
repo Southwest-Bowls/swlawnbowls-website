@@ -1558,7 +1558,7 @@
   function watch() {
     setTitle('Watch');
     var today = todayISO();
-    view.innerHTML = pageHead('Southwest TV', 'Livestreams and replays') +
+    view.innerHTML = backLink('/app/more', 'More') + pageHead('Southwest TV', 'Livestreams and replays') +
       '<div id="w-feature">' + loading() + '</div><div id="w-again"></div><div id="w-next"></div><p class="footnote" id="w-status"></p>' +
       '<section class="section" aria-labelledby="h-more-tv"><h2 class="section__title" id="h-more-tv">More from SW TV</h2><ul class="rows rows--menu">' +
       menuRow(YT_CHANNEL_URL, 'tv', 'SW TV on YouTube', 'Subscribe to hear when we go live') +
