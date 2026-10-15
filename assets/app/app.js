@@ -515,7 +515,7 @@
     var els = [];
     root.querySelectorAll('[data-roll]').forEach(function (el) {
       var key = el.getAttribute('data-roll-key') || el.getAttribute('data-roll');
-      if (rolledKeys[key]) return; rolledKeys[key] = true;
+      if (rolledKeys[key] && Date.now() - rolledKeys[key] < 60000) return; rolledKeys[key] = Date.now();
       var txt = el.getAttribute('data-roll'); el.setAttribute('aria-label', txt); el.setAttribute('role', 'text');
       el.innerHTML = txt.split('').map(function (ch, i) {
         if (!/\d/.test(ch)) return '<span aria-hidden="true">' + esc(ch) + '</span>';
@@ -3128,15 +3128,15 @@
     function prow(href, ic, title, meta) { return '<a class="prow" href="' + href + '"><span class="prow__ic" aria-hidden="true">' + icon(ic) + '</span><span class="prow__t"><b>' + esc(title) + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a>'; }
     view.innerHTML = '<header class="phero"><span class="phero__brand"><img src="/assets/app/swd-logo.png" alt="" width="22" height="26">Southwest Bowls Division</span><a class="phero__av" href="/app/my/profile" aria-label="Open my profile">' + (pphoto ? '<img src="' + esc(pphoto) + '" alt="">' : (initials(pf.name) ? esc(initials(pf.name)) : icon('person'))) + '</a>' +
         '<h1 class="phero__name">' + (pf.name ? esc(pf.name) : 'Welcome') + '</h1>' +
-        '<p class="phero__sub">' + (memberSession() ? 'Signed in' : (pf.name ? '' : 'Guest') ) + ([pf.division, pf.club].filter(Boolean).length ? [pf.division, pf.club].filter(Boolean).map(esc).join(' · ') : (memberSession() || pf.name ? '' : ' · Tap the circle to add your details')) + '</p></header>' +
+        '<p class="phero__sub">' + (memberSession() ? 'Signed in' + ([pf.division, pf.club].filter(Boolean).length ? ' · ' : '') : (pf.name ? '' : 'Guest') ) + ([pf.division, pf.club].filter(Boolean).length ? [pf.division, pf.club].filter(Boolean).map(esc).join(' · ') : (memberSession() || pf.name ? '' : ' · Tap the circle to add your details')) + '</p></header>' +
+      (preview ? '<section class="section mysec mysec--top" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
+        '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + loading() + '</div></section>' : '') +
       '<div class="psheet">' +
         (memberSession() ? '' : '<a class="pbanner" href="/app/signin"><span class="pbanner__t"><b>Sign in or create an account</b><small>Enter tournaments and keep your details</small></span><span class="pbanner__art" aria-hidden="true">' + icon('person') + '</span></a>') +
         '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honours and results' : 'Add your name and bio') + prow('/app/events?show=saved', 'bookmark', 'Saved events', nSaved ? nSaved + ' saved' : 'Nothing saved yet') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + '</div>' +
         '<div class="pgroup">' + prow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline') + '</div>' +
       '</div>' +
-      '<div id="my-res"></div>' + myEntriesHtml() +
-      (preview ? '<section class="section mysec" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
-        '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + loading() + '</div></section>' : '');
+      '<div id="my-res"></div>' + myEntriesHtml();
     var box = view.querySelector('#m-box');
     wireProfile();
     view.onclick = function (ev) {

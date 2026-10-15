@@ -2206,3 +2206,9 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 
 .signin__hint { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 var(--s3); color: var(--text-2); font-size: var(--fs-sm); text-align: left; }
 .signin__hint .i { flex: none; margin-top: 2px; }
+
+/* Home greeting may wrap instead of being cut off */
+.hbar__hello { white-space: normal; overflow: visible; text-overflow: clip; font-size: 1.3rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* Coloured backdrops fade in from the very top, so there is no hard edge under the status bar */
+.hbg, .escene__bg { -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16%, #000 42%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 16%, #000 42%, transparent 100%); }
+.mysec--top { margin-top: 0; }
