@@ -2069,3 +2069,5 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 
 .rollnum { font: inherit; font-weight: inherit; color: inherit; } .rollnum .roll { vertical-align: top; } .rollnum span { font: inherit; color: inherit; }
 .hbar__date .rollnum { font-weight: inherit; }
+.pulse__n.rollnum { font-family: var(--font-display); font-size: 2.4rem; font-weight: 600; line-height: 1.1; }
+.pulse__n .roll, .pulse__n .roll span { font-size: inherit; }

@@ -658,6 +658,18 @@
         '<div class="kcard__body"><h3 class="kcard__name">' + esc(f.who) + '</h3><p class="kcard__city">' + esc(shortTitle(r.t.title)) + '</p><p class="kcard__sum">' + esc(r.t.meta || '') + '</p></div></a>';
     }), 'Latest champions') + '</section>';
   }
+  // Home version: same size and look as the "Coming up" row
+  function champRow(list) {
+    var items = list.filter(function (r) { return firsts(r).length; }).slice(0, 8);
+    if (!items.length) return '';
+    return '<section class="hsec" aria-labelledby="h-champ"><div class="section__head"><h2 class="section__title" id="h-champ">Latest champions</h2>' +
+      '<a class="section__more" href="/app/results">See all' + icon('chev', 'i--sm') + '</a></div><ul class="hscroll">' + items.map(function (r) {
+        var f = firsts(r)[0], cat = catClass(r.cat ? r : { cat: categoryOf(r.t.title) });
+        return '<li><a class="pcard ' + cat + '" href="/app/results/' + encodeURIComponent(r.id) + '"' + (f.photo ? ' style="--ph:url(\'' + esc(f.photo) + '\')"' : '') + '>' +
+          '<span class="pcard__cat">' + icon('trophy', 'i--sm') + 'Champions</span>' +
+          '<span class="pcard__body"><span class="pcard__date">' + esc(r.t.meta || '') + '</span><span class="pcard__title">' + esc(f.who) + '</span><span class="pcard__meta">' + esc(shortTitle(r.t.title)) + '</span></span></a></li>';
+      }).join('') + '</ul></section>';
+  }
   function championPanel(r) {
     var f = firsts(r);
     if (!f.length) return '';
@@ -892,7 +904,7 @@
     rollIn(view);
     loadResults().then(function (list) {
       var el = view.querySelector('#home-champ'); if (!el) return;
-      el.innerHTML = champStrip(list); if (typeof wireDecks === 'function') wireDecks(el);
+      el.innerHTML = champRow(list);
     }).catch(function () {});
   }
   // Typing on Home moves to the full search screen, keeping the caret.
