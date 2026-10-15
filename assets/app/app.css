@@ -2066,3 +2066,6 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 .illo__card { position: absolute; left: 36px; top: 24px; width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--c); box-shadow: 0 10px 22px rgba(35,17,32,.14); }
 .illo__card .i { width: 28px; height: 28px; }
 .empty b, .error b { font-family: var(--font-display); }
+
+.rollnum { font: inherit; font-weight: inherit; color: inherit; } .rollnum .roll { vertical-align: top; } .rollnum span { font: inherit; color: inherit; }
+.hbar__date .rollnum { font-weight: inherit; }

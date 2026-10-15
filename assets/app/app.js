@@ -817,7 +817,7 @@
     currentNotices = live.filter(function (x) { return x.e.alert; });
     var unread = unreadCount(currentNotices);
     var hbgEv = (function () { var u0 = live.filter(function (x) { return eventPhase(x, today) === 'now'; }).concat(live.filter(function (x) { return eventPhase(x, today) !== 'now'; }))[0]; return u0 ? eventPhoto(u0, d.clubs) : ''; })();
-    var html = (hbgEv ? '<div class="hbg" aria-hidden="true" style="--ph:url(\'' + esc(hbgEv) + '\')"></div>' : '') + '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'short', month: 'short', day: 'numeric' })) + '</span>' +
+    var html = (hbgEv ? '<div class="hbg" aria-hidden="true" style="--ph:url(\'' + esc(hbgEv) + '\')"></div>' : '') + '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'short' }) + ', ' + fmt(today, { month: 'short' })) + ' <b class="rollnum" data-roll="' + (+today.slice(8)) + '" data-roll-key="home-day-' + today + '">' + (+today.slice(8)) + '</b></span>' +
       '<h1 class="hbar__hello">' + (function () { var h = new Date().getHours(); return h < 5 ? 'Hello' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; })() + (first ? ', ' + esc(first) : '') + '</h1>' +
       (function () { var fol = followed(), fe = live.filter(function (x) { return (x.clubIds || []).some(function (id) { return fol.indexOf(id) >= 0; }); })[0];
         return fe ? '<a class="hbar__club" href="/app/events/' + encodeURIComponent(fe.id) + '">' + icon('star', 'i--sm') + esc(fe.clubLabel) + ' hosts ' + esc(fe.short) + ' · ' + esc(dateRangeLabel(fe.dates, true)) + '</a>' : ''; })() + '</div>' +
@@ -848,7 +848,7 @@
         pc = '<a class="pulse pulse--live" href="/app/events/' + encodeURIComponent(ue.id) + (hasDraw ? '?tab=draw' : '') + '"><span class="pulse__dot" aria-hidden="true"></span><span class="pulse__t"><small>Happening now</small><b>' + esc(ue.short) + '</b><span>' + esc(ue.clubLabel) + (underway.length > 1 ? ' · +' + (underway.length - 1) + ' more' : '') + '</span></span>' + (hasDraw ? '<span class="pulse__go">Draw & scores' + icon('chev', 'i--sm') + '</span>' : '') + '</a>';
       } else if (future.length) {
         var dd = daysBetween(today, nextStart), ne = sameDay[0];
-        pc = '<a class="pulse" href="/app/events/' + encodeURIComponent(ne.id) + '"><span class="pulse__n" aria-hidden="true">' + dd + '</span><span class="pulse__t"><small>' + (dd === 1 ? 'day to go' : 'days to go') + '</small><b>' + esc(ne.short) + '</b><span>' + esc(ne.clubLabel) + (sameDay.length > 1 ? ' · +' + (sameDay.length - 1) + ' more that day' : '') + '</span></span></a>';
+        pc = '<a class="pulse" href="/app/events/' + encodeURIComponent(ne.id) + '"><b class="pulse__n rollnum" data-roll="' + dd + '" data-roll-key="home-pulse-' + today + '-' + dd + '">' + dd + '</b><span class="pulse__t"><small>' + (dd === 1 ? 'day to go' : 'days to go') + '</small><b>' + esc(ne.short) + '</b><span>' + esc(ne.clubLabel) + (sameDay.length > 1 ? ' · +' + (sameDay.length - 1) + ' more that day' : '') + '</span></span></a>';
       }
       var urg = live.map(function (x) { return { x: x, st: entryStatus(x, today) }; }).filter(function (o) { return o.st && o.st.kind === 'open' && o.st.left <= 3; }).sort(function (a, b) { return a.st.left - b.st.left; })[0];
       if (urg) pc += '<a class="pulse__nudge' + (urg.st.urgent ? ' pulse__nudge--hot' : '') + '" href="/app/events/' + encodeURIComponent(urg.x.id) + '">' + icon('hourglass', 'i--sm') + '<span><b>' + (urg.st.left === 0 ? 'Entries close today' : urg.st.left === 1 ? 'Entries close tomorrow' : 'Entries close in ' + urg.st.left + ' days') + '</b> · ' + esc(urg.x.short) + '</span></a>';
@@ -889,6 +889,7 @@
     }).catch(function () {});
     var sb = view.querySelector('[data-story]');
     if (sb) sb.addEventListener('click', function () { storyDialog(d.story); });
+    rollIn(view);
     loadResults().then(function (list) {
       var el = view.querySelector('#home-champ'); if (!el) return;
       el.innerHTML = champStrip(list); if (typeof wireDecks === 'function') wireDecks(el);
