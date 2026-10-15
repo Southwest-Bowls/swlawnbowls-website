@@ -924,7 +924,7 @@
     setTitle('Search');
     var today = todayISO();
     // The field appears at once (so typing carries on); results follow the data
-    view.innerHTML = '<div class="searchbar"><a class="iconbtn" href="/app" data-back data-close-search aria-label="Close search">' + icon('back') + '</a>' +
+    view.innerHTML = '<div class="searchbar"><a class="circbtn" href="/app" data-back data-close-search aria-label="Close search">' + icon('back') + '</a>' +
       '<form class="search search--page" role="search">' + icon('search') + '<label class="sr-only" for="sq">Search events, clubs, results</label>' +
       '<input id="sq" type="search" placeholder="Events, clubs, results" value="' + esc(params.get('q') || '') + '" autocomplete="off" enterkeyhint="search"></form></div>' +
       '<div id="s-out">' + loading() + '</div>';
@@ -935,11 +935,36 @@
       var RS = all[2].map(function (r) { return { r: r, t: fold([r.t.title, r.t.meta, r.names].join(' ')) }; });
       var expand = params.get('all') || '';
       var input = document.getElementById('sq');
-      function group(key, title, items, row) {
+      var clubsAll = all[1].clubs || [], special = '';
+      function clubMini(c) {
+        var id = c.id || slugify(c.name), ph = clubPhotoOf(c);
+        return '<li><a class="smini" href="/app/more/clubs/' + encodeURIComponent(id) + '"><span class="smini__ph"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '></span><span class="smini__t"><b>' + esc(c.name) + '</b><small>' + esc(c.city) + '</small></span><span class="smini__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a></li>';
+      }
+      function recents() { var r = store('recentSearches'); return Array.isArray(r) ? r : []; }
+      function remember(q) { q = String(q || '').trim(); if (q.length < 2) return; var r = recents().filter(function (z) { return fold(z) !== fold(q); }); r.unshift(q); store('recentSearches', r.slice(0, 6)); }
+      function weekendRange() { var d = new Date(), dow = new Date(today + 'T12:00:00Z').getUTCDay(), toSat = (6 - dow + 7) % 7, sat = addDays(today, dow === 0 ? -1 : toSat), sun = addDays(sat, 1); return dow === 0 ? [addDays(today, 0), today] : [sat, sun]; }
+      function drawSpecial(out) {
+        var list;
+        if (special === 'weekend') { var wr = weekendRange(); list = all[0].filter(function (x) { return x.dates && x.dates.start <= wr[1] && x.dates.end >= wr[0]; }); }
+        else list = all[0].filter(function (x) { var st = entryStatus(x, today); return st && (st.kind === 'open' || st.kind === 'openish'); });
+        out.innerHTML = '<h2 class="group-title">' + (special === 'weekend' ? 'This weekend' : 'Entries open') + ' <span class="muted">(' + list.length + ')</span></h2>' +
+          (list.length ? '<ul class="list list--cards">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : state('empty', special === 'weekend' ? 'Nothing this weekend' : 'No entries open', 'Check the calendar for what is coming up.', '<a class="btn btn--ghost" href="/app/events?show=calendar">Open the calendar</a>'));
+      }
+      function drawStart(out) {
+        var upc = all[0].filter(function (x) { return eventPhase(x, today) !== 'past'; }).slice(0, 5), rc = recents();
+        var chips = [['weekend', 'This weekend'], ['open', 'Entries open'], ["women's", "Women's"], ["men's", "Men's"], ['mixed', 'Mixed'], ['pairs', 'Pairs'], ['triples', 'Triples'], ['singles', 'Singles']];
+        out.innerHTML = '<div class="schips" role="group" aria-label="Quick searches">' + chips.map(function (c) { return '<button type="button" class="cchip" data-sq="' + esc(c[0]) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>' +
+          (rc.length ? '<section class="ssec"><div class="section__head"><h2 class="section__title">Recent</h2><button class="section__more" type="button" data-clear-recent>Clear</button></div><div class="schips">' + rc.map(function (q) { return '<button type="button" class="cchip cchip--recent" data-sq="' + esc(q) + '">' + icon('clock', 'i--sm') + esc(q) + '</button>'; }).join('') + '</div></section>' : '') +
+          (upc.length ? '<section class="ssec"><div class="section__head"><h2 class="section__title">Coming up</h2><a class="section__more" href="/app/events">See all' + icon('chev', 'i--sm') + '</a></div><ul class="hscroll">' + upc.map(function (x) { return '<li>' + photoCard(x, clubsAll, today) + '</li>'; }).join('') + '</ul></section>' : '') +
+          '<section class="ssec"><div class="section__head"><h2 class="section__title">Clubs</h2><a class="section__more" href="/app/more/clubs">See all' + icon('chev', 'i--sm') + '</a></div><ul class="cstrip">' + clubsAll.filter(function (c) { return clubPhotoOf(c); }).slice(0, 14).map(function (c) {
+            return '<li><a class="cstrip__i" href="/app/more/clubs/' + encodeURIComponent(c.id || slugify(c.name)) + '"><span class="cstrip__ph" style="--ph:url(\'' + esc(clubPhotoOf(c)) + '\')"></span><span>' + esc(c.name) + '</span></a></li>'; }).join('') + '</ul></section>';
+        blurUp(out);
+      }
+      function group(key, title, items, row, kind) {
         if (!items.length) return '';
         var shown = expand === key ? items : items.slice(0, 5);
         return '<section class="sgroup" aria-labelledby="sg-' + key + '"><h2 class="group-title" id="sg-' + key + '">' + title + ' <span class="muted">(' + items.length + ')</span></h2>' +
-          '<ul class="rows rows--menu">' + shown.map(row).join('') + '</ul>' +
+          '<ul class="' + (kind === 'cards' ? 'list list--cards' : kind === 'clubs' ? 'smini-list' : 'rows rows--menu') + '">' + shown.map(row).join('') + '</ul>' +
           (items.length > shown.length ? '<button class="textlink" type="button" data-expand="' + key + '">Show all ' + items.length + ' ' + title.toLowerCase() + icon('chev', 'i--sm') + '</button>' : '') + '</section>';
       }
       function apply() {
@@ -947,11 +972,8 @@
         var out = document.getElementById('s-out');
         var u = new URLSearchParams(); if (raw) u.set('q', raw); if (raw && expand) u.set('all', expand);
         history.replaceState(history.state, '', '/app/search' + (u.toString() ? '?' + u : ''));
-        if (!terms.length) {
-          out.innerHTML = '<p class="muted" style="margin-top:16px">Search tournament names, clubs, cities and player names.</p>' +
-            '<ul class="rows rows--menu" style="margin-top:12px">' + menuRow('/app/events', 'cal', 'Browse events') + menuRow('/app/more/clubs', 'pin', 'Browse clubs') + menuRow('/app/results', 'trophy', 'Browse results') + '</ul>';
-          return;
-        }
+        if (special) { drawSpecial(out); return; }
+        if (!terms.length) { drawStart(out); return; }
         var hit = function (o) { return terms.every(function (w) { return o.t.indexOf(w) >= 0; }); };
         var ev = EV.filter(hit).map(function (o) { return o.x; });
         var up = ev.filter(function (x) { return eventPhase(x, today) !== 'past'; });
@@ -960,24 +982,25 @@
         var cl = CL.filter(hit).map(function (o) { return o.c; });
         var rs = RS.filter(hit).map(function (o) { return o.r; });
         if (!ev.length && !cl.length && !rs.length) {
-          out.innerHTML = state('empty', 'No matches for “' + raw + '”', 'Try a different spelling or fewer words.', '<button class="btn btn--ghost" type="button" data-clear-search>Clear search</button>');
+          out.innerHTML = state('empty', 'Nothing found', 'Nothing matches “' + raw + '”. Try a club name or a player’s last name.', '<button class="btn btn--ghost" type="button" data-clear-search>Clear search</button>');
           return;
         }
         out.innerHTML = '<p class="sr-only" aria-live="polite">' + (ev.length + cl.length + rs.length) + ' matches</p>' +
-          group('events', 'Events', ev, function (x) {
-            var ph = eventPhase(x, today);
-            return menuRow('/app/events/' + encodeURIComponent(x.id), 'cal', x.short,
-              (ph === 'past' ? 'Completed' : ph === 'now' ? 'Today' : 'Upcoming') + ' · ' + [dateRangeLabel(x.dates, true), x.clubLabel].filter(Boolean).join(' · '));
-          }) +
-          group('clubs', 'Clubs', cl, function (c) { return menuRow('/app/more/clubs/' + encodeURIComponent(c.id || slugify(c.name)), 'pin', c.name, c.city); }) +
+          group('events', 'Events', ev, function (x) { return eventRow(x, today); }, 'cards') +
+          group('clubs', 'Clubs', cl, function (c) { return clubMini(c); }, 'clubs') +
           group('results', 'Results', rs, function (r) { return menuRow('/app/results/' + encodeURIComponent(r.id), 'trophy', shortTitle(r.t.title), r.t.meta || ''); });
       }
       var tmr;
-      input.addEventListener('input', function () { expand = ''; clearTimeout(tmr); tmr = setTimeout(apply, 120); });
-      view.querySelector('form').addEventListener('submit', function (ev) { ev.preventDefault(); apply(); input.blur(); });
+      input.addEventListener('input', function () { expand = ''; special = ''; clearTimeout(tmr); tmr = setTimeout(apply, 120); });
+      view.querySelector('form').addEventListener('submit', function (ev) { ev.preventDefault(); remember(input.value); apply(); input.blur(); });
       view.addEventListener('click', function (ev) {
+        var sq = ev.target.closest('[data-sq]');
+        if (sq) { var v = sq.getAttribute('data-sq'); haptic(); if (v === 'weekend' || v === 'open') { special = v; input.value = ''; } else { special = ''; input.value = v; remember(v); } apply(); return; }
+        if (ev.target.closest('[data-clear-recent]')) { store('recentSearches', []); apply(); return; }
+        if (special && ev.target.closest('.schips')) return;
+        var rl = ev.target.closest('#s-out a[href]'); if (rl && input.value.trim()) remember(input.value);
         var x = ev.target.closest('[data-expand]'); if (x) { expand = x.getAttribute('data-expand'); apply(); }
-        if (ev.target.closest('[data-clear-search]')) { input.value = ''; apply(); input.focus(); }
+        if (ev.target.closest('[data-clear-search]')) { input.value = ''; special = ''; apply(); input.focus(); }
         if (ev.target.closest('[data-close-search]')) { try { sessionStorage.setItem('swd:refocusSearch', '1'); } catch (e) {} }
       });
       apply();

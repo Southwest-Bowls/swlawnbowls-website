@@ -2071,3 +2071,21 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 .hbar__date .rollnum { font-weight: inherit; }
 .pulse__n.rollnum { font-family: var(--font-display); font-size: 2.4rem; font-weight: 600; line-height: 1.1; }
 .pulse__n .roll, .pulse__n .roll span { font-size: inherit; }
+
+/* Search v2 */
+.searchbar { display: flex; align-items: center; gap: 10px; margin: var(--s2) 0 var(--s3); }
+.search--page { flex: 1; margin: 0; border-radius: 999px; min-height: 52px; background: color-mix(in srgb, var(--surface) 85%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 1px 2px rgba(35,17,32,.08); }
+.schips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 12px; scrollbar-width: none; flex-wrap: nowrap; }
+.schips::-webkit-scrollbar { display: none; }
+.cchip--recent { display: inline-flex; align-items: center; gap: 6px; }
+.ssec { margin: var(--s4) 0; } .ssec .hscroll { margin-top: 8px; }
+.cstrip { list-style: none; margin: 8px calc(-1 * var(--gutter)) 0; padding: 0 var(--gutter) 6px; display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; }
+.cstrip::-webkit-scrollbar { display: none; }
+.cstrip__i { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 76px; text-decoration: none; color: var(--heading); text-align: center; font-size: var(--fs-xs); font-weight: 560; }
+.cstrip__ph { width: 68px; height: 68px; border-radius: 50%; background: var(--subtle) var(--ph) center / cover no-repeat; box-shadow: 0 0 0 3px var(--surface), 0 6px 16px rgba(35,17,32,.14); }
+.smini-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.smini { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; border-radius: 24px; background: var(--surface); text-decoration: none; color: var(--heading); box-shadow: 0 1px 2px rgba(35,17,32,.06); }
+.smini__ph { flex: none; width: 52px; height: 52px; border-radius: 50%; background: var(--subtle) var(--ph) center / cover no-repeat; }
+.smini__t { flex: 1; min-width: 0; display: flex; flex-direction: column; } .smini__t b { font-family: var(--font-display); } .smini__t small { color: var(--text-2); }
+.smini__go { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--subtle); }
+.sgroup { margin-top: var(--s4); }
