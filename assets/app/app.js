@@ -3215,9 +3215,15 @@
           if (k && k.indexOf('swd:memberPhoto:') === 0) localStorage.removeItem(k);
         }
       } catch (e) {}
+      var sob = view.querySelector('.signout-bottom'); if (sob) sob.remove();
       toast('Signed out'); signInForm();
     }
-    var foot = '<div class="actions"><button class="btn btn--ghost" type="button" data-signout>Sign out</button></div>';
+    var foot = '';
+    // Sign out sits at the very bottom of the page, quietly, not inside the membership card
+    if (memberSession()) {
+      view.insertAdjacentHTML('beforeend', '<div class="signout-bottom"><button class="btn btn--ghost" type="button">Sign out</button></div>');
+      view.querySelector('.signout-bottom button').addEventListener('click', function () { signOut(); });
+    }
     function draw(res) {
       if (res.state === 'linked') {
         return getJSON('/clubs-data.json').catch(function () { return { clubs: [] }; }).then(function (cd) {

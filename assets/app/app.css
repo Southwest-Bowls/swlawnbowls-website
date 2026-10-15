@@ -2226,3 +2226,6 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .hbar__hello { font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }
 .hbar__date { font-size: .8rem; }
 @media (max-width: 400px) { .hbar__hello { font-size: 1rem; } }
+
+.signout-bottom { display: flex; justify-content: center; margin: var(--s6) 0 var(--s4); }
+.signout-bottom .btn { min-width: 160px; }
