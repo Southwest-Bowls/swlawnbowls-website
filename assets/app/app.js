@@ -2284,7 +2284,7 @@
     if (pl && pl.length) return pl;
     return HUB_ROLES[String(e.format || '').toLowerCase()] || ['Player 1', 'Player 2'];
   }
-  var HUB_STATUS = { pending_payment: ['Pending payment', 'warn'], paid: ['Paid', 'ok'], waitlisted: ['Waitlisted', 'warn'], withdraw_requested: ['Withdrawal requested', 'warn'], withdrawn: ['Withdrawn', 'mute'], refunded: ['Refunded', 'mute'], checked_in: ['Checked in', 'ok'] };
+  var HUB_STATUS = { pending_payment: ['Pending payment', 'warn'], paid: ['Paid', 'ok'], waitlisted: ['Waitlisted', 'warn'], withdraw_requested: ['Withdrawal requested', 'warn'], withdrawn: ['Withdrawn', 'mute'], refunded: ['Withdrawn · refund in PayPal', 'mute'], checked_in: ['Checked in', 'ok'] };
   function statusChip(s) { var m = HUB_STATUS[s] || [s, 'mute']; return '<span class="schip schip--' + m[1] + '">' + esc(m[0]) + '</span>'; }
   function hubEntries() { return store('hubEntries') || []; }
   function hubSave(list) { store('hubEntries', list); }
@@ -2436,7 +2436,7 @@
         '<div class="hub__stats tdstats"><span class="hub__stat"><b>' + rows.length + '</b><span>Entered</span></span><span class="hub__stat"><b>' + (count('paid') + count('checked_in')) + '</b><span>Paid</span></span><span class="hub__stat"><b>' + count('pending_payment') + '</b><span>To collect</span></span></div>' +
         '<ul class="list list--plain">' + rows.map(function (r, i) {
           var act = r.status === 'pending_payment' ? '<button class="btn btn--sm" type="button" data-td="paid" data-i="' + i + '" aria-label="Mark ' + (r.method === 'check' ? 'check' : 'cash') + ' received for ' + esc(r.team) + '">Mark ' + esc(r.method === 'check' ? 'check' : 'cash') + ' received</button>'
-            : r.status === 'withdraw_requested' ? '<button class="btn btn--sm" type="button" data-td="refunded" data-i="' + i + '" aria-label="Approve and refund ' + esc(r.team) + '">Approve and refund</button>'
+            : r.status === 'withdraw_requested' ? '<button class="btn btn--sm" type="button" data-td="refunded" data-i="' + i + '" aria-label="Approve withdrawal for ' + esc(r.team) + '">Approve withdrawal</button>'
             : r.status === 'paid' ? '<button class="btn btn--ghost btn--sm" type="button" data-td="checked_in" data-i="' + i + '" aria-label="Check in ' + esc(r.team) + '">Check in</button>' : '';
           return '<li><div class="rcard rcard--col"><span class="rcard__body"><span class="rcard__title">' + esc(r.team) + (r.real ? ' (your entry)' : '') + '</span><span class="rcard__meta">' + esc(r.id) + ' · ' + esc(r.method) + '</span></span>' + statusChip(r.status) + act + '</div></li>'; }).join('') + '</ul>' +
         '<p class="footnote">Made-up teams for the preview. Changes stay on this phone.</p>';
@@ -2445,7 +2445,7 @@
         var b = ev.target.closest('[data-td]'); if (!b) return;
         var r = rows[+b.getAttribute('data-i')]; r.status = b.getAttribute('data-td');
         if (r.real) { var all = hubEntries(); all.forEach(function (en) { if (en.id === r.id) en.status = r.status; }); hubSave(all); } else { store('hubTd:' + cur, list); }
-        toast(r.status === 'refunded' ? 'Refund approved (preview)' : 'Updated (preview)'); tdScreen(params);
+        toast(r.status === 'refunded' ? 'Withdrawal approved. Refund it in PayPal, then it is done (practice)' : 'Updated (practice)'); tdScreen(params);
       };
     });
   }
