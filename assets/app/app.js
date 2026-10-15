@@ -2204,6 +2204,7 @@
   var scrollMemory = {};
   var renderToken = 0;
   var restoring = false;
+  var navDir = null;      // how the next screen arrives: 'fwd', 'back' or 'tab' (null on first load)
 
   function render() {
     var path = location.pathname, params = new URLSearchParams(location.search);
@@ -2217,6 +2218,14 @@
     var fresh = view.cloneNode(false);           // drop listeners left by the last screen
     view.parentNode.replaceChild(fresh, view); view = fresh;
     view.innerHTML = loading();
+    // A short slide or fade so screens arrive instead of snapping in
+    view.classList.remove('view--fwd', 'view--back', 'view--tab');   // cloneNode copied the last screen's class
+    if (navDir) {
+      view.classList.add('view--' + navDir);
+      var arrived = view;
+      setTimeout(function () { arrived.classList.remove('view--fwd', 'view--back', 'view--tab'); }, 400);
+      navDir = null;
+    }
     var p;
     try { p = route[1](params, match[1] && decodeURIComponent(match[1])); } catch (e) { p = Promise.reject(e); }
     return Promise.resolve(p).catch(function (err) {
@@ -2241,10 +2250,11 @@
     var depth = (history.state && history.state.depth) || 0;
     if (replace) history.replaceState({ depth: depth }, '', href);
     else history.pushState({ depth: depth + 1, from: cur }, '', href);
+    if (!navDir) navDir = replace ? 'tab' : 'fwd';
     return render().then(function () { view.focus({ preventScroll: true }); });
   }
 
-  window.addEventListener('popstate', function () { closeDialog(); restoring = true; render(); });
+  window.addEventListener('popstate', function () { closeDialog(); restoring = true; navDir = 'back'; render(); });
 
   document.addEventListener('click', function (ev) {
     // Save / unsave
@@ -2301,6 +2311,7 @@
     if (a.hasAttribute('data-back')) {
       var from = history.state && history.state.from;
       if (from && from.split('?')[0] === href.split('?')[0]) { history.back(); return; }
+      navDir = 'back';
       return go(href);
     }
     // Tapping the current tab again returns to the top of that tab
@@ -2308,10 +2319,12 @@
     if (tab && a.getAttribute('aria-current') === 'page') {
       var root = a.getAttribute('href');
       if (location.pathname === root) { window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); return; }
+      navDir = 'tab';
       return go(root);
     }
     // A tab always opens its main screen, so Results means the results
     // list, never the last tournament you looked at
+    if (tab) navDir = 'tab';
     go(href);
   });
 

@@ -564,6 +564,16 @@ html[data-text="xlarge"] .intro__art, html[data-text="large"] .intro__art { heig
   .iconbtn .i, .btn .i { transition: fill 160ms ease, transform 160ms ease; }
   .iconbtn[data-on="true"] .i { animation: pop 180ms ease-out; }
 }
+/* Screen transitions: forward slides in from the right, Back from the left,
+   tabs cross-fade. Short enough never to feel like waiting. */
+@media (prefers-reduced-motion: no-preference) {
+  .view--fwd { animation: view-fwd 240ms cubic-bezier(.22, .8, .3, 1) both; }
+  .view--back { animation: view-back 220ms cubic-bezier(.22, .8, .3, 1) both; }
+  .view--tab { animation: view-tab 180ms ease-out both; }
+}
+@keyframes view-fwd { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes view-back { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+@keyframes view-tab { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pop { 0% { transform: scale(.8); } 100% { transform: scale(1); } }
 
 /* ---------- More menu ---------------------------------------------
