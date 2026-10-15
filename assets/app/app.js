@@ -1006,7 +1006,7 @@
       var segs = [['calendar', 'Calendar'], ['upcoming', 'Upcoming'], ['saved', 'Saved']].concat(hasPast ? [['past', 'Completed']] : []);
       var calMonth = (f.month || today.slice(0, 7)), calDay = '', evLimit = 10, evLastKey = '';
       var nSet = f.club ? 1 : 0;
-      view.innerHTML = pageHead('Events', '') +
+      view.innerHTML = ((history.state && /^\/app\/(my|more\/membership)\b/.test(String(history.state.from || '').split('?')[0])) ? backLink('/app/events', 'Events') : '') + pageHead('Events', '') +
         '<div class="segmented" role="group" aria-label="Which events">' + segs.map(function (k) {
           return '<button type="button" data-show="' + k[0] + '" aria-pressed="' + (k[0] === show) + '">' + k[1] + '</button>';
         }).join('') + '</div>' +
@@ -3451,13 +3451,12 @@
       ['/photos/bill-hiscock-mixed-triples-2026/1th-kindorf-mar-bell.jpg', 'Results and champions', 'Browse past results, podiums and the Division standings.']
     ], i = 0, el = document.createElement('div'); el.className = 'welcome'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Welcome');
     function draw() {
-      if (i >= pages.length) { el.className = 'welcome welcome--auth'; el.innerHTML = authLanding('/photos/clubs/long-beach.jpg', false); var ab = el.querySelector('[data-auth="email"]'); if (ab) ab.focus(); return; }
+      if (i >= pages.length) { el.className = 'welcome welcome--auth'; el.innerHTML = authLanding('/photos/clubs/long-beach.jpg', false); return; }
       var p = pages[i];
       el.className = 'welcome';
       el.innerHTML = '<div class="welcome__photo" style="--ph:url(\'' + p[0] + '\')"></div><span class="welcome__brand"><img src="/assets/app/swd-logo.png" alt="" width="30" height="35"><b>Southwest Bowls</b></span><button class="welcome__skip" type="button" data-w-skip>Skip</button>' +
         '<div class="welcome__sheet"><div class="welcome__dots" aria-hidden="true">' + pages.map(function (_, k) { return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
         '<h2 class="welcome__t">' + p[1] + '</h2><p class="welcome__s">' + p[2] + '</p><button class="btn btn--wide btn--dark" type="button" data-w-next>' + (i === pages.length - 1 ? 'Get started' : 'Next') + '</button></div>';
-      var b = el.querySelector('[data-w-next]'); if (b) b.focus();
     }
     function done() { store('welcomed', true); el.remove(); }
     el.addEventListener('click', function (ev) {
