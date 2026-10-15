@@ -2626,7 +2626,9 @@
         '<form class="mform" id="c-form" novalidate><div class="otp" id="c-otp"><input class="otp__input" id="c-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" aria-label="6-digit code" aria-describedby="c-err">' +
         '<span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span></div>' +
         '<p class="mform__err" id="c-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Confirm</button></div></form>' +
-        '<p class="signin__again"><span id="c-timer"></span></p><p class="signin__foot">Wrong email? <button class="textlink" type="button" id="c-edit">Change it</button></p>', emailStep);
+        '<p class="signin__again"><span id="c-timer"></span></p>' +
+        '<div class="signin__nocode"><b>No email after a minute?</b><ul><li>Look in your spam or promotions folder.</li><li>Sign-in works only with the email the Division has on your membership. If you use a different one, use “Change it” below.</li><li>Not a member yet, or still stuck? You can keep browsing as a guest.</li></ul></div>' +
+        '<p class="signin__foot">Wrong email? <button class="textlink" type="button" id="c-edit">Change it</button> · <a class="textlink" href="/app">Continue as a guest</a></p>' + memberHelpHtml(false), emailStep);
       var f = view.querySelector('#c-form'), tm = view.querySelector('#c-timer'), inp = f.querySelector('#c-code'), boxes = f.querySelectorAll('.otp__box');
       function paint() {
         var v = inp.value.replace(/\D/g, '').slice(0, 6); inp.value = v;
