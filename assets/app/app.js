@@ -1744,11 +1744,12 @@
           mrow('/app/watch', 'tv', 'Southwest TV', 'Livestreams and replays', 'blue'),
           mrow('/app/more/resources', 'doc', 'Resources', '', 'blue')]) +
         group('About', [
-          mrow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline copies', 'blush'),
           mrow('/app/page/about-us', 'info', 'About Southwest', '', 'blush'),
           mrow('/app/page/contact-us', 'mail', 'Help and contact', '', 'blush'),
           mrow('/', 'globe', 'Southwest website', 'swlawnbowls.org', 'blush'),
-          mrow(FACEBOOK_URL, 'facebook', 'Facebook', 'Follow Southwest', 'blush')]);
+          mrow(FACEBOOK_URL, 'facebook', 'Facebook', 'Follow Southwest', 'blush')]) +
+        group('This app', [
+          mrow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline copies', 'orange')]);
     });
   }
 
