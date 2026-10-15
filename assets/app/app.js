@@ -3178,6 +3178,11 @@
       if (token === renderToken) view.innerHTML = errorState(err);
     }).then(function () {
       if (token !== renderToken) return;
+      // Every screen gets the soft blurred photo behind it (Home and event pages bring their own)
+      if (!view.querySelector('.hbg, .escene__bg')) {
+        var BD = { events: 'newport-harbor', results: 'the-groves', my: 'coronado', more: 'beverly-hills' };
+        view.insertAdjacentHTML('afterbegin', '<div class="hbg" aria-hidden="true" style="--ph:url(\'/photos/clubs/' + (BD[route[2]] || 'laguna-woods') + '.jpg\')"></div>');
+      }
       var key = path + location.search;
       var y = (history.state && history.state.y) || scrollMemory[key] || 0;
       window.scrollTo(0, restoring ? y : 0);
