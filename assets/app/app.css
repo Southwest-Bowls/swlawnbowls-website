@@ -1937,3 +1937,42 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 .welcome__dots i { background: rgba(20,16,26,.18); } .welcome__dots i.on { background: #14101a; }
 .welcome .btn--dark { background: #14101a; color: #fff; }
 .welcome__art { box-shadow: 0 18px 40px rgba(106,80,214,.25); }
+
+/* Welcome v2 + sign-in landing: real photos, white curved sheet */
+.welcome { display: block; padding: 0; background: #fff; text-align: center; overflow: hidden; }
+.welcome__photo { position: absolute; inset: 0 0 34% 0; background: #ddd var(--ph) center / cover no-repeat; }
+.welcome__skip { z-index: 2; background: rgba(255,255,255,.28); color: #fff; border-radius: 999px; padding: 0 18px; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.welcome__sheet { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px var(--gutter) calc(24px + env(safe-area-inset-bottom, 0px)); border-radius: 32px 32px 0 0; background: #fff; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 -10px 40px rgba(0,0,0,.12); }
+.welcome__dots { display: flex; gap: 8px; margin: 0 0 6px; } .welcome__dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(20,16,26,.16); } .welcome__dots i.on { width: 30px; border-radius: 4px; background: #a6d63a; }
+.welcome__t { color: #14101a; font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; letter-spacing: -.02em; margin: 6px 0 0; max-width: 16ch; }
+.welcome__s { color: #5b5566; margin: 0 0 10px; max-width: 32ch; }
+.welcome .btn--dark { background: #14101a; color: #fff; max-width: 420px; width: 100%; min-height: 54px; }
+.welcome--auth { background: #fff; overflow: auto; }
+.auth { position: relative; min-height: 100dvh; background: #fff; color: #14101a; margin: 0 calc(-1 * var(--gutter)); }
+.auth__photo { height: 56dvh; background: #ddd var(--ph) center / cover no-repeat; -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent); mask-image: linear-gradient(180deg, #000 60%, transparent); }
+.auth__back { position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: var(--gutter); background: rgba(255,255,255,.3); }
+.auth__body { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 0 var(--gutter) calc(28px + env(safe-area-inset-bottom, 0px)); margin-top: -18px; }
+.auth__t { font-family: var(--font-display); font-size: 1.75rem; font-weight: 650; letter-spacing: -.025em; line-height: 1.12; margin: 0; max-width: 14ch; color: #14101a; }
+.auth__s { color: #6b6575; margin: 0 0 8px; max-width: 32ch; }
+.auth__apple, .auth__alt { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; border: 0; border-radius: 999px; font: inherit; font-weight: 560; cursor: pointer; }
+.auth__apple { width: 100%; background: #000; color: #fff; } .auth__apple svg { width: 22px; height: 22px; fill: #fff; }
+.auth__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.auth__alt { background: #f1f0f3; color: #14101a; } .auth__alt svg, .auth__alt .i { width: 20px; height: 20px; }
+.auth small { font-size: .68rem; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: rgba(127,127,127,.25); }
+.auth__guest { background: none; border: 0; min-height: 44px; font: inherit; font-weight: 560; color: #14101a; text-decoration: underline; text-underline-offset: 3px; }
+.auth__fine { font-size: var(--fs-xs); color: #8a8494; margin: 0; }
+
+/* SWD brand touches */
+:root { --brand-red: #b22d34; --brand-teal: #2a8fa0; --brand-sun: #f2a43a; }
+.auth__logo { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 26px; background: #fff; box-shadow: 0 10px 28px rgba(35,17,32,.16); margin-top: -52px; position: relative; }
+.auth__logo img { width: 56px; height: auto; }
+.auth__tag { width: 150px; height: auto; margin-top: 8px; opacity: .9; }
+.welcome__brand { position: absolute; z-index: 2; top: calc(16px + env(safe-area-inset-top, 0px)); left: var(--gutter); display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 999px; background: rgba(255,255,255,.9); color: #14101a; font-size: .85rem; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.welcome__brand img { height: 28px; width: auto; }
+.phero__brand { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 6px 14px 6px 8px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 80%, transparent); font-size: var(--fs-xs); font-weight: 600; color: var(--heading); }
+.phero__brand img { height: 22px; width: auto; }
+.phero__av { background: linear-gradient(145deg, #7fc8d4, var(--brand-teal)); color: #fff; }
+.pbanner { background: linear-gradient(100deg, #fff1ee 0%, #f7c9c5 60%, #e9908f 100%); }
+.pbanner__art { background: var(--brand-red); box-shadow: 0 8px 18px rgba(178,45,52,.35); }
+.welcome__dots i.on { background: var(--brand-red); }
+.auth__apple { background: #14101a; }

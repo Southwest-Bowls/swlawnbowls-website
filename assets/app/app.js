@@ -2443,6 +2443,7 @@
         '<span class="signin__step">Step ' + step + ' of 2</span></div>' + inner + '</div>';
       view.querySelector('[data-sback]').addEventListener('click', function () {
         if (backTo) { backTo(); return; }
+        if (step === 1 && !params.get('step')) { landingStep(); return; }
         if (history.state && history.state.from) { history.back(); return; }
         navDir = 'back'; go('/app/my', true);
       });
@@ -2516,7 +2517,19 @@
       });
     }
     if (params.get('demo') === 'code') { email = 'you@example.com'; codeStep(); return Promise.resolve(); }
-    emailStep(); return Promise.resolve();
+    function landingStep() {
+      clearInterval(timer);
+      view.innerHTML = authLanding('/photos/clubs/long-beach.jpg', true);
+      view.querySelector('.auth').addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-auth]'); if (!b) return; var k = b.getAttribute('data-auth'); haptic();
+        if (k === 'email') emailStep();
+        else if (k === 'guest') { navDir = 'back'; go('/app', true); }
+        else if (k === 'back') { if (history.state && history.state.from) history.back(); else { navDir = 'back'; go('/app/my', true); } }
+        else toast((k === 'apple' ? 'Sign in with Apple' : 'Google sign-in') + ' switches on with the store release.');
+      });
+    }
+    if (params.get('step') === 'email') emailStep(); else landingStep();
+    return Promise.resolve();
   }
 
   // My results: every published place where the name on this phone appears (exact full-name match,
@@ -2910,7 +2923,7 @@
 
     var pf = store('profile') || {}, pphoto = store('memberPhoto:self'), nSaved = saved().length, nFol = followed().length;
     function prow(href, ic, title, meta) { return '<a class="prow" href="' + href + '"><span class="prow__ic" aria-hidden="true">' + icon(ic) + '</span><span class="prow__t"><b>' + esc(title) + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a>'; }
-    view.innerHTML = '<header class="phero"><a class="phero__av" href="/app/my/profile" aria-label="Open my profile">' + (pphoto ? '<img src="' + esc(pphoto) + '" alt="">' : (initials(pf.name) ? esc(initials(pf.name)) : icon('person'))) + '</a>' +
+    view.innerHTML = '<header class="phero"><span class="phero__brand"><img src="/assets/app/swd-logo.png" alt="" width="22" height="26">Southwest Bowls Division</span><a class="phero__av" href="/app/my/profile" aria-label="Open my profile">' + (pphoto ? '<img src="' + esc(pphoto) + '" alt="">' : (initials(pf.name) ? esc(initials(pf.name)) : icon('person'))) + '</a>' +
         '<h1 class="phero__name">' + (pf.name ? esc(pf.name) : 'Welcome') + '</h1>' +
         '<p class="phero__sub">' + (memberSession() ? 'Signed in' : (pf.name ? '' : 'Guest') ) + ([pf.division, pf.club].filter(Boolean).length ? [pf.division, pf.club].filter(Boolean).map(esc).join(' · ') : (memberSession() || pf.name ? '' : ' · Tap the circle to add your details')) + '</p></header>' +
       '<div class="psheet">' +
@@ -3324,6 +3337,19 @@
      Polish: haptics, collapsing title, pull to refresh, edge swipe back,
      long-press menu, bottom-sheet drag, offline pill, first-run welcome
      --------------------------------------------------------------- */
+  // Sign-in landing: real photo fading into white, Apple on top, Google and Email beneath, guest link
+  var APPLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.8-3-.8c-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.2.8 1.1 1.700 2.300 2.900 2.300 1.200 0 1.600-.7 3-.7s1.800.7 3 .7c1.300 0 2.100-1.100 2.800-2.200.9-1.300 1.300-2.500 1.300-2.600-.1 0-2.500-1-2.500-3.800ZM14.200 5.800c.6-.8 1.100-1.800 1-2.900-.9 0-2 .6-2.700 1.400-.6.700-1.100 1.800-1 2.800 1 .1 2-.5 2.700-1.300Z"/></svg>', GOOGLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.300-.2-1.900H12v3.700h5.400c-.2 1.200-.9 2.300-2 3v2.500h3.200c1.900-1.700 3-4.300 3-7.300Z"/><path fill="#34A853" d="M12 22c2.700 0 5-.9 6.600-2.400l-3.200-2.500c-.9.600-2 .9-3.400.9-2.600 0-4.800-1.800-5.600-4.100H3.100v2.600C4.700 19.800 8.100 22 12 22Z"/><path fill="#FBBC05" d="M6.400 14c-.2-.6-.3-1.300-.3-2s.1-1.400.3-2V7.400H3.100C2.400 8.800 2 10.400 2 12s.4 3.200 1.100 4.600L6.400 14Z"/><path fill="#EA4335" d="M12 5.900c1.500 0 2.800.5 3.800 1.500l2.900-2.900C17 2.900 14.700 2 12 2 8.100 2 4.700 4.200 3.100 7.400L6.400 10C7.200 7.700 9.400 5.900 12 5.900Z"/></svg>';
+  function authLanding(photo, back) {
+    return '<section class="auth">' + '<div class="auth__photo"' + (photo ? ' style="--ph:url(\'' + esc(photo) + '\')"' : '') + '></div>' +
+      (back ? '<button class="iconbtn gbtn auth__back" type="button" data-auth="back" aria-label="Back">' + icon('back') + '</button>' : '') +
+      '<div class="auth__body"><span class="auth__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls Division" width="64" height="75"></span><h1 class="auth__t">Welcome to Southwest Bowls</h1>' +
+      '<p class="auth__s">Sign in to enter tournaments and keep your details. Browsing needs no account.</p>' +
+      '<button class="auth__apple" type="button" data-auth="apple">' + APPLE_SVG + 'Continue with Apple<small>Soon</small></button>' +
+      '<div class="auth__row"><button class="auth__alt" type="button" data-auth="google">' + GOOGLE_SVG + 'Google<small>Soon</small></button>' +
+      '<button class="auth__alt" type="button" data-auth="email">' + icon('mail') + 'Email</button></div>' +
+      '<button class="auth__guest" type="button" data-auth="guest">Continue as a guest</button>' +
+      '<p class="auth__fine">Your email is only used to sign you in.</p><img class="auth__tag" src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls: A Sport for Life!" width="150" height="70" loading="lazy"></div></section>';
+  }
   function haptic(kind) {
     try {
       var H = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
@@ -3416,25 +3442,31 @@
     window.addEventListener('online', upd); window.addEventListener('offline', upd); upd();
   })();
 
-  // First run: three short screens
+  // First run: three photo screens, then the sign-in choices
   function welcome() {
     if (store('welcomed')) return;
     var pages = [
-      ['cal', 'Every tournament, in one place', 'Dates, entry details, schedules and flyers for Southwest Division events.'],
-      ['star', 'Follow your clubs', 'Save events and follow clubs. It stays on your phone, no account needed.'],
-      ['trophy', 'Results and champions', 'Browse past results, podiums and the Division standings.']
+      ['/photos/clubs/coronado.jpg', 'Every tournament, in one place', 'Dates, entry details, schedules and flyers for Southwest Division events.'],
+      ['/photos/clubs/the-groves.jpg', 'Follow your clubs', 'Save events and follow clubs. It stays on your phone, no account needed.'],
+      ['/photos/bill-hiscock-mixed-triples-2026/1th-kindorf-mar-bell.jpg', 'Results and champions', 'Browse past results, podiums and the Division standings.']
     ], i = 0, el = document.createElement('div'); el.className = 'welcome'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Welcome');
     function draw() {
-      var p = pages[i], last = i === pages.length - 1;
-      el.innerHTML = '<button class="welcome__skip" type="button" data-w-skip>Skip</button><div class="welcome__art" aria-hidden="true">' + icon(p[0]) + '</div><h2 class="welcome__t">' + p[1] + '</h2><p class="welcome__s">' + p[2] + '</p>' +
-        '<div class="welcome__dots" aria-hidden="true">' + pages.map(function (_, k) { return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
-        '<button class="btn btn--wide btn--dark" type="button" data-w-next>' + (last ? 'Get started' : 'Next') + '</button>';
+      if (i >= pages.length) { el.className = 'welcome welcome--auth'; el.innerHTML = authLanding('/photos/clubs/long-beach.jpg', false); var ab = el.querySelector('[data-auth="email"]'); if (ab) ab.focus(); return; }
+      var p = pages[i];
+      el.className = 'welcome';
+      el.innerHTML = '<div class="welcome__photo" style="--ph:url(\'' + p[0] + '\')"></div><span class="welcome__brand"><img src="/assets/app/swd-logo.png" alt="" width="30" height="35"><b>Southwest Bowls</b></span><button class="welcome__skip" type="button" data-w-skip>Skip</button>' +
+        '<div class="welcome__sheet"><div class="welcome__dots" aria-hidden="true">' + pages.map(function (_, k) { return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
+        '<h2 class="welcome__t">' + p[1] + '</h2><p class="welcome__s">' + p[2] + '</p><button class="btn btn--wide btn--dark" type="button" data-w-next>' + (i === pages.length - 1 ? 'Get started' : 'Next') + '</button></div>';
       var b = el.querySelector('[data-w-next]'); if (b) b.focus();
     }
     function done() { store('welcomed', true); el.remove(); }
     el.addEventListener('click', function (ev) {
       if (ev.target.closest('[data-w-skip]')) { done(); return; }
-      if (ev.target.closest('[data-w-next]')) { haptic(); if (i < pages.length - 1) { i++; draw(); } else done(); }
+      if (ev.target.closest('[data-w-next]')) { haptic(); i++; draw(); return; }
+      var b = ev.target.closest('[data-auth]'); if (!b) return; var k = b.getAttribute('data-auth'); haptic();
+      if (k === 'guest') done();
+      else if (k === 'email') { done(); go('/app/signin?step=email'); }
+      else toast((k === 'apple' ? 'Sign in with Apple' : 'Google sign-in') + ' switches on with the store release.');
     });
     document.body.appendChild(el); draw();
   }
