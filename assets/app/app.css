@@ -2032,3 +2032,6 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 .dframe__ph, .clcard__ph { border-radius: 24px; }
 .wday { border-radius: 26px; }
 .dateblock, .evrow__date { border-radius: 18px; }
+/* Back button over a photo: frosted, see-through, white arrow */
+.signin__top .circbtn, .auth__back, .cphoto__back { background: rgba(255,255,255,.22) !important; border: 1px solid rgba(255,255,255,.35); color: #fff; box-shadow: none; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.signin__top .circbtn .i, .auth__back .i { stroke: #fff; }
