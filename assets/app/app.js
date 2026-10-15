@@ -1949,30 +1949,43 @@
         '<li><b>Your details are wrong.</b> Once you’re in, use “Suggest a correction”. Nothing changes until the Division checks it.</li>' +
       '</ul><div class="actions"><a class="btn btn--ghost" href="/app/page/contact-us">' + icon('mail') + 'Contact Southwest Bowls</a></div></details>';
   }
-  // Guest details: everyone can use the app without an account, including
-  // players from other divisions and other countries. These optional details
-  // stay on this phone; nothing is sent anywhere.
+  // Identity header: everyone can use the app without an account, including
+  // players from other divisions and other countries. The optional details
+  // behind it stay on this phone; nothing is sent anywhere.
   var DIVISION_HINTS = ['Southwest (SWD)', 'Pacific Inter-Mountain (PIMD)', 'Arizona', 'Other U.S. division', 'Outside the United States'];
-  function guestSection() {
-    var p = store('profile') || {};
-    return '<section class="section mysec" aria-labelledby="h-guest"><div class="section__head"><h2 class="section__title" id="h-guest">You’re browsing as a guest</h2></div>' +
-      '<p>Events, live scoring, results, clubs and Southwest TV are open to everyone. Players from other divisions and other countries are welcome to follow and enter events.</p>' +
-      '<details class="gdetails"' + ((p.name || p.division || p.club) ? ' open' : '') + '><summary>' + (p.name || p.division || p.club ? 'Your details' : 'Add your details (optional)') + '</summary>' +
-      '<form class="mform" id="g-form" novalidate>' +
-        '<label class="mfield"><span>Your name (optional)</span><input id="g-name" type="text" autocomplete="name" value="' + esc(p.name || '') + '"></label>' +
-        '<label class="mfield"><span>Home division or country (optional)</span><input id="g-div" type="text" list="g-div-list" value="' + esc(p.division || '') + '">' +
-          '<datalist id="g-div-list">' + DIVISION_HINTS.map(function (d) { return '<option value="' + esc(d) + '">'; }).join('') + '</datalist></label>' +
-        '<label class="mfield"><span>Home club (optional)</span><input id="g-club" type="text" value="' + esc(p.club || '') + '"></label>' +
-        '<div class="actions"><button class="btn btn--ghost" type="submit">Save on this phone</button></div>' +
-        '<p class="footnote">Kept on this phone only. You never need to be an SWD member to use the app or to enter an event; each event page says who can play.</p>' +
-      '</form></details></section>';
+  function initials(name) {
+    var w = String(name || '').trim().split(/\s+/).filter(Boolean);
+    return w.length ? (w[0].charAt(0) + (w.length > 1 ? w[w.length - 1].charAt(0) : '')).toUpperCase() : '';
   }
-  function wireGuest() {
-    var f = view.querySelector('#g-form'); if (!f) return;
-    f.addEventListener('submit', function (ev) {
-      ev.preventDefault();
-      store('profile', { name: f.querySelector('#g-name').value.trim(), division: f.querySelector('#g-div').value.trim(), club: f.querySelector('#g-club').value.trim() });
-      toast('Saved on this phone');
+  function profileHeader() {
+    var p = store('profile') || {};
+    var first = String(p.name || '').trim().split(/\s+/)[0];
+    var chips = [p.division, p.club].filter(Boolean).map(function (c) { return '<span class="idhead__chip">' + esc(c) + '</span>'; }).join('');
+    return '<button class="idhead" type="button" data-edit-profile aria-label="Edit your details">' +
+      '<span class="idhead__avatar" aria-hidden="true">' + (initials(p.name) ? esc(initials(p.name)) : icon('person')) + '</span>' +
+      '<span class="idhead__text"><span class="idhead__name">' + (first ? 'Hi, ' + esc(first) : 'Welcome to Southwest Bowls') + '</span>' +
+      (chips ? '<span class="idhead__chips">' + chips + '</span>' : '<span class="idhead__meta">Guest · Add your details (optional)</span>') + '</span>' +
+      icon('chev', 'i--sm') + '</button>';
+  }
+  function wireProfile() {
+    var b = view.querySelector('[data-edit-profile]'); if (!b) return;
+    b.addEventListener('click', function () {
+      var p = store('profile') || {};
+      openDialog('Your details',
+        '<p class="muted">Optional, and kept on this phone only. You never need to be an SWD member to use the app or to enter an event.</p>' +
+        '<form class="mform" id="g-form" novalidate>' +
+          '<label class="mfield"><span>Your name</span><input id="g-name" type="text" autocomplete="name" value="' + esc(p.name || '') + '"></label>' +
+          '<label class="mfield"><span>Home division or country</span><input id="g-div" type="text" list="g-div-list" value="' + esc(p.division || '') + '">' +
+            '<datalist id="g-div-list">' + DIVISION_HINTS.map(function (d) { return '<option value="' + esc(d) + '">'; }).join('') + '</datalist></label>' +
+          '<label class="mfield"><span>Home club</span><input id="g-club" type="text" value="' + esc(p.club || '') + '"></label>' +
+          '<div class="actions"><button class="btn" type="submit">Save</button></div></form>');
+      document.getElementById('g-form').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var f = ev.target;
+        store('profile', { name: f.querySelector('#g-name').value.trim(), division: f.querySelector('#g-div').value.trim(), club: f.querySelector('#g-club').value.trim() });
+        closeDialog(); toast('Saved');
+        var h = view.querySelector('[data-edit-profile]'); if (h) { h.outerHTML = profileHeader(); wireProfile(); }
+      });
     });
   }
   // My SWD: membership (sign-in, preview while testing), then the things
@@ -1985,16 +1998,18 @@
     var preview = !!store('memberPreview') || !!memberSession();
     var today = todayISO();
 
-    view.innerHTML = pageHead('My SWD', 'Your membership and your Southwest', '') + guestSection() +
-      '<section class="section mysec" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
-        '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + (preview ? loading() : '') + '</div></section>' +
+    view.innerHTML = profileHeader() +
+      (preview ? '<section class="section mysec" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
+        '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + loading() + '</div></section>' : '') +
       '<section class="section mysec" aria-labelledby="h-saved"><div class="section__head"><h2 class="section__title" id="h-saved">Saved events</h2>' +
         '<a class="section__more" href="/app/events?show=saved">All saved' + icon('chev', 'i--sm') + '</a></div><div id="my-saved">' + loading() + '</div>' +
         '<p class="muted">Saved on this phone. Saving an event doesn’t enter you in it.</p></section>' +
       '<section class="section mysec" aria-labelledby="h-clubs"><div class="section__head"><h2 class="section__title" id="h-clubs">Followed clubs</h2>' +
-        '<a class="section__more" href="/app/more/clubs">All clubs' + icon('chev', 'i--sm') + '</a></div><div id="my-clubs"></div></section>';
+        '<a class="section__more" href="/app/more/clubs">All clubs' + icon('chev', 'i--sm') + '</a></div><div id="my-clubs"></div></section>' +
+      '<section class="section mysec" aria-labelledby="h-set"><div class="section__head"><h2 class="section__title" id="h-set">Settings</h2></div>' +
+        '<ul class="rows rows--cards">' + linkRow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline copies') + '</ul></section>';
     var box = view.querySelector('#m-box');
-    wireGuest();
+    wireProfile();
 
     // Saved events and followed clubs: this phone only, no sign-in
     loadEvents().then(function (events) {
@@ -2016,11 +2031,7 @@
         : state('empty', 'No clubs followed', 'Follow a club to see its events first.', '<a class="btn btn--ghost" href="/app/more/clubs">Find a club</a>');
     }).catch(function () {});
 
-    if (!preview) {
-      box.innerHTML = '<div class="mcard mcard--soon tint tint--blue"><p class="mcard__kicker">' + icon('person') + 'Member sign-in</p>' +
-        '<p class="mcard__lead">Coming soon: sign in to see your club, dues and novice status.</p></div>' + memberHelpHtml(false);
-      return Promise.resolve();
-    }
+    if (!preview) return Promise.resolve();   // members' card appears here once sign-in opens
 
     function signInForm(msg) {
       box.innerHTML =

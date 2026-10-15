@@ -1036,9 +1036,16 @@ html[data-text="xlarge"] .media--compact { flex-direction: column; align-items: 
 }
 html[data-text="xlarge"] .idcard__body { flex-wrap: wrap; }
 
-/* Guest details: collapsed until wanted, so My SWD opens on the useful parts */
-.gdetails { margin-top: var(--s3); }
-.gdetails > summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; color: var(--accent, #0079a8); list-style: none; }
-.gdetails > summary::-webkit-details-marker { display: none; }
-.gdetails > summary::after { content: '\203A'; margin-left: 8px; transition: transform .15s ease; }
-.gdetails[open] > summary::after { transform: rotate(90deg); }
+/* My SWD identity header: one tappable card instead of a title and a form */
+.idhead { display: flex; align-items: center; gap: var(--s3); width: 100%; text-align: left; font: inherit; color: inherit;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s4); margin: var(--s4) 0 var(--s4); min-height: 88px;
+  padding-top: calc(var(--s4) + var(--safe-t)); }
+.idhead__avatar { flex: none; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--tint-blue); color: var(--heading); font-weight: 800; font-size: 1.2rem; }
+.idhead__avatar .i { width: 28px; height: 28px; }
+.idhead__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.idhead__name { font-size: 1.25rem; font-weight: 800; line-height: 1.2; color: var(--heading); }
+.idhead__meta { color: var(--text-2); font-size: var(--fs-s, .95rem); }
+.idhead__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.idhead__chip { padding: 3px 10px; border-radius: var(--r-pill); background: var(--tint-blue); color: var(--text); font-size: var(--fs-xs); font-weight: 700; }
+.idhead > .i { flex: none; color: var(--text-2); }
+@media (prefers-reduced-motion: no-preference) { .idhead { transition: transform 140ms ease; } .idhead:active { transform: scale(.99); } }
