@@ -590,7 +590,7 @@
     var tl = dayEv.map(function (x, i) {
       var e = x.e, phase = eventPhase(x, today), ph = eventPhoto(x, CLUBS_LIST), st = entryStatus(x, today);
       return '<li class="tl__item' + (phase === 'past' ? ' tl__item--done' : '') + '"><span class="tl__node" aria-hidden="true">' + (phase === 'past' ? icon('check') : '') + '</span>' +
-        '<a class="tcard ' + catClass(x) + (i === 0 ? ' tcard--lead' : '') + '" href="/app/events/' + encodeURIComponent(x.id) + '">' +
+        '<a class="tcard ' + catClass(x) + ' tcard--lead' + '" href="/app/events/' + encodeURIComponent(x.id) + '">' +
         '<span class="tcard__who"><span class="tcard__av"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '></span><span class="tcard__wt"><b>' + esc(x.clubLabel || 'Southwest Bowls') + '</b><small>' + esc(x.cat || 'Open') + (e.format ? ' · ' + esc(cap(e.format)) : '') + '</small></span></span>' +
         (e.time ? '<span class="tcard__time">' + esc(e.time) + '</span>' : '') +
         '<span class="tcard__title">' + esc(x.short) + '</span>' + (st ? '<span class="tcard__st">' + icon(st.icon) + esc(st.label) + '</span>' : '') + '</a></li>';
@@ -2902,18 +2902,19 @@
     var preview = !!store('memberPreview') || !!memberSession();
     var today = todayISO();
 
-    view.innerHTML = profileHeader() +
+    var pf = store('profile') || {}, pphoto = store('memberPhoto:self'), nSaved = saved().length, nFol = followed().length;
+    function prow(href, ic, title, meta) { return '<a class="prow" href="' + href + '"><span class="prow__ic" aria-hidden="true">' + icon(ic) + '</span><span class="prow__t"><b>' + esc(title) + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a>'; }
+    view.innerHTML = '<header class="phero"><a class="phero__av" href="/app/my/profile" aria-label="Open my profile">' + (pphoto ? '<img src="' + esc(pphoto) + '" alt="">' : (initials(pf.name) ? esc(initials(pf.name)) : icon('person'))) + '</a>' +
+        '<h1 class="phero__name">' + (pf.name ? esc(pf.name) : 'Welcome') + '</h1>' +
+        '<p class="phero__sub">' + (memberSession() ? 'Signed in' : (pf.name ? '' : 'Guest') ) + ([pf.division, pf.club].filter(Boolean).length ? [pf.division, pf.club].filter(Boolean).map(esc).join(' · ') : (memberSession() || pf.name ? '' : ' · Tap the circle to add your details')) + '</p></header>' +
+      '<div class="psheet">' +
+        (memberSession() ? '' : '<a class="pbanner" href="/app/signin"><span class="pbanner__t"><b>Sign in or create an account</b><small>Enter tournaments and keep your details</small></span><span class="pbanner__art" aria-hidden="true">' + icon('person') + '</span></a>') +
+        '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honours and results' : 'Add your name and bio') + prow('/app/events?show=saved', 'bookmark', 'Saved events', nSaved ? nSaved + ' saved' : 'Nothing saved yet') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + '</div>' +
+        '<div class="pgroup">' + prow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline') + '</div>' +
+      '</div>' +
       '<div id="my-res"></div>' + myEntriesHtml() +
-      (memberSession() ? '' : '<a class="btn btn--wide signin__cta" href="/app/signin">Sign in or create an account</a>') +
       (preview ? '<section class="section mysec" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
-        '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + loading() + '</div></section>' : '') +
-      '<section class="section mysec" aria-labelledby="h-saved"><div class="section__head"><h2 class="section__title" id="h-saved">Saved events</h2>' +
-        '<a class="section__more" href="/app/events?show=saved">All saved' + icon('chev', 'i--sm') + '</a></div><div id="my-saved">' + loading() + '</div>' +
-        '<p class="muted">Saved on this phone. Saving an event doesn’t enter you in it.</p></section>' +
-      '<section class="section mysec" aria-labelledby="h-clubs"><div class="section__head"><h2 class="section__title" id="h-clubs">Followed clubs</h2>' +
-        '<a class="section__more" href="/app/more/clubs">All clubs' + icon('chev', 'i--sm') + '</a></div><div id="my-clubs"></div></section>' +
-      '<section class="section mysec" aria-labelledby="h-set"><div class="section__head"><h2 class="section__title" id="h-set">Settings</h2></div>' +
-        '<ul class="rows rows--cards">' + linkRow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline copies') + '</ul></section>';
+        '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + loading() + '</div></section>' : '');
     var box = view.querySelector('#m-box');
     wireProfile();
     view.onclick = function (ev) {
