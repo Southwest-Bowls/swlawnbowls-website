@@ -1951,10 +1951,10 @@
     setTitle('Clubs');
     return getJSON('/clubs-data.json').then(function (d) {
       var clubs = d.clubs || [];
-      var q0 = params.get('q') || '', cview = params.get('view') === 'list' ? 'list' : 'map', selId = '';
+      var q0 = params.get('q') || '', cview = params.get('view') === 'list' ? 'list' : params.get('view') === 'map' ? 'map' : 'cards', selId = '';
       var map = null, markers = [];
       view.innerHTML = backLink('/app/more', 'More') + pageHead('Clubs', clubs.length + ' clubs, Cambria to Coronado') +
-        '<div class="segmented" role="group" aria-label="Show clubs as">' + [['map', 'Map'], ['list', 'List']].map(function (k) {
+        '<div class="segmented" role="group" aria-label="Show clubs as">' + [['cards', 'Cards'], ['map', 'Map'], ['list', 'List']].map(function (k) {
           return '<button type="button" data-cview="' + k[0] + '" aria-pressed="' + (k[0] === cview) + '">' + k[1] + '</button>'; }).join('') + '</div>' +
         '<label class="search search--list">' + icon('search') + '<span class="sr-only">Search clubs</span>' +
         '<input type="search" id="q" placeholder="Search by club or city" value="' + esc(q0) + '" autocomplete="off"></label>' +
@@ -2020,9 +2020,32 @@
           box.innerHTML = state('empty', 'The map needs a connection', 'You can still browse every club in the list.', '<button class="btn" type="button" data-cview-go="list">Show the list</button>');
         });
       }
+      // Cards: one big club at a time, swipe left or right. Photo on top in the phone's own shape, details below.
+      function drawDeck(box, list) {
+        if (!list.length) { box.innerHTML = state('empty', 'No clubs match', 'Try another name or city.'); return; }
+        box.innerHTML = '<div class="cdeck" role="group" aria-roledescription="carousel" aria-label="Clubs, swipe left or right">' +
+          '<div class="cdeck__bar"><span class="cdeck__count" id="c-count" aria-live="polite">1 of ' + list.length + '</span><span class="cdeck__arrows"><button class="circbtn" type="button" data-searchtoggle aria-label="Search clubs">' + icon('search') + '</button><button class="circbtn" type="button" data-deck="-1" aria-label="Previous club">' + icon('back') + '</button><button class="circbtn" type="button" data-deck="1" aria-label="Next club">' + icon('chev') + '</button></span></div>' +
+          '<ul class="cdeck__track" id="c-track" tabindex="0" aria-label="Club cards">' + list.map(function (c, i) {
+            var id = c.id || slugify(c.name), ph = clubPhotoOf(c), maps = c.lat && c.lng ? 'https://www.google.com/maps/search/?api=1&query=' + c.lat + ',' + c.lng : '';
+            return '<li class="cdeck__slide" role="group" aria-roledescription="slide" aria-label="' + (i + 1) + ' of ' + list.length + '">' +
+              '<article class="kcard"><div class="kcard__photo"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '>' +
+                (c.status === 'private' ? '<span class="kcard__chip">Private club</span>' : '') +
+                (c.logo && safeUrl(c.logo) ? '<span class="kcard__logo"><img src="' + esc(c.logo) + '" alt="" loading="lazy"></span>' : '') + '</div>' +
+              '<div class="kcard__body"><h2 class="kcard__name">' + esc(c.name) + '</h2><p class="kcard__city">' + icon('pin', 'i--sm') + esc(c.city) + '</p>' +
+                (c.summary ? '<p class="kcard__sum">' + esc(c.summary) + '</p>' : '') +
+                '<div class="kcard__actions">' + (maps ? '<a class="btn" href="' + maps + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>' : '') + followBtn(id, c.name) + '</div>' +
+                '<a class="kcard__more" href="/app/more/clubs/' + encodeURIComponent(id) + '">Contact and details' + icon('chev', 'i--sm') + '</a></div></article></li>';
+          }).join('') + '</ul></div>';
+        var tr = document.getElementById('c-track'), cn = document.getElementById('c-count');
+        function cur() { var sl = tr.querySelector('.cdeck__slide'); var w = sl ? sl.getBoundingClientRect().width + 14 : 1; return Math.max(0, Math.min(list.length - 1, Math.round(tr.scrollLeft / w))); }
+        tr.addEventListener('scroll', function () { cn.textContent = (cur() + 1) + ' of ' + list.length; }, { passive: true });
+        tr.addEventListener('keydown', function (ev) { if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') { ev.preventDefault(); step(ev.key === 'ArrowRight' ? 1 : -1); } });
+        function step(d) { var sl = tr.querySelector('.cdeck__slide'); var w = sl.getBoundingClientRect().width + 14; tr.scrollTo({ left: (cur() + d) * w, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
+        box.querySelectorAll('[data-deck]').forEach(function (b) { b.addEventListener('click', function () { step(+b.getAttribute('data-deck')); }); });
+      }
       function syncUrl() {
         var u = new URLSearchParams(), qv = document.getElementById('q').value.trim();
-        if (qv) u.set('q', qv); if (cview === 'list') u.set('view', 'list');
+        if (qv) u.set('q', qv); if (cview !== 'cards') u.set('view', cview);
         history.replaceState(history.state, '', '/app/more/clubs' + (u.toString() ? '?' + u : ''));
       }
       function apply() {
@@ -2030,6 +2053,8 @@
         var box = document.getElementById('c-list');
         if (cview === 'map') { box.innerHTML = ''; return; }
         var list = shownClubs();
+        var sl0 = view.querySelector('.search--list'); if (sl0) sl0.hidden = cview === 'cards' && !document.getElementById('q').value && !sl0.dataset.open;
+        if (cview === 'cards') { drawDeck(box, list); return; }
         box.innerHTML = list.length ? '<p class="count">' + list.length + ' club' + (list.length === 1 ? '' : 's') + '</p><ul class="ccovers">' + list.map(function (c) {
           var id = c.id || slugify(c.name), on = isFollowing(id), ph = clubPhotoOf(c);
           return '<li><a class="ccover" href="/app/more/clubs/' + encodeURIComponent(id) + '"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '>' +
@@ -2042,6 +2067,7 @@
         if (cview === 'map' && map && window.maplibregl) drawMarkers(window.maplibregl);
       });
       view.addEventListener('click', function (ev) {
+        if (ev.target.closest('[data-searchtoggle]')) { var sl1 = view.querySelector('.search--list'); sl1.hidden = !sl1.hidden; sl1.dataset.open = sl1.hidden ? '' : '1'; if (!sl1.hidden) document.getElementById('q').focus(); return; }
         var go = ev.target.closest('[data-cview-go]');
         var cv = ev.target.closest('[data-cview]') || (go && { getAttribute: function () { return go.getAttribute('data-cview-go'); } });
         if (cv) { cview = cv.getAttribute('data-cview') || cv.getAttribute('data-cview-go'); view.querySelectorAll('[data-cview]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-cview') === cview); }); drawMap(); apply(); }
