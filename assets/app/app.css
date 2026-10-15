@@ -1306,3 +1306,10 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .honours__yr { font-weight: 800; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .mfield textarea { width: 100%; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); color: var(--text); font: inherit; font-size: max(16px, 1rem); resize: vertical; }
 .block .list--plain, .block .honours { padding-left: 0; }
+
+.badges { list-style: none; display: flex; flex-wrap: wrap; gap: var(--s2); margin: 0 0 var(--s3); padding: 0; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill); background: var(--tint-yellow); color: var(--heading); font-weight: 700; font-size: var(--fs-s, .95rem); }
+.ticks { border: 0; padding: 0; margin: var(--s4) 0 0; display: grid; gap: var(--s1); }
+.ticks legend { font-weight: 700; margin-bottom: 6px; padding: 0; }
+.tick { display: flex; align-items: center; gap: var(--s3); min-height: 48px; padding: 0 var(--s3); border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); cursor: pointer; }
+.tick input { width: 22px; height: 22px; accent-color: var(--primary); flex: none; }

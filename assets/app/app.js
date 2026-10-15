@@ -2263,6 +2263,10 @@
       (chips ? '<span class="idhead__chips">' + chips + '</span>' : '<span class="idhead__meta">Guest · Tap to add details</span>') + '</span>' +
       icon('chev', 'i--sm') + '</a>';
   }
+  // Things a player can tick on their own profile. Kept on this phone; the player decides what to show.
+  var BADGES = [['team-usa', 'Team USA member'], ['national', 'National champion'], ['division', 'Division champion'], ['coach', 'Coach'], ['umpire', 'Umpire'],
+    ['marker', 'Marker'], ['officer', 'Club or Division officer'], ['novice', 'Novice player']];
+  function badgeLabel(id) { return (BADGES.filter(function (b) { return b[0] === id; })[0] || [0, ''])[1]; }
   // My profile page: all on this phone. Bio and honours are typed by the player; the season numbers and
   // timeline come from the published results; the photo is resized and kept here, never uploaded.
   function profilePage() {
@@ -2284,10 +2288,11 @@
           '<div class="pro__text"><h1 class="pro__name">' + esc(p.name || 'Your name') + '</h1>' +
           '<div class="idhead__chips">' + [p.division, p.club].filter(Boolean).map(function (c) { return '<span class="idhead__chip">' + esc(c) + '</span>'; }).join('') + '</div></div>' +
           '<button class="btn btn--ghost btn--sm pro__edit" type="button" data-edit-profile>Edit</button></section>' +
+        ((p.badges || []).length ? '<ul class="badges" aria-label="About me">' + p.badges.map(function (b) { return '<li class="badge">' + icon('check', 'i--sm') + esc(badgeLabel(b)) + '</li>'; }).join('') + '</ul>' : '') +
         '<p class="pro__bio">' + (p.bio ? esc(p.bio).replace(/\n/g, '<br>') : '<span class="muted">Add a short bio with Edit.</span>') + '</p>' +
         (p.name ? '<div class="hub__stats mystats"><span class="hub__stat"><b>' + tourns + '</b><span>Tournaments</span></span><span class="hub__stat"><b>' + pod + '</b><span>Podiums</span></span><span class="hub__stat"><b>' + wins + '</b><span>Wins</span></span></div>' : '') +
-        '<section class="block"><h2>Honours</h2>' + (honours.length ? '<ul class="honours">' + honours.map(function (h) { return '<li><span class="honours__yr">' + esc(h.year || '') + '</span><span>' + esc(h.text) + '</span></li>'; }).join('') + '</ul>'
-          : '<p class="muted">Titles, selections and roles that the published results don’t show. Add them with Edit.</p>') + '</section>' +
+        '<section class="block"><h2>Other honours</h2>' + (honours.length ? '<ul class="honours">' + honours.map(function (h) { return '<li><span class="honours__yr">' + esc(h.year || '') + '</span><span>' + esc(h.text) + '</span></li>'; }).join('') + '</ul>'
+          : '<p class="muted">Anything else you want to list, such as a title from another division or year. Add it with Edit.</p>') + '</section>' +
         (partners.length ? '<section class="block"><h2>Played most with</h2><p>' + partners.map(esc).join(' · ') + '</p></section>' : '') +
         '<section class="block"><h2>Results' + (mine.length ? ' (' + mine.length + ')' : '') + '</h2>' +
           (mine.length ? '<ul class="list list--plain">' + mine.map(function (m) {
@@ -2309,14 +2314,17 @@
       '<label class="mfield mfield--icon"><span>Your name</span><span class="mfield__box">' + icon('person') + '<input id="g-name" type="text" autocomplete="name" value="' + esc(p.name || '') + '"></span></label>' +
       '<label class="mfield mfield--icon"><span>Home division or country</span><span class="mfield__box">' + icon('pin') + '<input id="g-div" type="text" list="g-div-list" value="' + esc(p.division || '') + '"></span><datalist id="g-div-list">' + DIVISION_HINTS.map(function (d) { return '<option value="' + esc(d) + '">'; }).join('') + '</datalist></label>' +
       '<label class="mfield mfield--icon"><span>Home club</span><span class="mfield__box">' + icon('people') + '<input id="g-club" type="text" value="' + esc(p.club || '') + '"></span></label>' +
+      '<fieldset class="ticks"><legend>More about me</legend>' + BADGES.map(function (b) {
+        return '<label class="tick"><input type="checkbox" name="badge" value="' + b[0] + '"' + ((p.badges || []).indexOf(b[0]) >= 0 ? ' checked' : '') + '><span>' + esc(b[1]) + '</span></label>'; }).join('') + '</fieldset>' +
       '<label class="mfield"><span>Bio</span><textarea id="g-bio" rows="4" maxlength="600">' + esc(p.bio || '') + '</textarea></label>' +
-      '<label class="mfield"><span>Honours (one per line, start with the year)</span><textarea id="g-hon" rows="5" maxlength="1500" placeholder="2024 Team USA, ...">' + esc(hon) + '</textarea></label>' +
+      '<label class="mfield"><span>Other honours (one per line, start with the year)</span><textarea id="g-hon" rows="5" maxlength="1500" placeholder="2024 Team USA, ...">' + esc(hon) + '</textarea></label>' +
       '<div class="actions"><button class="btn btn--wide" type="submit">Save</button></div></form>');
     document.getElementById('g-form').addEventListener('submit', function (ev) {
       ev.preventDefault();
       var f = ev.target;
       var honours = f.querySelector('#g-hon').value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) { var m = /^((?:19|20)\d{2})\b[\s:,.\-–—]*(.*)$/.exec(l); return m && m[2] ? { year: m[1], text: m[2] } : { year: '', text: l }; });
-      store('profile', { name: f.querySelector('#g-name').value.trim(), division: f.querySelector('#g-div').value.trim(), club: f.querySelector('#g-club').value.trim(), bio: f.querySelector('#g-bio').value.trim(), honours: honours });
+      store('profile', { name: f.querySelector('#g-name').value.trim(), division: f.querySelector('#g-div').value.trim(), club: f.querySelector('#g-club').value.trim(), bio: f.querySelector('#g-bio').value.trim(), honours: honours,
+        badges: Array.prototype.map.call(f.querySelectorAll('input[name=badge]:checked'), function (c) { return c.value; }) });
       closeDialog(); toast('Saved'); if (done) done();
     });
   }
