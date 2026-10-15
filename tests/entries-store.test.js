@@ -66,7 +66,7 @@ test('events-data.json loads; open only when upcoming, not cancelled, fee known'
   assert.equal(by['laguna-open-pairs-2026'].open, false); // TBD fee and past
   assert.equal(by['paypal-test-coronado'].open, false); // no date
   assert.deepEqual(by['mumma-mixed-pairs-2026'].roles.length, 2);
-  assert.deepEqual(by['waterbury-2026'].roles, []); // blank format, needs a human rule
+  assert.deepEqual(by['waterbury-2026'].roles, ['Skip', 'Vice', 'Lead']); // flyer: three-person triples teams
 });
 
 test('cancelled and no-fee events stay closed', () => {
