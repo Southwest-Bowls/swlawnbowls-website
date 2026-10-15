@@ -25,15 +25,12 @@ The 6-digit code in the email is what the new sign-in screen asks for, and it wo
         </td></tr>
         <tr><td style="padding:8px 28px 0;text-align:center;">
           <h1 style="margin:12px 0 8px;font-size:24px;line-height:1.25;">Your sign-in code</h1>
-          <p style="margin:0 0 20px;font-size:16px;line-height:1.5;color:#635861;">Type this code into the Southwest Bowls app to sign in. It works for 10 minutes.</p>
+          <p style="margin:0 0 20px;font-size:16px;line-height:1.5;color:#635861;">Type this code into the Southwest Bowls app to sign in. It works for 10 minutes. If you didn’t ask for it, you can ignore this email.</p>
         </td></tr>
         <tr><td align="center" style="padding:0 28px 20px;">
           <div style="display:inline-block;background:#f6f5f7;border:1px solid #e4dfe3;border-radius:14px;padding:14px 22px;font-size:34px;font-weight:800;letter-spacing:10px;">{{ .Token }}</div>
         </td></tr>
-        <tr><td align="center" style="padding:0 28px 8px;">
-          <p style="margin:0 0 12px;font-size:15px;color:#635861;">Or open the app directly:</p>
-          <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#c8102e;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:14px 28px;border-radius:999px;">Open Southwest Bowls</a>
-        </td></tr>
+        
         <tr><td style="padding:24px 28px 8px;">
           <p style="margin:0;font-size:14px;line-height:1.5;color:#635861;">Southwest Bowls is the app of the Southwest Bowls Division of lawn bowls: tournaments, results, clubs and Southwest TV.</p>
         </td></tr>
