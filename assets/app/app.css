@@ -1114,15 +1114,6 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .gcard--feature .gcard__meta { color: inherit; opacity: .8; }
 .gcard--feature .textlink { color: var(--accent); }
 
-/* Sign-in screen */
-.signin { display: flex; flex-direction: column; align-items: stretch; padding-top: var(--s3); }
-.signin__logo { align-self: center; margin-bottom: var(--s4); }
-.signin__h { text-align: center; font-size: 1.75rem; }
-.signin__sub { text-align: center; color: var(--text-2); margin: var(--s2) 0 var(--s3); }
-.signin__guest { align-self: center; margin-top: var(--s5); min-height: 44px; display: inline-flex; align-items: center; }
-.signin__again { display: flex; justify-content: space-between; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-top: var(--s4); color: var(--text-2); }
-.signin__cta { margin: 0 0 var(--s4); display: flex; align-items: center; justify-content: center; text-decoration: none; }
-.codein { text-align: center; letter-spacing: .5em; font-size: 1.6rem !important; font-weight: 800; min-height: 64px !important; padding: 0 var(--s3) 0 calc(var(--s3) + .5em) !important; }
 
 /* Results (app pass): filter chips, compact rows */
 .chips { display: flex; gap: var(--s2); overflow-x: auto; margin: 0 0 var(--s3); padding: 2px 0 var(--s2); scrollbar-width: none; }
@@ -1161,3 +1152,29 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .chero__where { display: flex; align-items: center; gap: 6px; color: var(--text-2); margin-bottom: var(--s3); }
 .actionbar { position: sticky; bottom: calc(var(--tabbar-h) + var(--safe-b) + 10px); display: flex; gap: var(--s3); align-items: center; margin-top: var(--s5); padding: var(--s3); border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--line); box-shadow: 0 6px 24px rgba(0,0,0,.18); z-index: 5; }
 .actionbar .btn--wide { flex: 1; width: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+
+/* Sign-in screens: left-aligned, big headline, pill fields, full-width button, OTP boxes */
+.signin { display: flex; flex-direction: column; padding-top: calc(var(--safe-t) + var(--s2)); min-height: calc(100vh - var(--tabbar-h) - 40px); }
+.signin__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s5); }
+.signin__step { font-size: var(--fs-s, .95rem); font-weight: 700; color: var(--text-2); padding: 4px 12px; border-radius: var(--r-pill); background: var(--tint-blue); }
+.signin__logo { align-self: flex-start; margin-bottom: var(--s4); }
+.signin__h { font-size: clamp(1.9rem, 8vw, 2.4rem); line-height: 1.1; letter-spacing: -.02em; text-align: left; }
+.signin__sub { color: var(--text-2); margin: var(--s3) 0 var(--s4); font-size: 1.05rem; }
+.signin__art { width: 128px; height: auto; margin: 0 0 var(--s4); }
+.sa-body { fill: var(--tint-blue); stroke: var(--heading); stroke-width: 3; } .sa-flap { fill: none; stroke: var(--heading); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.sa-dot { fill: var(--accent); } .sa-tick { fill: none; stroke: var(--accent-ink); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.signin__or { display: flex; align-items: center; gap: var(--s3); margin: var(--s5) 0 var(--s4); color: var(--text-2); font-size: var(--fs-s, .95rem); }
+.signin__or::before, .signin__or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.social { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.social__btn { min-height: 56px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px; opacity: .6; }
+.social__btn svg { width: 22px; height: 22px; fill: currentColor; }
+.social__btn small { font-size: .7rem; font-weight: 800; padding: 2px 7px; border-radius: var(--r-pill); background: var(--tint-orange); color: var(--heading); }
+.signin__foot { margin-top: auto; padding-top: var(--s5); text-align: center; color: var(--text-2); }
+.signin__again { text-align: center; color: var(--text-2); margin-top: var(--s4); }
+.mfield--pill input { border-radius: var(--r-pill); min-height: 58px; padding-left: 50px; }
+.mfield--pill .mfield__box > .i { left: 18px; }
+.btn--wide { width: 100%; min-height: 58px; font-size: 1.05rem; border-radius: var(--r-pill); }
+.otp { position: relative; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-top: var(--s3); }
+.otp__input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px; z-index: 2; }
+.otp__box { display: grid; place-items: center; height: 60px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 1.6rem; font-weight: 800; color: var(--heading); }
+.otp__box.is-on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--tint-blue); }

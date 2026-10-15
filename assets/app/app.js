@@ -2066,19 +2066,28 @@
   function signInScreen(params) {
     setTitle('Sign in');
     var email = '', timer = null;
-    function shell(inner) {
-      view.innerHTML = backLink('/app/my', 'My SWD') +
-        '<div class="signin"><span class="logo-plate signin__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="64" height="75"></span>' + inner +
-        '<a class="textlink signin__guest" href="/app">Continue as a guest</a></div>';
+    var MAIL_ART = '<svg class="signin__art" viewBox="0 0 120 90" aria-hidden="true" focusable="false"><rect x="14" y="22" width="92" height="58" rx="10" class="sa-body"/>' +
+      '<path d="M18 28 60 58l42-30" class="sa-flap"/><circle cx="96" cy="22" r="11" class="sa-dot"/><path d="m91 22 4 4 7-8" class="sa-tick"/></svg>';
+    function shell(step, inner, backTo) {
+      view.innerHTML = '<div class="signin"><div class="signin__top"><button class="circbtn" type="button" data-sback aria-label="Back">' + icon('back') + '</button>' +
+        '<span class="signin__step">Step ' + step + ' of 2</span></div>' + inner + '</div>';
+      view.querySelector('[data-sback]').addEventListener('click', function () { if (backTo) backTo(); else go('/app/my'); });
+    }
+    function socialRow() {
+      return '<div class="signin__or"><span>or continue with</span></div><div class="social">' +
+        '<button class="social__btn" type="button" disabled aria-disabled="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.8-3-.8c-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.2.8 1.1 1.700 2.300 2.900 2.300 1.200 0 1.600-.7 3-.7s1.800.7 3 .7c1.300 0 2.100-1.100 2.800-2.200.9-1.300 1.300-2.500 1.300-2.600-.1 0-2.500-1-2.500-3.800ZM14.200 5.800c.6-.8 1.100-1.800 1-2.900-.9 0-2 .6-2.700 1.400-.6.700-1.100 1.800-1 2.800 1 .1 2-.5 2.700-1.300Z"/></svg>Apple<small>Soon</small></button>' +
+        '<button class="social__btn" type="button" disabled aria-disabled="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.300-.2-1.900H12v3.700h5.400c-.2 1.200-.9 2.300-2 3v2.500h3.200c1.900-1.700 3-4.300 3-7.300Z"/><path fill="#34A853" d="M12 22c2.700 0 5-.9 6.600-2.400l-3.200-2.500c-.9.600-2 .9-3.400.9-2.600 0-4.800-1.800-5.600-4.100H3.100v2.600C4.700 19.800 8.100 22 12 22Z"/><path fill="#FBBC05" d="M6.400 14c-.2-.6-.3-1.300-.3-2s.1-1.400.3-2V7.400H3.100C2.400 8.800 2 10.400 2 12s.4 3.200 1.100 4.600L6.400 14Z"/><path fill="#EA4335" d="M12 5.900c1.500 0 2.800.5 3.800 1.500l2.900-2.900C17 2.900 14.700 2 12 2 8.100 2 4.700 4.200 3.100 7.400L6.400 10C7.200 7.700 9.400 5.900 12 5.900Z"/></svg>Google<small>Soon</small></button></div>';
     }
     function emailStep(msg) {
       clearInterval(timer);
-      shell('<h1 class="signin__h">Welcome</h1><p class="signin__sub">Sign in or create an account with your email. We’ll send you a code. No password to remember.</p>' +
+      shell(1, '<span class="logo-plate signin__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="64" height="75"></span>' +
+        '<h1 class="signin__h">Log in or create an account</h1><p class="signin__sub">Enter your email and we’ll send you a code. No password to remember.</p>' +
         (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
-        '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon"><span>Email</span><span class="mfield__box">' + icon('mail') +
-        '<input id="s-email" type="email" autocomplete="email" inputmode="email" value="' + esc(email) + '" required></span></label>' +
-        '<p class="mform__err" id="s-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Continue</button></div></form>' +
-        '<p class="footnote">You don’t need an account to use the app. An account lets you keep your details and, for SWD members, shows your membership card.</p>');
+        '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
+        '<input id="s-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="' + esc(email) + '" required></span></label>' +
+        '<p class="mform__err" id="s-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Send me a code</button></div></form>' +
+        socialRow() +
+        '<p class="signin__foot">No account needed to browse. <a class="textlink" href="/app">Continue as a guest</a></p>');
       var f = view.querySelector('#s-form');
       f.addEventListener('submit', function (ev) {
         ev.preventDefault();
@@ -2093,35 +2102,43 @@
     }
     function codeStep(msg) {
       var left = 45;
-      shell('<h1 class="signin__h">Check your email</h1><p class="signin__sub">If <b>' + esc(email) + '</b> can sign in, a code is on its way. Type it here. It works for 10 minutes.</p>' +
+      shell(2, MAIL_ART + '<h1 class="signin__h">Check your email</h1><p class="signin__sub">If <b>' + esc(email) + '</b> can sign in, we’ve sent a 6-digit code. It works for 10 minutes.</p>' +
         (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
-        '<form class="mform" id="c-form" novalidate><label class="mfield"><span>Code from the email</span>' +
-        '<input class="codein" id="c-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" pattern="[0-9]*" aria-describedby="c-err"></label>' +
+        '<form class="mform" id="c-form" novalidate><div class="otp" id="c-otp"><input class="otp__input" id="c-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" aria-label="6-digit code" aria-describedby="c-err">' +
+        '<span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span><span class="otp__box"></span></div>' +
         '<p class="mform__err" id="c-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Confirm</button></div></form>' +
-        '<p class="signin__again"><span id="c-timer"></span> <button class="textlink" type="button" id="c-edit">Wrong email? Edit</button></p>');
-      var f = view.querySelector('#c-form'), tm = view.querySelector('#c-timer'), again = null;
+        '<p class="signin__again"><span id="c-timer"></span></p><p class="signin__foot">Wrong email? <button class="textlink" type="button" id="c-edit">Change it</button></p>', emailStep);
+      var f = view.querySelector('#c-form'), tm = view.querySelector('#c-timer'), inp = f.querySelector('#c-code'), boxes = f.querySelectorAll('.otp__box');
+      function paint() {
+        var v = inp.value.replace(/\D/g, '').slice(0, 6); inp.value = v;
+        boxes.forEach(function (b, i) { b.textContent = v.charAt(i); b.classList.toggle('is-on', i === v.length && document.activeElement === inp); });
+        if (v.length === 6) f.requestSubmit ? f.requestSubmit() : f.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+      inp.addEventListener('input', paint); inp.addEventListener('focus', paint); inp.addEventListener('blur', paint);
+      setTimeout(function () { inp.focus(); }, 50);
       function tick() {
-        if (left > 0) { tm.textContent = 'Resend code in ' + left + 's'; left--; return; }
+        if (left > 0) { tm.textContent = 'You can resend the code in ' + left + ' seconds'; left--; return; }
         clearInterval(timer); tm.innerHTML = '<button class="textlink" type="button" id="c-resend">Resend code</button>';
-        again = tm.querySelector('#c-resend');
-        again.addEventListener('click', function () {
+        tm.querySelector('#c-resend').addEventListener('click', function () {
           memberFetch('/auth/v1/otp', { email: email, create_user: SIGNUP_OPEN }).then(function () { toast('Code sent'); }, function () { toast('Code sent'); });
           left = 45; timer = setInterval(tick, 1000); tick();
         });
       }
       clearInterval(timer); timer = setInterval(tick, 1000); tick();
       view.querySelector('#c-edit').addEventListener('click', function () { emailStep(); });
+      var busy = false;
       f.addEventListener('submit', function (ev) {
         ev.preventDefault();
-        var code = f.querySelector('#c-code').value.replace(/\D/g, ''), out = f.querySelector('#c-err');
-        if (code.length < 6) { out.textContent = 'Enter the code from the email.'; f.querySelector('#c-code').focus(); return; }
-        f.querySelector('button').disabled = true; out.textContent = '';
+        var code = inp.value.replace(/\D/g, ''), out = f.querySelector('#c-err');
+        if (busy) return;
+        if (code.length < 6) { out.textContent = 'Enter the 6-digit code from the email.'; inp.focus(); return; }
+        busy = true; f.querySelector('button').disabled = true; out.textContent = '';
         memberFetch('/auth/v1/verify', { type: 'email', email: email, token: code }).then(function (j) {
           clearInterval(timer);
           setMemberSession({ access: j.access_token, refresh: j.refresh_token, expires: Date.now() + (j.expires_in || 3600) * 1000 });
           store('memberPreview', true); toast('Signed in');
           go('/app/my', true);
-        }, function () { f.querySelector('button').disabled = false; out.textContent = 'That code didn’t work. Check it or ask for a new one.'; });
+        }, function () { busy = false; f.querySelector('button').disabled = false; inp.value = ''; paint(); out.textContent = 'That code didn’t work. Check it or ask for a new one.'; });
       });
     }
     if (params.get('demo') === 'code') { email = 'you@example.com'; codeStep(); return Promise.resolve(); }
