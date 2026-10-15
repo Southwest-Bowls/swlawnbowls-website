@@ -1560,3 +1560,29 @@ button.cal__day { display: flex; flex-direction: column; align-items: center; ju
 .fielderr { display: block; color: var(--brand-red); font-weight: 700; font-size: var(--fs-sm); margin-top: 4px; }
 html[data-text="xxlarge"] .tabbar a { font-size: .6875rem; }
 html[data-text="xxlarge"] .hub__stats { grid-template-columns: repeat(2, 1fr); }
+
+/* ===== Clubs: real map + photo-led list ===== */
+.mapwrap { position: relative; margin: var(--s3) 0 var(--s4); }
+.mapgl { height: min(64vh, 520px); min-height: 360px; border-radius: 26px; overflow: hidden; background: var(--tint-blue); box-shadow: 0 2px 4px rgba(35, 17, 32, .10), 0 14px 32px rgba(35, 17, 32, .16); }
+.gpin { width: 44px; height: 44px; border-radius: 50%; border: 3px solid #fff; background: var(--brand-red) center / cover no-repeat; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); padding: 0; cursor: pointer; transition: transform 180ms cubic-bezier(.2, .9, .3, 1.3); }
+.gpin--on { border-color: #f5c93a; }
+.gpin--sel { transform: scale(1.35); z-index: 3; border-color: var(--heading); }
+.csheet { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 20px; background: color-mix(in srgb, var(--surface) 86%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 8px 28px rgba(35, 17, 32, .25); z-index: 5; }
+.csheet[hidden] { display: none; }
+.csheet__img { flex: none; width: 56px; height: 56px; border-radius: 14px; object-fit: cover; }
+.csheet__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.csheet__name { font-weight: 800; color: var(--heading); }
+.csheet__city { color: var(--text-2); font-size: var(--fs-sm); }
+.ccovers { list-style: none; margin: 0; padding: 0 0 var(--s4); display: grid; gap: var(--s3); }
+.ccover { position: relative; display: flex; align-items: flex-end; height: 176px; border-radius: 24px; overflow: hidden; color: #fff; text-decoration: none; isolation: isolate; background: #3a2a38 var(--ph, none) center / cover no-repeat; box-shadow: 0 2px 4px rgba(35, 17, 32, .10), 0 12px 26px rgba(35, 17, 32, .18); }
+.ccover::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(18, 8, 16, 0) 30%, rgba(18, 8, 16, .85) 100%); }
+.ccover__chips { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; }
+.ccover__chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: rgba(255, 255, 255, .24); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); font-size: .8125rem; font-weight: 700; }
+.ccover__chip .i { width: 14px; height: 14px; fill: currentColor; }
+.ccover__body { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; }
+.ccover__name { font-size: 1.3rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+.ccover__city { display: inline-flex; align-items: center; gap: 6px; opacity: .92; }
+.maplibregl-ctrl-attrib { font-size: 11px; }
+@media (prefers-reduced-motion: no-preference) { .ccover { transition: transform 260ms cubic-bezier(.2,.9,.3,1.2); } .ccover:active { transform: scale(.98); } }
+
+.mapslow { position: absolute; left: 12px; right: 12px; top: 12px; z-index: 6; padding: 10px 14px; border-radius: 14px; background: var(--surface); box-shadow: 0 6px 20px rgba(35,17,32,.2); font-size: var(--fs-sm); }
