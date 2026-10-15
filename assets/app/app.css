@@ -1929,3 +1929,11 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 .welcome__t { font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; letter-spacing: -.02em; margin: 14px 0 0; max-width: 18ch; } .welcome__s { color: rgba(255,255,255,.75); max-width: 30ch; margin: 0; }
 .welcome__dots { display: flex; gap: 8px; margin: 10px 0 18px; } .welcome__dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.3); } .welcome__dots i.on { width: 22px; border-radius: 4px; background: #fff; }
 .welcome .btn--dark { background: #fff; color: #14101a; max-width: 360px; }
+
+/* Welcome: light and airy */
+.welcome { background: linear-gradient(170deg, #dcebff 0%, #efe6ff 55%, #fff7ef 100%); color: #14101a; }
+.welcome__skip { color: #5b5566; }
+.welcome__t { color: #14101a; } .welcome__s { color: #5b5566; }
+.welcome__dots i { background: rgba(20,16,26,.18); } .welcome__dots i.on { background: #14101a; }
+.welcome .btn--dark { background: #14101a; color: #fff; }
+.welcome__art { box-shadow: 0 18px 40px rgba(106,80,214,.25); }
