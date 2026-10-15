@@ -1383,3 +1383,5 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .tdstats { margin: var(--s3) 0; }
 .mfield select { width: 100%; min-height: 52px; padding: 0 var(--s4); border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); color: var(--text); font: inherit; font-size: max(16px, 1rem); }
 .mfield--icon select { padding-left: 46px; }
+
+:root:not([data-theme="dark"]) .signin::before { opacity: .12; top: 30%; bottom: calc(var(--tabbar-h) + var(--safe-b) + 90px); }
