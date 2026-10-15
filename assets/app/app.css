@@ -1451,3 +1451,22 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--br
 
 .rcpt__tagimg { display: block; width: 150px; height: auto; margin-top: 4px; }
 :root[data-theme="dark"] .rcpt__tagimg { background: #fff; border-radius: 8px; padding: 2px 6px; }
+
+/* Metrics: label, big value, helper */
+.hub__stat { gap: 2px; }
+.hub__label { font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); }
+.hub__help { color: var(--text-2); font-size: var(--fs-xs); line-height: 1.25; }
+.hub__stat > b { font-size: 1.9rem; line-height: 1.1; color: var(--heading); display: inline-flex; font-variant-numeric: tabular-nums; }
+/* Number roll: each digit scrolls up from 0, once per app launch */
+.roll { display: inline-block; height: 1.1em; overflow: hidden; line-height: 1.1; }
+.roll__col { display: flex; flex-direction: column; transform: translateY(0); }
+.roll__col > span { display: block; height: 1.1em; line-height: 1.1; }
+.is-rolling .roll__col { transform: translateY(calc(var(--d) * -1.1em)); transition: transform 900ms cubic-bezier(.2, .8, .2, 1); transition-delay: calc(var(--i) * 80ms); }
+/* Colour dots in the category chips double as the legend */
+.chip__dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; background: var(--cat-solid); border: 1px solid rgba(35, 17, 32, .25); }
+.chip[aria-pressed="true"] .chip__dot { border-color: rgba(35, 17, 32, .6); }
+.search--list { margin: var(--s2) 0 var(--s3); }
+.eband { position: relative; padding-right: 64px; }
+.eband > .iconbtn { position: absolute; top: 10px; right: 10px; }
+.hub__stat > b span, .hub__stat > b .roll span { font-size: inherit; color: inherit; font-weight: inherit; }
+.hub__stat > b .roll { vertical-align: top; }
