@@ -1412,3 +1412,15 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--br
 .mrow--static { cursor: default; }
 .mrow__title--plain { font-weight: 600; }
 .mrow__ic { font-weight: 800; }
+
+/* About: compact, app-like */
+.dolist { list-style: none; margin: 0; padding: var(--s3) var(--s4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); display: grid; gap: var(--s3); }
+.dolist li { display: grid; grid-template-columns: 22px 1fr; gap: var(--s3); align-items: start; line-height: 1.35; }
+.dolist .i { color: var(--primary); margin-top: 2px; }
+.bgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.bcard { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: var(--s4) var(--s2); height: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); color: var(--text); text-decoration: none; }
+.bgrid__av { width: 52px; height: 52px; border-radius: 50%; background: var(--tint-blush); display: grid; place-items: center; font-weight: 800; color: var(--heading); }
+.bgrid__name { font-weight: 800; color: var(--heading); line-height: 1.2; }
+.bgrid__role { color: var(--text-2); font-size: var(--fs-s, .95rem); line-height: 1.25; }
+.logochip--dark { background: #231120; border-color: #231120; }
+@media (prefers-reduced-motion: no-preference) { .bcard { transition: transform 140ms ease; } .bcard:active { transform: scale(.98); } }

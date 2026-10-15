@@ -802,8 +802,8 @@
       function strip(id, title, list) {
         if (!list.length) return '';
         return '<section class="hsec" aria-labelledby="' + id + '"><div class="section__head"><h2 class="section__title" id="' + id + '">' + esc(title) + '</h2></div><ul class="logostrip">' + list.map(function (o) {
-          var img = '<img src="' + esc(o.logo) + '" alt="' + esc(o.name) + '" loading="lazy" decoding="async">';
-          return '<li>' + (safeUrl(o.url) ? '<a class="logochip" href="' + esc(o.url) + '" target="_blank" rel="noopener" aria-label="' + esc(o.name) + ', opens their website">' + img + '</a>' : '<span class="logochip">' + img + '</span>') + '</li>';
+          var img = '<img src="' + esc(o.logo) + '" alt="' + esc(o.name) + '" decoding="async">';
+          return '<li>' + (safeUrl(o.url) ? '<a class="logochip' + (/world bowls/i.test(o.name) ? ' logochip--dark' : '') + '" href="' + esc(o.url) + '" target="_blank" rel="noopener" aria-label="' + esc(o.name) + ', opens their website">' + img + '</a>' : '<span class="logochip' + (/world bowls/i.test(o.name) ? ' logochip--dark' : '') + '">' + img + '</span>') + '</li>';
         }).join('') + '</ul></section>';
       }
       el.innerHTML = strip('h-par', 'Our partners', pd.partners || []) + strip('h-mem', 'Proud member of', pd.memberOf || []);
@@ -2461,17 +2461,17 @@
       function logoGroup(title, list) {
         if (!list.length) return '';
         return '<section class="mgroup"' + (title === 'Our partners' ? ' id="partners"' : '') + '><h2 class="mgroup__label">' + esc(title) + '</h2><ul class="logogrid">' + list.map(function (o) {
-          var img = '<img src="' + esc(o.logo) + '" alt="' + esc(o.name) + '" loading="lazy" decoding="async">';
-          return '<li>' + (safeUrl(o.url) ? '<a class="logochip" href="' + esc(o.url) + '" target="_blank" rel="noopener" aria-label="' + esc(o.name) + ', opens their website">' + img + '</a>' : '<span class="logochip">' + img + '</span>') + '</li>'; }).join('') + '</ul></section>';
+          var img = '<img src="' + esc(o.logo) + '" alt="' + esc(o.name) + '" decoding="async">';
+          return '<li>' + (safeUrl(o.url) ? '<a class="logochip' + (/world bowls/i.test(o.name) ? ' logochip--dark' : '') + '" href="' + esc(o.url) + '" target="_blank" rel="noopener" aria-label="' + esc(o.name) + ', opens their website">' + img + '</a>' : '<span class="logochip' + (/world bowls/i.test(o.name) ? ' logochip--dark' : '') + '">' + img + '</span>') + '</li>'; }).join('') + '</ul></section>';
       }
       view.innerHTML = backLink('/app/more', 'More') +
         '<section class="hub" aria-label="Southwest Bowls Division"><span class="logo-plate hub__logo"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75"></span>' +
         '<div class="hub__text"><h1 class="hub__name">About Southwest</h1><span class="hub__sub">A volunteer-led division</span></div>' + (lead ? '<p class="about__lead">' + esc(lead) + '</p>' : '') + '</section>' +
-        (what ? '<section class="mgroup"><h2 class="mgroup__label">What we do</h2><ul class="mlist">' + what.items.map(function (t) { return '<li class="mrow mrow--static"><span class="mrow__ic mrow__ic--blue">' + icon('check') + '</span><span class="mrow__main"><span class="mrow__title mrow__title--plain">' + esc(t) + '</span></span></li>'; }).join('') + '</ul></section>' : '') +
-        (board ? '<section class="mgroup"><h2 class="mgroup__label">Board of directors</h2><ul class="mlist">' + board.items.map(function (m) {
+        (what ? '<section class="mgroup"><h2 class="mgroup__label">What we do</h2><ul class="dolist">' + what.items.map(function (t) { return '<li>' + icon('check', 'i--sm') + '<span>' + esc(t) + '</span></li>'; }).join('') + '</ul></section>' : '') +
+        (board ? '<section class="mgroup"><h2 class="mgroup__label">Board of directors</h2><ul class="bgrid">' + board.items.map(function (m) {
           var em = /^mailto:/.test(m.link || '') ? m.link : '';
-          var inner = '<span class="mrow__ic mrow__ic--blush">' + esc(initials(m.title)) + '</span><span class="mrow__main"><span class="mrow__title">' + esc(m.title) + '</span><span class="mrow__meta">' + esc(m.meta || '') + '</span></span>' + (em ? '<span class="mrow__end" aria-hidden="true">' + icon('mail', 'i--sm') + '</span>' : '');
-          return '<li>' + (em ? '<a class="mrow" href="' + esc(em) + '" aria-label="Email ' + esc(m.title) + ', ' + esc(m.meta || '') + '">' + inner + '</a>' : '<div class="mrow">' + inner + '</div>') + '</li>'; }).join('') + '</ul></section>' : '') +
+          var inner = '<span class="bgrid__av">' + esc(initials(m.title)) + '</span><span class="bgrid__name">' + esc(m.title) + '</span><span class="bgrid__role">' + esc(m.meta || '') + '</span>';
+          return '<li>' + (em ? '<a class="bcard" href="' + esc(em) + '" aria-label="Email ' + esc(m.title) + ', ' + esc(m.meta || '') + '">' + inner + '</a>' : '<div class="bcard">' + inner + '</div>') + '</li>'; }).join('') + '</ul><p class="footnote">Tap a name to send an email.</p></section>' : '') +
         logoGroup('Our partners', pd.partners || []) + logoGroup('Proud member of', pd.memberOf || []) +
         '<div class="actions"><a class="btn btn--wide" href="/app/page/contact-us">Contact Southwest</a></div>';
       if (location.hash === '#partners') { var g = view.querySelector('#partners'); if (g) g.scrollIntoView(); }
