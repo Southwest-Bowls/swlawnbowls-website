@@ -1976,3 +1976,14 @@ dialog.dlg::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur
 .pbanner__art { background: var(--brand-red); box-shadow: 0 8px 18px rgba(178,45,52,.35); }
 .welcome__dots i.on { background: var(--brand-red); }
 .auth__apple { background: #14101a; }
+
+/* Sign-in steps: clean, no watermark */
+.signin::before { display: none !important; }
+.signin__step { display: none; }
+.signin__top { margin-bottom: var(--s4); }
+.signin__h { font-family: var(--font-display); font-size: 1.75rem; font-weight: 650; letter-spacing: -.025em; line-height: 1.12; }
+.signin__sub { font-size: var(--fs-sm); margin-top: 8px; }
+.signin .btn--wide { background: #14101a; color: #fff; border-radius: 999px; min-height: 54px; }
+.signin .mfield__box { border-radius: 999px; min-height: 54px; background: var(--surface); border: 1px solid var(--line); }
+.signin__foot { font-size: var(--fs-sm); }
+.signin .btn--wide { background: var(--heading); color: var(--bg); }

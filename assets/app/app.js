@@ -2460,7 +2460,6 @@
         '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
         '<input id="s-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="' + esc(email) + '" required></span></label>' +
         '<p class="mform__err" id="s-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Send me a code</button></div></form>' +
-        socialRow() +
         '<p class="signin__foot">No account needed to browse. <a class="textlink" href="/app">Continue as a guest</a></p>');
       var f = view.querySelector('#s-form');
       f.addEventListener('submit', function (ev) {
