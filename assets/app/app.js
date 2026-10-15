@@ -606,7 +606,7 @@
         '<span class="tcard__title">' + esc(x.short) + '</span>' + (st ? '<span class="tcard__st">' + icon(st.icon) + esc(st.label) + '</span>' : '') + '</a></li>';
     }).join('');
     html += '<div id="cal-day-list" tabindex="-1">' + (!anyThisMonth ? state('empty', 'No events this month', 'Use the arrows to look at another month.')
-      : (dayEv.length ? '<ol class="tl">' + tl + '</ol>' : '<p class="muted tl__none">Nothing scheduled this day. Days with a coloured dot have events.</p>')) + '</div></div>';
+      : (dayEv.length ? '<ol class="tl">' + tl + '</ol>' : '<p class="muted tl__none">Nothing scheduled this day. Days with a colored dot have events.</p>')) + '</div></div>';
     return html;
   }
   // One event as a coloured card (same look as the calendar timeline)
@@ -3040,7 +3040,7 @@
   var BADGES = [['team-usa', 'Team USA member'], ['national', 'National champion'], ['division', 'Division champion'], ['coach', 'Coach'], ['umpire', 'Umpire'],
     ['marker', 'Marker'], ['officer', 'Club or Division officer'], ['novice', 'Novice player']];
   function badgeLabel(id) { return (BADGES.filter(function (b) { return b[0] === id; })[0] || [0, ''])[1]; }
-  // My profile page: all on this phone. Bio and honours are typed by the player; the season numbers and
+  // My profile page: all on this phone. Bio and honors are typed by the player; the season numbers and
   // timeline come from the published results; the photo is resized and kept here, never uploaded.
   function profilePage() {
     setTitle('My profile');
@@ -3066,7 +3066,7 @@
         '<p class="pro__bio">' + (p.bio ? esc(p.bio).replace(/\n/g, '<br>') : '<span class="muted">Add a short bio with Edit.</span>') + '</p>' +
         (p.name ? '<div class="hub__stats mystats">' + metric('pro-t', tourns, 'Tournaments', 'With a result') + metric('pro-p', pod, 'Podiums', 'Top three') + metric('pro-w', wins, 'Wins', 'First places') + '</div>' : '') +
         (awards.length ? '<section class="block"><h2>Awards</h2><ul class="honours">' + awards.map(function (x) { return '<li><span class="honours__yr">' + esc(x.r.year || '') + '</span><a href="/app/results/' + encodeURIComponent(x.r.id) + '">' + esc(x.a.title + ' · ' + shortTitle(x.r.t.title)) + '</a></li>'; }).join('') + '</ul></section>' : '') +
-        '<section class="block"><h2>Other honours</h2>' + (honours.length ? '<ul class="honours">' + honours.map(function (h) { return '<li><span class="honours__yr">' + esc(h.year || '') + '</span><span>' + esc(h.text) + '</span></li>'; }).join('') + '</ul>'
+        '<section class="block"><h2>Other honors</h2>' + (honours.length ? '<ul class="honours">' + honours.map(function (h) { return '<li><span class="honours__yr">' + esc(h.year || '') + '</span><span>' + esc(h.text) + '</span></li>'; }).join('') + '</ul>'
           : '<p class="muted">Anything else you want to list, such as a title from another division or year. Add it with Edit.</p>') + '</section>' +
         (partners.length ? '<section class="block"><h2>Played most with</h2><p>' + partners.map(esc).join(' · ') + '</p></section>' : '') +
         '<section class="block"><h2>Results' + (mine.length ? ' (' + mine.length + ')' : '') + '</h2>' +
@@ -3098,7 +3098,7 @@
       '<fieldset class="ticks"><legend>More about me</legend>' + BADGES.map(function (b) {
         return '<label class="tick"><input type="checkbox" name="badge" value="' + b[0] + '"' + ((p.badges || []).indexOf(b[0]) >= 0 ? ' checked' : '') + '><span>' + esc(b[1]) + '</span></label>'; }).join('') + '</fieldset>' +
       '<label class="mfield"><span>Bio</span><textarea id="g-bio" rows="4" maxlength="600">' + esc(p.bio || '') + '</textarea></label>' +
-      '<label class="mfield"><span>Other honours (one per line, start with the year)</span><textarea id="g-hon" rows="5" maxlength="1500" placeholder="2024 Team USA, ...">' + esc(hon) + '</textarea></label>' +
+      '<label class="mfield"><span>Other honors (one per line, start with the year)</span><textarea id="g-hon" rows="5" maxlength="1500" placeholder="2024 Team USA, ...">' + esc(hon) + '</textarea></label>' +
       '<div class="actions"><button class="btn btn--wide" type="submit">Save</button></div></form>');
     var gdiv = document.getElementById('g-div'), gclub = document.getElementById('g-club');
     gdiv.addEventListener('change', function () { document.getElementById('g-country-row').hidden = !/^International/.test(gdiv.value); });
@@ -3133,7 +3133,7 @@
         (memberSession() ? '' : '<span class="tag tag--preview">Preview</span>') + '</div><div id="m-box">' + loading() + '</div></section>' : '') +
       '<div class="psheet">' +
         (memberSession() ? '' : '<a class="pbanner" href="/app/signin"><span class="pbanner__t"><b>Sign in or create an account</b><small>Enter tournaments and keep your details</small></span><span class="pbanner__art" aria-hidden="true">' + icon('person') + '</span></a>') +
-        '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honours and results' : 'Add your name and bio') + prow('/app/events?show=saved', 'bookmark', 'Saved events', nSaved ? nSaved + ' saved' : 'Nothing saved yet') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + '</div>' +
+        '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honors and results' : 'Add your name and bio') + prow('/app/events?show=saved', 'bookmark', 'Saved events', nSaved ? nSaved + ' saved' : 'Nothing saved yet') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + '</div>' +
         '<div class="pgroup">' + prow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline') + '</div>' +
       '</div>' +
       '<div id="my-res"></div>' + myEntriesHtml();
