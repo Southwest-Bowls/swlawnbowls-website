@@ -1186,3 +1186,46 @@ button.cal__day--sel { background: var(--heading); color: var(--surface); }
 .signin::before { content: ''; position: fixed; z-index: -1; left: 6%; right: 6%; top: 22%; bottom: calc(var(--tabbar-h) + var(--safe-b) + 120px);
   background: url('/assets/app/swd-logo.png') center / contain no-repeat; opacity: .2; filter: blur(1.5px); pointer-events: none; }
 :root[data-theme="dark"] .signin::before { opacity: .22; }
+
+/* More: one title, four grouped lists, one row style (icon circle, title, meta, chevron) */
+.mtitle { font-size: 1.9rem; letter-spacing: -.01em; margin: var(--s3) 0 var(--s4); padding-top: var(--safe-t); }
+.mgroup { margin-bottom: var(--s5); }
+.mgroup__label { font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); margin: 0 var(--s2) var(--s2); }
+.mlist { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); overflow: hidden; }
+.mlist > li + li { border-top: 1px solid var(--line); }
+.mrow { display: flex; align-items: center; gap: var(--s3); width: 100%; min-height: 64px; padding: 10px var(--s4); background: transparent; border: 0; font: inherit; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; }
+.mrow__ic { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--heading); }
+.mrow__ic .i { width: 22px; height: 22px; }
+.mrow__ic--blue { background: var(--tint-blue); } .mrow__ic--orange { background: var(--tint-orange); } .mrow__ic--blush { background: var(--tint-blush); }
+.mrow__ic--plum { background: var(--subtle); }
+.mrow__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mrow__title { font-weight: 700; color: var(--heading); }
+.mrow__meta { color: var(--text-2); font-size: var(--fs-s, .95rem); }
+.mrow__end { flex: none; color: var(--text-2); display: grid; }
+@media (prefers-reduced-motion: no-preference) { .mrow { transition: background-color 120ms ease; } .mrow:active { background: var(--subtle); } }
+
+/* ===== Native pass for every inner page =====
+   Back is a pill button; plain lists become one rounded card with icon circles;
+   information sections become cards. Same look as More, Clubs and My SWD. */
+.back { min-height: 40px; margin: var(--s2) 0 var(--s3); padding: 0 var(--s4) 0 var(--s2); border-radius: var(--r-pill); background: var(--surface); border: 1px solid var(--line); }
+.rows:not(.rows--cards):not(.rows--quiet):not(.people) { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: 0 var(--s4); overflow: hidden; }
+.rows:not(.rows--cards):not(.rows--quiet):not(.people) > li:last-child { border-bottom: 0; }
+.rows--menu:not(.rows--cards) > li:first-child { border-top: 0; }
+.rows--menu .row { min-height: 64px; padding: 10px 0; }
+.rows--menu .row__title { font-weight: 700; color: var(--heading); }
+.rows--menu .row > .i:first-child { flex: none; box-sizing: content-box; width: 22px; height: 22px; padding: 9px; border-radius: 12px; background: var(--tint-blue); color: var(--heading); }
+.rows--quiet { background: transparent; }
+.block { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s4); margin-top: var(--s4); }
+.block h2 { font-size: 1.2rem; }
+.block .rows, .block .rows:not(.rows--cards):not(.rows--quiet):not(.people) { background: transparent; border: 0; border-radius: 0; padding: 0; }
+.block figure img { border-radius: 14px; }
+.intro h1, .screen-title { font-size: 1.75rem; }
+
+.page-sec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s4); margin-top: var(--s4); }
+.page-sec > h2 { font-size: 1.2rem; margin-bottom: var(--s3); }
+.page-sec .rows:not(.rows--cards):not(.rows--quiet), .page-sec .people { background: transparent; border: 0; border-radius: 0; padding: 0; }
+
+.phead { margin-top: var(--s3); }
+.phead h1 { font-size: 1.9rem; letter-spacing: -.01em; }
+.page-sec > .embed-card, .page-sec > .card { background: transparent; border: 0; padding: 0; }
+.page-sec:has(> .embed-card) { padding: var(--s4); }

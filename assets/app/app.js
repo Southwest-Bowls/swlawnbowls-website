@@ -618,10 +618,8 @@
   }
   // Every main screen opens with the same compact header: a short heading,
   // the section name, and one restrained decorative graphic.
-  function pageHead(title, label, art) {
-    var g = art === 'logo' ? '<span class="logo-plate phead__logo" aria-hidden="true"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75" decoding="async"></span>'
-      : art ? '<span class="phead__icon phead__icon--' + art + '" aria-hidden="true">' + icon(art === 'trophy' ? 'trophy' : 'tv') + '</span>' : '';
-    return '<header class="phead"><div class="phead__text"><h1>' + esc(title) + '</h1><p class="phead__label">' + esc(label) + '</p></div>' + g + '</header>';
+  function pageHead(title, label) {
+    return '<header class="phead"><div class="phead__text"><h1>' + esc(title) + '</h1>' + (label ? '<p class="phead__label">' + esc(label) + '</p>' : '') + '</div></header>';
   }
   function setTitle(t) { document.title = (t ? t + ' · ' : '') + 'Southwest Bowls'; }
 
@@ -732,7 +730,7 @@
     currentNotices = live.filter(function (x) { return x.e.alert; });
     var unread = unreadCount(currentNotices);
     var html = '<header class="hbar"><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'long', month: 'long', day: 'numeric' })) + '</span>' +
-      '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Your Southwest') + '</h1></div>' +
+      '<h1 class="hbar__hello">' + (first ? 'Hi, ' + esc(first) : 'Southwest Bowls') + '</h1></div>' +
       '<a class="circbtn" id="hq" href="/app/search" aria-label="Search events, clubs and results">' + icon('search') + '</a>' +
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
       '<a class="circbtn circbtn--me" href="/app/my" aria-label="My SWD">' + (initials(prof.name) ? esc(initials(prof.name)) : icon('person')) + '</a></header>';
@@ -921,7 +919,7 @@
       var segs = [['upcoming', 'Upcoming'], ['calendar', 'Calendar'], ['saved', 'Saved']].concat(hasPast ? [['past', 'Completed']] : []);
       var calMonth = (f.month || today.slice(0, 7)), calDay = '';
       var nSet = f.club ? 1 : 0;
-      view.innerHTML = pageHead('Find your next game.', 'Events', 'logo') +
+      view.innerHTML = pageHead('Events', '') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search events or clubs</span>' +
         '<input type="search" id="q" placeholder="Search events" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
         '<div class="segmented" role="group" aria-label="Which events">' + segs.map(function (k) {
@@ -937,7 +935,7 @@
         '<input type="hidden" id="f-cat" value="' + esc(f.cat) + '">' +
         '<label><span class="sr-only">Club</span><select id="f-club">' + opt('', 'All clubs', f.club) + opt('followed', 'Followed clubs', f.club) +
         Object.keys(clubs).sort(function (a, b) { return clubs[a] < clubs[b] ? -1 : 1; }).map(function (k) { return opt(k, clubs[k], f.club); }).join('') + '</select></label>' +
-        '</div><div id="ev-results"></div><p class="footnote">Save a game. Find it on Home.</p>';
+        '</div><div id="ev-results"></div>';
 
       function apply() {
         var qRaw = document.getElementById('q').value.trim(), q = qRaw.toLowerCase();
@@ -994,7 +992,7 @@
                 : '<p class="muted" style="margin:12px 0">No upcoming saved events.</p>') +
               (past.length ? '<h2 class="group-title" id="h-past">Past</h2><ul class="list list--cards" aria-labelledby="h-past">' + past.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '');
           } else {
-            out.innerHTML = head + (show === 'upcoming' ? '<h2 class="section__title list-title">Coming up</h2>' : '') +
+            out.innerHTML = head +
               '<ul class="list list--cards">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>';
           }
         }
@@ -1284,7 +1282,7 @@
       var f = { q: params.get('q') || '', cat: params.get('cat') || '', year: params.get('year') || '' };
       var years = {}; list.forEach(function (r) { if (r.year) years[r.year] = 1; });
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
-      view.innerHTML = pageHead('The people. The wins.', 'Results', 'trophy') +
+      view.innerHTML = pageHead('Results', '') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search results or players</span>' +
         '<input type="search" id="q" placeholder="Search results or players" value="' + esc(f.q) + '" autocomplete="off" enterkeyhint="search"></label>' +
         champStrip(list) + standLink +
@@ -1295,7 +1293,7 @@
         '<input type="hidden" id="f-cat" value="' + esc(f.cat) + '">' +
         '<div id="res-list"></div></section>' +
         '<ul class="rows" style="margin-top:24px">' + linkRow('/archive', 'doc', '2022–2025 results', 'The results archive', { ext: true }) + '</ul>' +
-        '<p class="footnote">Find a result. Celebrate your club.</p>';
+        '';
       view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
       function apply() {
         var qRaw = document.getElementById('q').value.trim(), q = qRaw.toLowerCase();
@@ -1400,7 +1398,7 @@
       var cur = srcs.filter(function (s) { return s.key === params.get('list'); })[0] || srcs[0];
       var year = srcs[0].year;
       view.innerHTML = backLink('/app/results', 'Results') +
-        pageHead((year ? year + ' ' : '') + 'Standings', 'Season points', 'trophy') +
+        pageHead((year ? year + ' ' : '') + 'Standings', 'Season points') +
         '<div class="segmented" role="tablist" aria-label="Which standings">' + srcs.map(function (s) {
           var on = s.key === cur.key;
           return '<button type="button" role="tab" id="tab-' + esc(s.key) + '" aria-controls="panel" aria-selected="' + on + '" tabindex="' + (on ? 0 : -1) + '" data-list="' + esc(s.key) + '">' + esc(s.label) + '</button>';
@@ -1560,7 +1558,7 @@
   function watch() {
     setTitle('Watch');
     var today = todayISO();
-    view.innerHTML = pageHead('From the greens.', 'Southwest TV', 'play') +
+    view.innerHTML = pageHead('Southwest TV', 'Livestreams and replays') +
       '<div id="w-feature">' + loading() + '</div><div id="w-again"></div><div id="w-next"></div><p class="footnote" id="w-status"></p>' +
       '<section class="section" aria-labelledby="h-more-tv"><h2 class="section__title" id="h-more-tv">More from SW TV</h2><ul class="rows rows--menu">' +
       menuRow(YT_CHANNEL_URL, 'tv', 'SW TV on YouTube', 'Subscribe to hear when we go live') +
@@ -1705,31 +1703,26 @@
     return loadEvents().catch(function () { return []; }).then(function (events) {
       currentNotices = events.filter(function (x) { var p = eventPhase(x, today); return x.e.alert && (p === 'upcoming' || p === 'now'); });
       var n = currentNotices.length;
-      view.innerHTML = pageHead('Your Southwest.', 'More', 'logo') +
-        '<a class="feature-tile tint tint--blue" href="/app/more/clubs">' + icon('pin') +
-          '<span class="feature-tile__body"><span class="feature-tile__title">Find your club</span><span class="feature-tile__sub">Visit. Play. Belong.</span></span>' + CHEV + '</a>' +
-        '<h2 class="section__title list-title">Explore</h2>' +
-        '<nav class="tiles tiles--small" aria-label="Explore">' + [
-          ['/app/more/news', 'news', 'News', 'blush'],
-          ['/app/more/play', 'flag', 'Learn bowls', 'orange'],
-          ['/app/more/resources', 'doc', 'Resources', 'blue'],
-          ['/app/page/about-us', 'info', 'About Southwest', 'plain']
-        ].map(function (t) { return '<a class="tile tile--' + t[3] + '" href="' + t[0] + '">' + icon(t[1]) + '<span class="tile__label">' + t[2] + '</span></a>'; }).join('') + '</nav>' +
-        '<ul class="rows rows--menu rows--cards" style="margin-top:12px">' + menuRow('/app/watch', 'tv', 'Southwest TV', 'Livestreams and replays') + '</ul>' +
-        '<h2 class="section__title list-title">Make it yours</h2>' +
-        '<ul class="rows rows--menu rows--cards">' +
-          menuRow('/app/events?show=saved', 'bookmark', 'Saved events') +
-          '<li><button class="row" type="button" data-notices aria-haspopup="dialog">' + icon('bell') +
-            '<span class="row__main"><span class="row__title">Tournament updates</span>' + (n ? '<span class="row__meta" data-upd-label="short">' + updatesShort(currentNotices) + '</span>' : '') + '</span>' + CHEV + '</button></li>' +
-          menuRow('/app/more/settings', 'sliders', 'App settings', 'Appearance & text size') +
-          menuRow('/app/page/contact-us', 'mail', 'Help & contact', 'Contact Southwest Bowls') +
-        '</ul>' +
-        '<h2 class="section__title list-title">Follow Southwest</h2>' +
-        '<ul class="rows rows--menu rows--cards">' +
-          menuRow(FACEBOOK_URL, 'facebook', 'Follow us on Facebook') +
-          menuRow(YT_CHANNEL_URL, 'tv', 'Watch SW TV on YouTube') +
-        '</ul>' +
-        '<ul class="rows rows--menu rows--quiet">' + menuRow('/', 'globe', 'Southwest website') + '</ul>';
+      // Four plain groups, one row style. Icon colour tells the group, nothing else changes.
+      function mrow(href, iconName, title, meta, tone) {
+        var web = /^https?:/i.test(href) || (href.charAt(0) === '/' && !/^\/app\b/.test(href));
+        return '<li><a class="mrow" href="' + esc(href) + '"' + (web ? ' target="_blank" rel="noopener"' : '') + '><span class="mrow__ic mrow__ic--' + tone + '">' + icon(iconName) + '</span>' +
+          '<span class="mrow__main"><span class="mrow__title">' + esc(title) + '</span>' + (meta ? '<span class="mrow__meta">' + esc(meta) + '</span>' : '') + '</span>' +
+          (web ? '<span class="mrow__end" aria-hidden="true">' + icon('ext', 'i--sm') + '</span><span class="sr-only">Opens in your browser</span>' : '<span class="mrow__end" aria-hidden="true">' + icon('chev', 'i--sm') + '</span>') + '</a></li>';
+      }
+      function group(label, rows) { return '<section class="mgroup" aria-labelledby="mg-' + slugify(label) + '"><h2 class="mgroup__label" id="mg-' + slugify(label) + '">' + esc(label) + '</h2><ul class="mlist">' + rows.join('') + '</ul></section>'; }
+      view.innerHTML = '<h1 class="mtitle">More</h1>' +
+        group('Explore', [
+          mrow('/app/more/clubs', 'pin', 'Clubs', 'Map and list', 'blue'),
+          mrow('/app/more/news', 'news', 'News', '', 'blue'),
+          mrow('/app/more/play', 'flag', 'Learn bowls', '', 'blue'),
+          mrow('/app/watch', 'tv', 'Southwest TV', 'Livestreams and replays', 'blue'),
+          mrow('/app/more/resources', 'doc', 'Resources', '', 'blue')]) +
+        group('About', [
+          mrow('/app/page/about-us', 'info', 'About Southwest', '', 'blush'),
+          mrow('/app/page/contact-us', 'mail', 'Help and contact', '', 'blush'),
+          mrow('/', 'globe', 'Southwest website', 'swlawnbowls.org', 'blush'),
+          mrow(FACEBOOK_URL, 'facebook', 'Facebook', 'Follow Southwest', 'blush')]);
     });
   }
 
@@ -1819,7 +1812,7 @@
     return getJSON('/clubs-data.json').then(function (d) {
       var clubs = d.clubs || [];
       var q0 = params.get('q') || '', cview = params.get('view') === 'list' ? 'list' : 'map', selId = '';
-      view.innerHTML = backLink('/app/more', 'More') + pageHead('Find your club.', 'Clubs · Cambria to Coronado', 'logo') +
+      view.innerHTML = backLink('/app/more', 'More') + pageHead('Clubs', clubs.length + ' clubs, Cambria to Coronado') +
         '<label class="search">' + icon('search') + '<span class="sr-only">Search clubs</span>' +
         '<input type="search" id="q" placeholder="Search by club or city" value="' + esc(q0) + '" autocomplete="off"></label>' +
         '<div class="segmented" role="group" aria-label="Show clubs as">' + [['map', 'Map'], ['list', 'List']].map(function (k) {
