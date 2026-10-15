@@ -1524,6 +1524,7 @@
     return '<div class="ecard"><div class="ecard__row"><span class="ecard__ic" aria-hidden="true">' + icon(ic) + '</span><b class="ecard__t">' + esc(title) + '</b>' +
       '<button class="btn btn--dark btn--sm" type="button" data-embed="' + key + '" data-url="' + esc(url) + '" data-h="' + (parseInt(height, 10) || 650) + '" data-title="' + esc(title) + '">View</button>' +
       '<a class="circbtn ecard__ext" href="' + esc(url.replace(/([?&])widget=true&?/, '$1').replace(/[?&]$/, '')) + '" target="_blank" rel="noopener" aria-label="Open ' + esc(title) + ' full screen">' + icon('ext') + '</a></div>' +
+      (kind === 'form' ? '<p class="ecard__note">No Google account needed. If the form says “Sign in to Google to save your progress”, ignore it: fill it in and press Submit.</p>' : '') +
       '<div id="' + key + '"></div></div>';
   }
   function entriesPanel(e) {

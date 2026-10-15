@@ -2190,3 +2190,5 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 
 .cstrip__ph { display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; color: var(--heading); }
 .cstrip__n { color: var(--text-2); font-size: .7rem; font-weight: 500; }
+.ecard__note { margin: 10px 4px 0; color: var(--text-2); font-size: var(--fs-xs); }
+.ecard .embed { padding-bottom: 96px; }
