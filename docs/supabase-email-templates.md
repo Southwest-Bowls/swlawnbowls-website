@@ -6,7 +6,7 @@ Do this for **Magic Link** and for **Confirm signup** (same text for both). Noth
 **Subject:** `Your Southwest Bowls sign-in code`
 
 **Why the link went to the wrong site.** The app asks for the sign-in link to return to the page it was opened from. Supabase only honours that address if it is in the allowed list. Otherwise it uses the project's **Site URL**. A test address (a laptop or an IP on your Wi-Fi) is not on the list, so the link fell back to the old Site URL. Fix both:
-1. Authentication, **URL Configuration**, **Site URL**: `https://swlawnbowls-website.vercel.app/app`
+1. Authentication, **URL Configuration**, **Site URL**: `https://swd-google-calendar.vercel.app/app`
 2. **Redirect URLs** must contain: `https://swlawnbowls-website.vercel.app/app/**`, `https://swd-google-calendar.vercel.app/app/**`, and (testing only) `http://192.168.0.151:8765/app/**`.
 
 The 6-digit code in the email is what the new sign-in screen asks for, and it works even if the link goes somewhere unexpected.
@@ -21,7 +21,7 @@ The 6-digit code in the email is what the new sign-in screen asks for, and it wo
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:18px;border:1px solid #e4dfe3;">
         <tr><td align="center" style="padding:28px 24px 8px;">
-          <img src="https://swlawnbowls-website.vercel.app/assets/app/swd-logo.png" width="72" alt="Southwest Bowls" style="display:block;border:0;">
+          <img src="https://swd-google-calendar.vercel.app/assets/app/swd-logo.png" width="72" alt="Southwest Bowls" style="display:block;border:0;">
         </td></tr>
         <tr><td style="padding:8px 28px 0;text-align:center;">
           <h1 style="margin:12px 0 8px;font-size:24px;line-height:1.25;">Your sign-in code</h1>
