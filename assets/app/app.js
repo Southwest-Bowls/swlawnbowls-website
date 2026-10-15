@@ -3215,6 +3215,8 @@
           if (k && k.indexOf('swd:memberPhoto:') === 0) localStorage.removeItem(k);
         }
       } catch (e) {}
+      // A fresh guest: the typed profile (name, bio, honors, photo) goes too. Saved events, followed clubs and display settings stay.
+      try { ['profile', 'memberPhoto:self'].forEach(function (k) { localStorage.removeItem('swd:' + k); }); } catch (e) {}
       store('memberPreview', false);
       toast('Signed out'); render();   // redraw the whole page as signed out
     }
