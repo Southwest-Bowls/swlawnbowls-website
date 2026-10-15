@@ -894,6 +894,17 @@
       return '<a class="shortcut shortcut--' + t[3] + '" href="' + t[0] + '"><span class="shortcut__dot">' + icon(t[1]) + '</span><span class="shortcut__label">' + t[2] + '</span></a>';
     }).join('') + '</nav>';
 
+    // Your clubs: the clubs you follow, one tap to each (shown only when you follow some)
+    (function () {
+      var fol = followed(), mineC = (d.clubs || []).filter(function (c) { return fol.indexOf(c.id || slugify(c.name)) >= 0; });
+      if (!mineC.length) return;
+      html += '<section class="hsec" aria-labelledby="h-yc"><div class="section__head"><h2 class="section__title" id="h-yc">Your clubs</h2><a class="section__more" href="/app/more/clubs?view=cards">All clubs' + icon('chev', 'i--sm') + '</a></div><ul class="cstrip">' +
+        mineC.map(function (c) {
+          var id = c.id || slugify(c.name), ph = clubPhotoOf(c), n = live.filter(function (x) { return (x.clubIds || []).indexOf(id) >= 0; }).length;
+          return '<li><a class="cstrip__i" href="/app/more/clubs/' + encodeURIComponent(id) + '"><span class="cstrip__ph"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '>' + (ph ? '' : esc((c.name || '?').charAt(0))) + '</span><span>' + esc(c.name) + '</span>' + (n ? '<small class="cstrip__n">' + n + ' upcoming</small>' : '') + '</a></li>';
+        }).join('') + '</ul></section>';
+    })();
+
     // 4. Upcoming events: a row of cards you swipe sideways
     var more = live.filter(function (x) { return !shownIds[x.id]; }).slice(0, 8);
     if (more.length) {

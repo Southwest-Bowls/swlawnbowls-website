@@ -2187,3 +2187,6 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .hbar__club { display: flex; align-items: center; gap: 8px; margin: -6px 0 var(--s3); padding: 8px 14px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 75%, transparent); font-size: var(--fs-xs); min-height: 40px; }
 .hbar__club span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 380px) { .hbar__logo { width: 40px; height: 40px; } .hbar .circbtn { width: 42px; height: 42px; } }
+
+.cstrip__ph { display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; color: var(--heading); }
+.cstrip__n { color: var(--text-2); font-size: .7rem; font-weight: 500; }
