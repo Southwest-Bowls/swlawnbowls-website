@@ -1957,6 +1957,7 @@
     var p = store('profile') || {};
     return '<section class="section mysec" aria-labelledby="h-guest"><div class="section__head"><h2 class="section__title" id="h-guest">You’re browsing as a guest</h2></div>' +
       '<p>Events, live scoring, results, clubs and Southwest TV are open to everyone. Players from other divisions and other countries are welcome to follow and enter events.</p>' +
+      '<details class="gdetails"' + ((p.name || p.division || p.club) ? ' open' : '') + '><summary>' + (p.name || p.division || p.club ? 'Your details' : 'Add your details (optional)') + '</summary>' +
       '<form class="mform" id="g-form" novalidate>' +
         '<label class="mfield"><span>Your name (optional)</span><input id="g-name" type="text" autocomplete="name" value="' + esc(p.name || '') + '"></label>' +
         '<label class="mfield"><span>Home division or country (optional)</span><input id="g-div" type="text" list="g-div-list" value="' + esc(p.division || '') + '">' +
@@ -1964,7 +1965,7 @@
         '<label class="mfield"><span>Home club (optional)</span><input id="g-club" type="text" value="' + esc(p.club || '') + '"></label>' +
         '<div class="actions"><button class="btn btn--ghost" type="submit">Save on this phone</button></div>' +
         '<p class="footnote">Kept on this phone only. You never need to be an SWD member to use the app or to enter an event; each event page says who can play.</p>' +
-      '</form></section>';
+      '</form></details></section>';
   }
   function wireGuest() {
     var f = view.querySelector('#g-form'); if (!f) return;

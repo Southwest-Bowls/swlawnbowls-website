@@ -1035,3 +1035,10 @@ html[data-text="xlarge"] .media--compact { flex-direction: column; align-items: 
   .idcard__name { font-size: 1.1875rem; }
 }
 html[data-text="xlarge"] .idcard__body { flex-wrap: wrap; }
+
+/* Guest details: collapsed until wanted, so My SWD opens on the useful parts */
+.gdetails { margin-top: var(--s3); }
+.gdetails > summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; color: var(--accent, #0079a8); list-style: none; }
+.gdetails > summary::-webkit-details-marker { display: none; }
+.gdetails > summary::after { content: '\203A'; margin-left: 8px; transition: transform .15s ease; }
+.gdetails[open] > summary::after { transform: rotate(90deg); }
