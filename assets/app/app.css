@@ -2223,3 +2223,6 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .hbar { align-items: flex-start; }
 .hbar__text { padding-top: 2px; }
 .hbar__club { margin-top: 0; }
+.hbar__hello { font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }
+.hbar__date { font-size: .8rem; }
+@media (max-width: 400px) { .hbar__hello { font-size: 1rem; } }
