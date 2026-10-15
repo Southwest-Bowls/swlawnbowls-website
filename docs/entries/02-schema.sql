@@ -1,7 +1,7 @@
 -- ============================================================================
 -- DRAFT -- NOT APPLIED -- DO NOT RUN
 -- ============================================================================
--- SWD Hub, tournament entries: 0005_hub_entries (proposed name).
+-- Tournament entries: 0005_entries (proposed name).
 -- Status: design draft for review by Giulia, Anne and Bill. Nothing here has
 -- been run, parsed by a Postgres server, or tested. Expect syntax fixes on the
 -- first real run (do that on a scratch Supabase project, never production).
@@ -87,7 +87,7 @@ CREATE TABLE public.hub_admins (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 COMMENT ON TABLE public.hub_admins IS
-  'Division admins: see and do everything in the Hub, including approving withdrawals and recording refunds. Seeded by hand by the operator; no API write policy. OPEN QUESTION: are Anne and Bill admins, or is Bill admin and Anne a TD on every event?';
+  'Division admins: see and do everything in the app, including approving withdrawals and recording refunds. Seeded by hand by the operator; no API write policy. OPEN QUESTION: are Anne and Bill admins, or is Bill admin and Anne a TD on every event?';
 ALTER TABLE public.hub_admins ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
@@ -859,7 +859,7 @@ COMMIT;
 -- 16. Schema placement: tables are in "public" so the API can serve them under RLS, unlike the member
 --     data in "private". Confirm this is the intended exposure model before applying.
 -- 17. Link to clubs: events.club_name is free text; link to private.clubs?
--- 19. Functions the docs in docs/hub/ need that this file does not have yet: player cancels an unpaid
+-- 19. Functions the docs in docs/entries/ need that this file does not have yet: player cancels an unpaid
 --     entry (01 T9), TD releases a check/cash hold (01 T8), TD removes a paid entry (01 T14), event
 --     cancellation and its refund list, waitlist promotion/offer, switch payment choice, void a wrongly
 --     recorded payment (bounced check, "mark not received"), TD override at cap or after the deadline

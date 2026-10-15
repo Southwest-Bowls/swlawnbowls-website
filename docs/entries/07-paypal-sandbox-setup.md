@@ -15,7 +15,7 @@ Giulia or Anne add the values in the Vercel dashboard (project settings, Environ
 ## What the build needs from PayPal
 1. **Server creates the order** with the entry id in `custom_id` and `invoice_id` (amount comes from our database, never from the browser).
 2. **Browser shows the pay button** (PayPal JS SDK v6), including card, Apple Pay and Google Pay.
-3. **Server captures** the approved order, then waits for the signed **webhook** before confirming the entry (docs/hub/03-payments.md).
+3. **Server captures** the approved order, then waits for the signed **webhook** before confirming the entry (docs/entries/03-payments.md).
 4. **Webhook**: a public HTTPS address on our server, subscribed to the capture-completed, capture-denied and refund events, verified by PayPal's signature check. Add it under the sandbox app, Sandbox Webhooks, Add Webhook, once the server address exists.
 5. **Transaction search** is on, so a nightly job can compare PayPal's list to our payments.
 
@@ -33,7 +33,7 @@ Giulia or Anne add the values in the Vercel dashboard (project settings, Environ
 Real money only after: all sandbox paths pass, Anne has done a full dry run, the refund-by-hand step has been practised, the Apple review question is answered, and Giulia says go. Live credentials are then created in PayPal's **Live** tab and added to Vercel Production only.
 
 ## Why the variables are named HUB_PAYPAL_*
-The older website entry code (`api/_lib/paypal.js`, `api/webhook.js`) reads `PAYPAL_CLIENT_ID` and friends. The Hub uses its own `HUB_PAYPAL_*` names so the two can never overwrite each other, and the existing buttons keep working untouched.
+The older website entry code (`api/_lib/paypal.js`, `api/webhook.js`) reads `PAYPAL_CLIENT_ID` and friends. The entry system uses its own `HUB_PAYPAL_*` names so the two can never overwrite each other, and the existing buttons keep working untouched.
 
 ## One-time setup, no secrets in chat
 Run in Terminal, in the website repo folder: `bash scripts/set-paypal-sandbox.sh`. It asks you to paste the sandbox Client ID and Secret (the Secret is hidden), saves them to Vercel for Preview and Development only, and prints nothing sensitive. Then `scripts/paypal-sandbox-smoke.mjs` proves the keys work against fake money.

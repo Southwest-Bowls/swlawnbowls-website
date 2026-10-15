@@ -1,7 +1,7 @@
 # 06 — Risks and test plan
 
 Status: DRAFT for review by Giulia, Anne and Bill. Written 2026-10-14.
-Scope: entry, payment, refund/withdrawal, check-in and results in the SWD Hub, replacing Google Sheets.
+Scope: entry, payment, refund/withdrawal, check-in and results in the app and database, replacing Google Sheets.
 
 State, column and role names follow `02-schema.sql`.
 
@@ -32,8 +32,8 @@ Likelihood (L) and impact (I): H / M / L. "Owner" is a proposed role, not an agr
 | R15 | **Offline players at the green** (no signal, older players, no smartphone) | H | M | Players never need the app on the day. TD console works from the printed list and can add or mark entries on a phone, with a plain-text fallback. Check-in is TD-side, not player-side. | TD |
 | R16 | **Players who do not use the web at all** | H | M | Paper or email entry stays accepted; TD or admin enters it on their behalf (`paid_offline` or pending). | TD |
 | R17 | **Apple review**: in-app purchase rule may apply to entry fees in a native app | M | H | Unconfirmed that event entry fees are exempt. Ship the web app first. If an iOS app is built, ask Apple's review team before relying on the exemption; fallback is opening the payment page in the browser. Do not submit an iOS build with in-app payments until answered. | Giulia |
-| R18 | **Withdrawal and refund disputes** (rule text unknown) | M | M | Rules configurable per event; the rule text is TBD (OPEN QUESTION: Anne and Bill). App shows the event's rule text at entry and at withdrawal. Today some events say "no refunds after" a date; the Hub must display, not invent, rules. | Anne, Bill |
-| R19 | **Bus factor**: only Giulia can fix it | H | H | Succession items in `docs/succession-and-accounts.md` (Vercel Pro, GitHub org, shared logins). Runbook for TDs. Rollback plan works without a developer. | Giulia |
+| R18 | **Withdrawal and refund disputes** (rule text unknown) | M | M | Rules configurable per event; the rule text is TBD (OPEN QUESTION: Anne and Bill). App shows the event's rule text at entry and at withdrawal. Today some events say "no refunds after" a date; the entry system must display, not invent, rules. | Anne, Bill |
+| R19 | **Bus factor**: only Giulia can fix it | H | H | Succession items in `docs/succession-and-accounts.md` (Vercel Pro, Gitentry system org, shared logins). Runbook for TDs. Rollback plan works without a developer. | Giulia |
 | R20 | **Sheets data drift during migration** (about 30 inconsistent sheets, no source of truth map) | H | M | Source-of-truth map before importing. Dry-run import into a test database and reconcile counts against the sheet. | Giulia with Anne (OPEN QUESTION: session not yet held) |
 | R21 | **Legal/tax**: SWD's status, sales tax, record keeping for fees | L | M | OPEN QUESTION for SWD's treasurer or accountant. Export of all payments per event for their books. | SWD treasurer (OPEN QUESTION: who) |
 
@@ -81,7 +81,7 @@ Rules for all scripts: sandbox credentials only, in a separate Vercel preview en
 
 Pilot event: OPEN QUESTION, not chosen. Use a low-stakes event with a single TD. Do this checklist at least two weeks before opening entries.
 
-- [ ] Event created in the Hub by the TD (not by Giulia), fee, deadline, refund text, contact filled in.
+- [ ] Event created in the app by the TD (not by Giulia), fee, deadline, refund text, contact filled in.
 - [ ] TD has signed in on their own phone and laptop.
 - [ ] Three or more volunteers (not developers) complete a sandbox entry and a check/cash entry without help; note every point they get stuck.
 - [ ] Email to TD and to player arrives and is not in spam (test with Gmail, Yahoo, an older provider).
@@ -93,25 +93,25 @@ Pilot event: OPEN QUESTION, not chosen. Use a low-stakes event with a single TD.
 - [ ] The PayPal live credentials are NOT yet in the production environment until the "before real money" list below is complete (except its last item, which is the first live test).
 - [ ] After opening entries: first live entry is a small controlled one by Anne or Giulia, refunded afterward; confirm the money appears in SWD's PayPal and the refund returns.
 - [ ] Day before: export the list; day of: TD has paper copy and the admin phone numbers.
-- [ ] Week after: compare Hub totals to PayPal statement and to checks received; record differences.
+- [ ] Week after: compare app totals to PayPal statement and to checks received; record differences.
 
 ## 3. Rollback plan (back to Google Sheets)
 
-Principle: during the pilot the old system keeps working in parallel, so rollback means "stop using the Hub", not "rebuild".
+Principle: during the pilot the old system keeps working in parallel, so rollback means "stop using in-app entry", not "rebuild".
 
 | Step | Detail |
 |---|---|
 | Keep the old path alive | Do not remove existing PayPal buttons, `registrationUrl`/`entries.pubUrl` Sheets links or the Sheets for the pilot event until the event is closed and reconciled. |
-| Daily export | The Hub exports entries (CSV in the same column layout as the current sheet) each day and on demand, to a division-owned Drive folder. OPEN QUESTION: which sheet layout counts as "current", pending the source-of-truth session. |
+| Daily export | The system exports entries (CSV in the same column layout as the current sheet) each day and on demand, to a division-owned Drive folder. OPEN QUESTION: which sheet layout counts as "current", pending the source-of-truth session. |
 | Trigger | Any "no-go" item below, a failed reconcile, a money mismatch not explained in 24 hours, or a TD request. Decision by Giulia, Anne or Bill (any one can call it). |
-| Action | (1) Close entries in the Hub (status `entries_closed`). (2) Switch event page back to the old PayPal button/Sheet link (a one-line edit in `events-data.json`, which is how the site works today). (3) Import Hub entries into the Sheet from the latest export. (4) Email already-entered players: their entries stand, no action needed. (5) Leave the database untouched for diagnosis. |
+| Action | (1) Close entries in the app (status `entries_closed`). (2) Switch event page back to the old PayPal button/Sheet link (a one-line edit in `events-data.json`, which is how the site works today). (3) Import entry system entries into the Sheet from the latest export. (4) Email already-entered players: their entries stand, no action needed. (5) Leave the database untouched for diagnosis. |
 | Money in flight | Pending PayPal payments are left to complete; the reconcile list is worked by hand by Anne or Bill. No refunds are made to "fix" a rollback unless a player asks. |
 | After | Short write-up of what happened; re-run the relevant test before trying again. |
 | Limit | Rollback after results are entered is data copy only. Results stay in the database and are exported to `results-data.json` form. OPEN QUESTION: who maintains this export. |
 
 ## 4. Go / no-go criteria
 
-Checked at three points: before opening entries, 24 hours before the event, and morning of the event. Any single "no-go" means do not proceed on the Hub for that stage.
+Checked at three points: before opening entries, 24 hours before the event, and morning of the event. Any single "no-go" means do not proceed on the entry system for that stage.
 
 | Criterion | Go | No-go |
 |---|---|---|

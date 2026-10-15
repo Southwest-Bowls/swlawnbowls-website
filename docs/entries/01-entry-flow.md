@@ -6,7 +6,7 @@ Anything marked **OPEN QUESTION** is not decided; do not build around a guess.
 
 ## Decisions this document relies on (from Giulia)
 
-- Payments go to **SWD's own, existing PayPal account**. The old buttons stay on current events until an event moves to the Hub; Hub events use orders created by our server in that same account (see `03-payments.md`). Card data never touches our code.
+- Payments go to **SWD's own, existing PayPal account**. The old buttons stay on current events until an event moves to in-app entry; in-app-entry events use orders created by our server in that same account (see `03-payments.md`). Card data never touches our code.
 - Apple Pay and Google Pay are offered through the processor (PayPal), not built by us.
 - **Pay by check or cash** is a path of its own: the app emails the TD and holds the entry as pending payment.
 - **Refunds are handled by Anne and Bill** (admins, or TDs with the `can_refund` flag). Other TDs and players cannot approve or issue refunds. The money itself is returned by hand in PayPal (or by check/cash) and then recorded in the app; the app does not call PayPal to refund in v1.
@@ -166,12 +166,12 @@ Until rules are set, every request goes to Anne/Bill with no suggested amount.
 
 Counts are from the 51 events in `events-data.json` (`paypal.system`, and `registrationUrl`).
 
-| # | Style today | How to tell | Count | What the player does today | Becomes in the Hub |
+| # | Style today | How to tell | Count | What the player does today | Becomes in the app |
 |---|---|---|---|---|---|
 | 1 | **Classic** hosted PayPal button | `paypal.system = classic`, has `hostedButtonId`, `price` | 2 | Click a PayPal button; names typed in a PayPal field (the 127-char limit) | Standard entry form + PayPal order. `hostedButtonId` kept only in `legacy_paypal_button`; price becomes `fee_cents`. |
 | 2 | **Modern** generated PayPal button | `system = modern`, `buttonName`, `price`, `containerSuffix`, sometimes `playerLabels` (Skip/Vice/Lead) | 10 | Fill player fields on the page, pay in PayPal; data squeezed into `custom_id` | Same entry form. `playerLabels` become the player position labels. `price` becomes `fee_cents`. |
 | 3 | **Embed** pasted PayPal HTML | `system = embed`, raw `html` with a `hosted_button_id` | 18 | Pay with a pasted form; one text box ("Player Name") | Same entry form. Raw HTML is discarded; fee is read from `fee` text (needs parsing and a human check, since the price is not in a field here). |
-| 4 | **External link** | `system = none` plus `registrationUrl` (Google Form or a club's own site) | 3 | Leave our site, register elsewhere (Cambria Open Pairs, Eileen Morton Powerplay, Laguna Open Pairs) | Event keeps an "Enter on [site]" mode: no entry rows, no payment from us. Optionally later: TD brings the entries in by import. The event page says plainly the entry is handled elsewhere. Whether hosting clubs want to move onto the Hub is **OPEN QUESTION**. |
+| 4 | **External link** | `system = none` plus `registrationUrl` (Google Form or a club's own site) | 3 | Leave our site, register elsewhere (Cambria Open Pairs, Eileen Morton Powerplay, Laguna Open Pairs) | Event keeps an "Enter on [site]" mode: no entry rows, no payment from us. Optionally later: TD brings the entries in by import. The event page says plainly the entry is handled elsewhere. Whether hosting clubs want to move onto in-app entry is **OPEN QUESTION**. |
 | 5 | **Contact / mail-in only** | `system = none`, no `registrationUrl`; relies on `contact` (name, phone, email, `mailTo`, sometimes `payableTo`) and sometimes `registrationInstructions` | 18 | Phone/email the TD, send a check by mail | Pay-by-check-or-cash path: online form creates a `pending_payment` entry and emails the TD; TD marks received. Old contact details become the "send your check to" block. |
 
 Counts add up to 51 (2 + 10 + 18 + 3 + 18). No event has both a PayPal system and a `registrationUrl`. A migration script must still report the exact assignment per event rather than trust these counts.
@@ -188,7 +188,7 @@ Counts add up to 51 (2 + 10 + 18 + 3 + 18). No event has both a PayPal system an
 | `deadline` (text) | `entry_deadline` + `refund_policy_text` (e.g. "no refunds after") |
 | `paypal.price` | `fee_cents` where present |
 | `paypal.playerLabels` | position labels |
-| `paypal.hostedButtonId` / `html` / `buttonName` / `containerSuffix` | not used by the Hub; kept in `events.legacy_paypal_button` for the transition, then archived |
+| `paypal.hostedButtonId` / `html` / `buttonName` / `containerSuffix` | not used by the entry system; kept in `events.legacy_paypal_button` for the transition, then archived |
 | `registrationUrl` | external-entry mode or "More information" link |
 | `registrationInstructions` / `registrationLabel` | player-facing instructions text |
 | `contact` (name, email, phone) | `td_contact_*`: the contact shown to players and an address the check/cash entry email goes to, in addition to the TDs assigned in the `tds` table (see section 9) |
@@ -219,8 +219,8 @@ Which address sends these (an SWD address, not a personal one) and who is copied
 7. Must a partner confirm the entry?
 8. Format rules for `2+2` (club entry of two teams) and `rinks`; 3 events with blank format.
 9. Cap sizes: only one event states a cap today.
-10. (Resolved by the data: no event mixes PayPal and an external link today; if one does later, the Hub form wins.)
-11. Do hosting clubs with their own sign-up pages want to move onto the Hub?
+10. (Resolved by the data: no event mixes PayPal and an external link today; if one does later, the in-app form wins.)
+11. Do hosting clubs with their own sign-up pages want to move onto in-app entry?
 12. PayPal: developer app and webhook under SWD's account; who holds the login; whether Apple Pay and Google Pay show for that account.
 13. Sender address for entry emails and who is copied.
 14. Which TDs besides Anne and Bill, and who may approve withdrawals for events they don't direct. Is Bill the same Bill Brault named in the PRD and on 8 events? Can Giulia (admin) also refund?

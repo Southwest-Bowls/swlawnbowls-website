@@ -2271,10 +2271,10 @@
   }
   function placeWord(n) { n = +n; return n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : n ? n + 'th' : ''; }
   /* ===============================================================
-     HUB PREVIEW (entry, payment choice, My entries, TD console)
-     Hidden behind ?hub=1 and never sent anywhere: entries are kept on this phone only,
+     PRACTICE MODE (entry, payment choice, receipt, My entries, TD console)
+     Hidden behind ?practice=1 (?hub=1 still works) and never sent anywhere: entries are kept on this phone only,
      no email is sent, no card is charged. It exists so the Division can try the screens
-     before the database and PayPal wiring are built (see docs/hub/).
+     before the database and PayPal wiring are built (see docs/entries/).
      =============================================================== */
   function hubOn() { return !!store('hubPreview'); }
   function hubBanner() { return '<p class="hubbanner" role="note"><b>Practice mode.</b> Nothing is sent to anyone and nothing is charged. This only shows how entering will work.</p>'; }
@@ -3026,11 +3026,11 @@
   }, true);
   captureSignIn();
   (function () {
-    var q = new URLSearchParams(location.search), h = q.get('hub');
+    var q = new URLSearchParams(location.search), h = q.get('practice') || q.get('hub');
     if (h !== '1' && h !== '0') return;
     if (h === '1') store('hubPreview', true);
     else { try { Object.keys(localStorage).forEach(function (k) { if (k === 'swd:hubPreview' || k === 'swd:hubEntries' || k.indexOf('swd:hubTd:') === 0) localStorage.removeItem(k); }); } catch (e) {} }
-    q.delete('hub'); history.replaceState(history.state, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+    q.delete('hub'); q.delete('practice'); history.replaceState(history.state, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   })();
   if (!history.state) history.replaceState({ depth: 0 }, '');
   render();

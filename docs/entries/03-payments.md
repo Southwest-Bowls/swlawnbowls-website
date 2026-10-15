@@ -8,7 +8,7 @@ State, column and role names follow `02-schema.sql`.
 | Decision | Source |
 |---|---|
 | Money goes to SWD's own, existing PayPal account, not the LLC | Giulia |
-| Keep PayPal; existing buttons keep working on current events until an event moves to the Hub (Hub events use server-created orders in the same account, not the hosted buttons) | Giulia, PRD sec. 7 |
+| Keep PayPal; existing buttons keep working on current events until an event moves to in-app entry (in-app-entry events use server-created orders in the same account, not the hosted buttons) | Giulia, PRD sec. 7 |
 | Card data never touches our servers or database | Giulia |
 | Apple Pay and Google Pay are offered through the processor | Giulia |
 | Pay by check or cash: emails the TD, entry held as `pending_payment` (`payment_choice` = check or cash) | Giulia |
@@ -38,7 +38,7 @@ Apple Pay and Google Pay notes:
 | Item | Detail |
 |---|---|
 | Availability | Apple Pay and Google Pay through PayPal are part of PayPal's card-processing product. **OPEN QUESTION: does SWD's PayPal business account have it enabled, and is the account eligible? Must be checked in the PayPal dashboard by the account owner.** |
-| Apple Pay setup | Requires the Hub domain to be registered and verified with PayPal for Apple Pay. Done by the PayPal account owner. |
+| Apple Pay setup | Requires the entry-system domain to be registered and verified with PayPal for Apple Pay. Done by the PayPal account owner. |
 | In a native app | Wallet buttons inside an embedded web view may not work or may be restricted. **OPEN QUESTION: test on real devices before promising.** Fallback is section 10. |
 | If not available | Standard PayPal button (PayPal balance, PayPal guest card checkout) still works with no extra setup. |
 
@@ -102,7 +102,7 @@ Payment status: `created`, `paid`, `failed`, `partially_refunded`, `refunded`, `
 |---|---|
 | Sent when | Payment captured (online) or TD marks received (check/cash) |
 | Contents | Event title and date, all player names, amount paid, method, date, entry id, refund rule text for the event, SWD contact |
-| Sender | Hub email service, from an SWD address. **OPEN QUESTION: which sending address and domain.** |
+| Sender | entry email service, from an SWD address. **OPEN QUESTION: which sending address and domain.** |
 | Also | PayPal sends its own receipt to online payers; ours is the one that lists players |
 | Tax wording | Entry fees are not described as donations. **OPEN QUESTION: whether SWD wants any tax statement on receipts.** |
 | Resend | Player can re-view receipt in "My entries"; admin can resend |
@@ -144,10 +144,10 @@ The rule only suggests an amount to Anne or Bill; they type the final amount. Th
 
 | Check | How often | What it does |
 |---|---|---|
-| Daily job: list PayPal transactions for the day (Transaction Search API) and match on `custom_id` to our `payments` | Daily, plus a button on the admin screen | Reports: paid at PayPal but not in Hub; in Hub but not at PayPal; amount mismatch; refunded at PayPal but not in Hub |
+| Daily job: list PayPal transactions for the day (Transaction Search API) and match on `custom_id` to our `payments` | Daily, plus a button on the admin screen | Reports: paid at PayPal but not in our system; in entry system but not at PayPal; amount mismatch; refunded at PayPal but not in our system |
 | Event close-out report | On demand | Entries, collected online, collected check/cash, refunded, net, outstanding pending |
 | Export | CSV for the treasurer | Date, entry id, event, payer name, method, gross, refund, net |
-| Money in transit | None; PayPal pays out to SWD's bank on its own schedule | Bank link stays in PayPal, not in Hub |
+| Money in transit | None; PayPal pays out to SWD's bank on its own schedule | Bank link stays in PayPal, not in our system |
 | Who sees it | Anne, Bill, and treasurer (**OPEN QUESTION: who is the treasurer and do they get a login?**) |
 
 Transaction Search API may need to be enabled for the PayPal app and has a delay before transactions appear. **OPEN QUESTION: confirm availability on SWD's account.**
@@ -197,9 +197,9 @@ Play's payments policy has a similar exemption for physical goods and services c
 | Item | Detail |
 |---|---|
 | Existing events | `events-data.json` has `paypal.system` of `modern` (10 events), `classic` (2), `embed` (18, pasted PayPal HTML) or `none` (21). These stay as-is for current events. |
-| Hub events | A Hub event with `fee_cents` replaces `paypal` in the page; the old block is hidden for it and kept in `events.legacy_paypal_button` so it can be switched back (rollback in `06`). |
+| In-app-entry events | An in-app-entry event with `fee_cents` replaces `paypal` in the page; the old block is hidden for it and kept in `events.legacy_paypal_button` so it can be switched back (rollback in `06`). |
 | Old data | No migration of past payments; PayPal history and old sheets remain the record. |
-| Fee strings | Today fees are text like "$45/team"; Hub needs integer cents plus unit (team or player). |
+| Fee strings | Today fees are text like "$45/team"; the entry system needs integer cents plus unit (team or player). |
 | Per-event options | Some events have more than one price or add-on. **OPEN QUESTION: list them (lunches, banquet, side events).** |
 
 ## 14. Open questions summary
