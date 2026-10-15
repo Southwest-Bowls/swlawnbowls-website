@@ -1986,6 +1986,81 @@
         '<li><b>Your details are wrong.</b> Once you’re in, use “Suggest a correction”. Nothing changes until the Division checks it.</li>' +
       '</ul><div class="actions"><a class="btn btn--ghost" href="/app/page/contact-us">' + icon('mail') + 'Contact Southwest Bowls</a></div></details>';
   }
+  /* ---------------------------------------------------------------
+     Sign in or create an account: email, then a short code typed in the
+     app (a link opens in the browser, away from the installed app, so the
+     code is the main way). The email also carries a link as a backup.
+     Apple and Google buttons are added here once the store accounts exist
+     (Apple requires Sign in with Apple whenever Google is offered).
+     SIGNUP_OPEN stays false until sign-ups are opened in Supabase; until
+     then only addresses already on the roster receive a code.
+     --------------------------------------------------------------- */
+  var SIGNUP_OPEN = false;
+  function signInScreen(params) {
+    setTitle('Sign in');
+    var email = '', timer = null;
+    function shell(inner) {
+      view.innerHTML = backLink('/app/my', 'My SWD') +
+        '<div class="signin"><span class="logo-plate signin__logo"><img src="/assets/app/swd-logo.png" alt="Southwest Bowls" width="64" height="75"></span>' + inner +
+        '<a class="textlink signin__guest" href="/app">Continue as a guest</a></div>';
+    }
+    function emailStep(msg) {
+      clearInterval(timer);
+      shell('<h1 class="signin__h">Welcome</h1><p class="signin__sub">Sign in or create an account with your email. We’ll send you a code. No password to remember.</p>' +
+        (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
+        '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon"><span>Email</span><span class="mfield__box">' + icon('mail') +
+        '<input id="s-email" type="email" autocomplete="email" inputmode="email" value="' + esc(email) + '" required></span></label>' +
+        '<p class="mform__err" id="s-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Continue</button></div></form>' +
+        '<p class="footnote">You don’t need an account to use the app. An account lets you keep your details and, for SWD members, shows your membership card.</p>');
+      var f = view.querySelector('#s-form');
+      f.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var v = f.querySelector('#s-email').value.trim(), out = f.querySelector('#s-err');
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { out.textContent = 'Enter your email address.'; f.querySelector('#s-email').focus(); return; }
+        email = v; f.querySelector('button').disabled = true; out.textContent = '';
+        store('afterSignIn', '/app/my');
+        var next = function () { codeStep(); };
+        // Same answer whether or not the address exists: never reveal who is on the roster
+        memberFetch('/auth/v1/otp?redirect_to=' + encodeURIComponent(location.origin + '/app/my'), { email: email, create_user: SIGNUP_OPEN }).then(next, next);
+      });
+    }
+    function codeStep(msg) {
+      var left = 45;
+      shell('<h1 class="signin__h">Check your email</h1><p class="signin__sub">If <b>' + esc(email) + '</b> can sign in, a code is on its way. Type it here. It works for 10 minutes.</p>' +
+        (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
+        '<form class="mform" id="c-form" novalidate><label class="mfield"><span>Code from the email</span>' +
+        '<input class="codein" id="c-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" pattern="[0-9]*" aria-describedby="c-err"></label>' +
+        '<p class="mform__err" id="c-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Confirm</button></div></form>' +
+        '<p class="signin__again"><span id="c-timer"></span> <button class="textlink" type="button" id="c-edit">Wrong email? Edit</button></p>');
+      var f = view.querySelector('#c-form'), tm = view.querySelector('#c-timer'), again = null;
+      function tick() {
+        if (left > 0) { tm.textContent = 'Resend code in ' + left + 's'; left--; return; }
+        clearInterval(timer); tm.innerHTML = '<button class="textlink" type="button" id="c-resend">Resend code</button>';
+        again = tm.querySelector('#c-resend');
+        again.addEventListener('click', function () {
+          memberFetch('/auth/v1/otp', { email: email, create_user: SIGNUP_OPEN }).then(function () { toast('Code sent'); }, function () { toast('Code sent'); });
+          left = 45; timer = setInterval(tick, 1000); tick();
+        });
+      }
+      clearInterval(timer); timer = setInterval(tick, 1000); tick();
+      view.querySelector('#c-edit').addEventListener('click', function () { emailStep(); });
+      f.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var code = f.querySelector('#c-code').value.replace(/\D/g, ''), out = f.querySelector('#c-err');
+        if (code.length < 6) { out.textContent = 'Enter the code from the email.'; f.querySelector('#c-code').focus(); return; }
+        f.querySelector('button').disabled = true; out.textContent = '';
+        memberFetch('/auth/v1/verify', { type: 'email', email: email, token: code }).then(function (j) {
+          clearInterval(timer);
+          setMemberSession({ access: j.access_token, refresh: j.refresh_token, expires: Date.now() + (j.expires_in || 3600) * 1000 });
+          store('memberPreview', true); toast('Signed in');
+          go('/app/my', true);
+        }, function () { f.querySelector('button').disabled = false; out.textContent = 'That code didn’t work. Check it or ask for a new one.'; });
+      });
+    }
+    if (params.get('demo') === 'code') { email = 'you@example.com'; codeStep(); return Promise.resolve(); }
+    emailStep(); return Promise.resolve();
+  }
+
   // Identity header: everyone can use the app without an account, including
   // players from other divisions and other countries. The optional details
   // behind it stay on this phone; nothing is sent anywhere.
@@ -2036,6 +2111,7 @@
     var today = todayISO();
 
     view.innerHTML = profileHeader() +
+      (memberSession() ? '' : '<a class="btn btn--wide signin__cta" href="/app/signin">Sign in or create an account</a>') +
       (preview ? '<section class="section mysec" aria-labelledby="h-member"><div class="section__head"><h2 class="section__title" id="h-member">Membership</h2>' +
         '<span class="tag tag--preview">Preview</span></div><div id="m-box">' + loading() + '</div></section>' : '') +
       '<section class="section mysec" aria-labelledby="h-saved"><div class="section__head"><h2 class="section__title" id="h-saved">Saved events</h2>' +
@@ -2273,6 +2349,7 @@
     [/^\/app\/my\/?$/, mySwd, 'my'],
     [/^\/app\/more\/membership\/?$/, mySwd, 'my'],   // earlier preview address
     [/^\/app\/more\/(play|division|ladies-day|archives|follow|resources)\/?$/, subsection, 'more'],
+    [/^\/app\/signin\/?$/, signInScreen, 'my'],
     [/^\/app\/search\/?$/, searchScreen, 'home'],
     [/^\/app\/page\/([a-z0-9-]+)\/?$/, infoPage, 'more']
   ];
