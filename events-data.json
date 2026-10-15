@@ -242,9 +242,13 @@
       "subtitle": null,
       "date": "Saturday, May 16, 2026",
       "time": "9:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:15 AM — Check-in",
+        "9:00 AM — Play starts",
+        "5:00 PM — Play ends"
+      ],
       "format": "triples",
-      "formatDetails": "Mix/Match Triples",
+      "formatDetails": "Mix/Match Triples · Four 10-end games",
       "club": {
         "name": "Friendly Valley Lawn Bowling Club",
         "address": "Santa Clarita, CA",
@@ -284,9 +288,14 @@
       "subtitle": null,
       "date": "Sunday, May 17, 2026",
       "time": "9:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:15 AM — Gates open",
+        "8:45 AM — Scorecards",
+        "9:00 AM — Games start",
+        "Lunch after the second game"
+      ],
       "format": "",
-      "formatDetails": "",
+      "formatDetails": "Mixed rinks · 2 bowls · four 10-end games",
       "club": {
         "name": "Santa Monica Lawn Bowling Club",
         "address": "1642 7th St, Santa Monica, CA 90401",
@@ -326,9 +335,12 @@
       "subtitle": null,
       "date": "Saturday, May 23 – Monday, May 25, 2026",
       "time": "9:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:30 AM — Registration",
+        "9:00 AM — Play starts"
+      ],
       "format": "pairs",
-      "formatDetails": "Pairs · 3-day tournament",
+      "formatDetails": "Pairs · 4 bowls · four 10-end games",
       "club": {
         "name": "Beverly Hills Lawn Bowling Club",
         "address": "401 S Roxbury Dr, Beverly Hills, CA 90212",
@@ -368,9 +380,16 @@
       "subtitle": null,
       "date": "Sunday, May 31, 2026",
       "time": "9:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:40 AM — Announcements",
+        "9:00 AM — Game 1 (trial ends before it)",
+        "10:00 AM — Game 2",
+        "11:00 AM — Game 3",
+        "Lunch after the third game",
+        "1:00 PM — Game 4 (around)"
+      ],
       "format": "triples",
-      "formatDetails": "2-Bowl Mixed Triples",
+      "formatDetails": "Mixed triples · 2 bowls · four 45-minute games",
       "club": {
         "name": "Hermosa Beach Lawn Bowling Club",
         "address": "",
@@ -410,9 +429,13 @@
       "subtitle": null,
       "date": "Saturday, June 20, 2026",
       "time": "9:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:30 AM — Registration",
+        "9:00 AM — Play begins",
+        "Lunch provided"
+      ],
       "format": "pairs",
-      "formatDetails": "3-Bowl Pairs · Seniors",
+      "formatDetails": "Seniors pairs · 3 bowls · 4 × 10 ends",
       "club": {
         "name": "Beverly Hills Lawn Bowling Club",
         "address": "401 S Roxbury Dr, Beverly Hills, CA 90212",
@@ -905,9 +928,14 @@
       "subtitle": "Men's Sponsored",
       "date": "Saturday, October 17 – Sunday, October 18, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:00 AM — Check-in",
+        "8:30 AM — Announcements",
+        "8:45 AM — Trial ends",
+        "9:00 AM — Games start"
+      ],
       "format": "triples",
-      "formatDetails": "Triples · Skip / Vice / Lead",
+      "formatDetails": "Triples · 2 bowls · four 14-end games · Day 2: 18-end games",
       "club": {
         "name": "Newport Harbor Lawn Bowling Club",
         "address": "1550 Crown Dr N, Newport Beach, CA 92625",
@@ -1097,7 +1125,9 @@
       "subtitle": "Women's Sponsored",
       "date": "Saturday, July 11 – Sunday, July 12, 2026",
       "time": "8:00 AM – 5:00 PM",
-      "schedule": [],
+      "schedule": [
+        "8:45 AM — Announcements and trial ends"
+      ],
       "format": "singles",
       "formatDetails": "Singles · US Nationals Playdown",
       "club": {
@@ -2312,7 +2342,10 @@
       "subtitle": "Club Sponsored",
       "date": "Sunday, September 27, 2026",
       "time": "8:30 AM check-in · 9:00 AM start",
-      "schedule": [],
+      "schedule": [
+        "8:30 AM — Registration",
+        "9:00 AM — Play starts"
+      ],
       "format": "pairs",
       "formatDetails": "4-Bowl Pairs · 4 games × 10 ends",
       "club": {
