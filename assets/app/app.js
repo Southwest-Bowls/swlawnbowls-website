@@ -175,6 +175,7 @@
   function openDialog(title, html) {
     document.getElementById('dlg-body').innerHTML = '<h2 id="dlg-title">' + esc(title) + '</h2>' + html;
     if (dlg.showModal) { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute('open', '');
+    dlg.scrollTop = 0; requestAnimationFrame(function () { dlg.scrollTop = 0; });
   }
   function closeDialog() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
   var dlgHold = false;   // a long-press opened the sheet and the finger is still down (its release must not count as a backdrop tap)
@@ -924,17 +925,18 @@
   function drawHome(d) {
     var today = d.today;
     var live = d.events.filter(function (x) { var p = eventPhase(x, today); return p === 'upcoming' || p === 'now'; });
+    var liveAll = live;   // never filtered: saved-event alerts and the bell must not depend on your picks
     // Personal focus: with interests picked, Home shows only what you chose. "Show everything" brings the full Home back.
     var ivx = interests() || {}, focusTopics = !ivx.all && (ivx.topics || []).length > 0, focusCats = !ivx.all && (ivx.cats || []).length > 0;
     function showT(t) { return !focusTopics || (ivx.topics || []).indexOf(t) >= 0; }
     if (focusCats) live = live.filter(function (x) { return ivx.cats.indexOf(x.cat || 'Open') >= 0; });
     var ids = saved();
     var mine = d.events.filter(function (x) { return ids.indexOf(x.id) >= 0; });
-    var mineNext = mine.filter(function (x) { return live.indexOf(x) >= 0; });   // already in date order
+    var mineNext = mine.filter(function (x) { return liveAll.indexOf(x) >= 0; });   // already in date order
 
     // 1. Greeting bar: date and hello on the left; search, updates and profile as small round buttons
     var prof = store('profile') || {}, first = String(prof.name || '').trim().split(/\s+/)[0];
-    currentNotices = live.filter(function (x) { return x.e.alert; });
+    currentNotices = liveAll.filter(function (x) { return x.e.alert; });
     var unread = unreadCount(currentNotices);
     var hbgEv = (function () { var u0 = live.filter(function (x) { return eventPhase(x, today) === 'now'; }).concat(live.filter(function (x) { return eventPhase(x, today) !== 'now'; }))[0]; return u0 ? eventPhoto(u0, d.clubs) : ''; })();
     var html = (hbgEv ? '<div class="hbg" aria-hidden="true" style="--ph:url(\'' + esc(hbgEv) + '\')"></div>' : '') + '<header class="hbar"><span class="hbar__logo" aria-hidden="true"><img src="/assets/app/swd-logo.png" alt="" width="30" height="35"></span><div class="hbar__text"><span class="hbar__date">' + esc(fmt(today, { weekday: 'short' }) + ', ' + fmt(today, { month: 'short' })) + ' <b class="rollnum" data-roll="' + (+today.slice(8)) + '" data-roll-key="home-day-' + today + '">' + (+today.slice(8)) + '</b></span>' +
@@ -971,7 +973,7 @@
       var links = [], T = { tournaments: ['/app/events', 'cal', 'Tournaments'], results: ['/app/results', 'trophy', 'Latest results'], standings: ['/app/standings', 'medal', 'Standings'], clubs: ['/app/more/clubs', 'pin', 'Clubs'], watch: ['/app/watch', 'tv', 'Southwest TV'], news: ['/app/more/news', 'news', 'News'] };
       (iv.topics || []).forEach(function (t) { if (T[t]) links.push('<a class="fy__i" href="' + T[t][0] + '"><span class="fy__ic" aria-hidden="true">' + icon(T[t][1]) + '</span><span>' + T[t][2] + '</span></a>'); });
       (iv.cats || []).forEach(function (c) { links.push('<a class="fy__i" href="/app/events?cat=' + encodeURIComponent(c) + '"><span class="fy__ic" aria-hidden="true"><i class="chip__dot ' + CAT_DOT[c] + '"></i></span><span>' + esc(c) + '</span></a>'); });
-      var nextFor = live.filter(function (x) { return !(iv.cats || []).length || (iv.cats || []).indexOf(x.cat || 'Open') >= 0; })[0];
+      var nextFor = (!focusTopics || showT('tournaments') || (iv.cats || []).length) ? live.filter(function (x) { return !(iv.cats || []).length || (iv.cats || []).indexOf(x.cat || 'Open') >= 0; })[0] : null;
       html += '<section class="fy" aria-labelledby="h-fy"><div class="section__head"><h2 class="section__title" id="h-fy">For you</h2><span class="fy__acts"><button class="section__more" type="button" data-toggle-all>' + (iv.all ? 'Only my picks' : 'Show everything') + '</button><button class="section__more" type="button" data-open-interests>Edit' + icon('chev', 'i--sm') + '</button></span></div>' +
         (nextFor ? '<a class="fy__next ' + catClass(nextFor) + '" href="/app/events/' + encodeURIComponent(nextFor.id) + '"><small>Next for you</small><b>' + esc(nextFor.short) + '</b><span>' + esc(dateRangeLabel(nextFor.dates, true)) + ' · ' + esc(nextFor.clubLabel) + '</span></a>' : '') +
         '<div class="fy__row">' + links.join('') + '</div></section>';
@@ -1004,7 +1006,7 @@
       ['/app/events?show=calendar', 'cal', 'Calendar', 'blue', 'tournaments', 1], ['/app/results', 'trophy', 'Results', 'orange', 'results', 1],
       ['/app/more/clubs', 'pin', 'Clubs', 'blush', 'clubs', 1], ['/app/watch', 'tv', 'Watch', 'ink', 'watch', 1],
       ['/app/standings', 'medal', 'Standings', 'orange', 'standings', 0], ['/app/more/news', 'news', 'News', 'blue', 'news', 0]];
-    var scList = SC.filter(function (t) { return focusTopics ? (ivx.topics || []).indexOf(t[4]) >= 0 : t[5] === 1; });
+    var scList = SC.filter(function (t) { return focusTopics ? (ivx.topics || []).indexOf(t[4]) >= 0 : (t[5] === 1 || wantsTopic(t[4])); });
     if (scList.length) html += '<nav class="shortcuts" aria-label="Sections">' + scList.sort(function (a, b) { return (wantsTopic(b[4]) ? 1 : 0) - (wantsTopic(a[4]) ? 1 : 0); }).map(function (t) {
       return '<a class="shortcut shortcut--' + t[3] + '" href="' + t[0] + '"><span class="shortcut__dot">' + icon(t[1]) + '</span><span class="shortcut__label">' + t[2] + '</span></a>';
     }).join('') + '</nav>';
@@ -2595,7 +2597,7 @@
         // Signed in: ask the server to delete the account first; only then clear the phone
         memberRpc('delete_my_account').then(wipe, function () {
           var db2 = document.getElementById('del-box');
-          db2.innerHTML = '<div class="note" role="alert"><b>We couldn’t delete the account just now.</b>Try again in a minute. If it keeps failing, email apps@giuliagallo.com from your sign-in address and we will delete it for you.</div><div class="actions"><button class="btn btn--ghost" type="button" data-del-start>Try again</button></div>';
+          db2.innerHTML = '<div class="note" role="alert"><b>We couldn’t delete the account just now.</b>Try again in a minute. If it keeps failing, email webmaster@swlawnbowls.org from your sign-in address and we will delete it for you.</div><div class="actions"><button class="btn btn--ghost" type="button" data-del-start>Try again</button></div>';
         });
         return;
       }
@@ -2788,7 +2790,7 @@
     }
     function emailStep(msg) {
       clearInterval(timer);
-      shell(1, '<h1 class="signin__h">Log in or create an account</h1><p class="signin__sub">Enter your email and we’ll send you a code.</p><p class="signin__hint">' + icon('info', 'i--sm') + '<span>Use the email your club gave the Division. If you’re not sure which, try your main one, then your others.</span></p>' +
+      shell(1, '<h1 class="signin__h">Log in or create an account</h1><p class="signin__sub">Enter your email and we’ll send you a code.</p><p class="signin__hint">' + icon('info', 'i--sm') + '<span>Use the email your club gave the Division. If you’re not sure which, try your main one, then your others.</span></p><p class="signin__hint signin__legal"><span>By continuing you agree to the <button type="button" class="linkbtn" data-legal="terms">Terms</button> and <button type="button" class="linkbtn" data-legal="privacy">Privacy Policy</button>.</span></p>' +
         (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
         '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
         '<input id="s-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="' + esc(email) + '" required></span></label>' +
@@ -2863,7 +2865,7 @@
         else toast((k === 'apple' ? 'Continue with Apple' : 'Continue with Google') + ' switches on with the store release.');
       });
     }
-    if (params.get('step') === 'email') emailStep(); else landingStep();
+    if (params.get('step') === 'email' && termsOk()) emailStep(); else landingStep();
     return Promise.resolve();
   }
 
@@ -3760,7 +3762,7 @@
       '<button class="auth__apple" type="button" data-auth="apple" aria-disabled="' + (store('termsAccepted') ? 'false' : 'true') + '">' + APPLE_SVG + 'Continue with Apple<small>Soon</small></button>' +
       '<div class="auth__row"><button class="auth__alt" type="button" data-auth="google" aria-disabled="' + (store('termsAccepted') ? 'false' : 'true') + '">' + GOOGLE_SVG + 'Google<small>Soon</small></button>' +
       '<button class="auth__alt" type="button" data-auth="email" aria-disabled="' + (store('termsAccepted') ? 'false' : 'true') + '">' + icon('mail') + 'Email</button></div>' +
-      '<p class="auth__login">Already have an account? <button type="button" class="linkbtn" data-auth="email">Log in here</button></p>' +
+      '<p class="auth__login">Already have an account? <button type="button" class="linkbtn" data-auth="email" aria-disabled="' + (store('termsAccepted') ? 'false' : 'true') + '">Log in here</button></p>' +
       '<button class="auth__guest" type="button" data-auth="guest">Continue as a guest</button>' +
       '<p class="auth__fine">Your email is only used to sign you in.</p><img class="auth__tag" src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls: A Sport for Life!" width="150" height="70" loading="lazy"></div></section>';
   }
@@ -3931,6 +3933,7 @@
 
   function welcome() {
     if (store('welcomed')) return;
+    if (/^\/app\/(privacy|terms|signin)/.test(location.pathname)) return;   // never cover a page someone opened on purpose
     var SCENES = [
       { k: 'details', h: 'Every tournament detail, one tap away', s: 'Dates, fees, deadlines and flyers for the whole Southwest Division.' },
       { k: 'results', h: 'Results and champions, always at hand', s: 'Podiums, standings and winners from every tournament.' },
@@ -3938,7 +3941,7 @@
       { k: 'calendar', h: 'Never miss a tournament day', s: 'A calendar of every event and a countdown to the next one.' }
     ];
     var steps = SCENES.map(function (sc) { return { t: 'scene', sc: sc }; }).concat([{ t: 'fact' }, { t: 'wiz', n: 0 }, { t: 'wiz', n: 1 }, { t: 'wiz', n: 2 }, { t: 'custom' }, { t: 'auth' }]);
-    var i = 0, timer = null, facts = [], reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var i = 0, timer = null, facts = [], goingBack = false, lastNav = 0, reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     var el = document.createElement('div'); el.className = 'welcome'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Welcome');
     // Facts: two come from our own data (so they are always true), two are well-known
     var HIST = 'The Old Bowling Green in Southampton, England, dates from 1299 and is believed to be the oldest in the world still in use.';
@@ -3974,14 +3977,14 @@
       el.setAttribute('data-scene', sc.k);
       el.innerHTML = '<div class="sc__top">' + bars() + '<button class="wiz__skip" type="button" data-w-skip>Skip</button></div><div class="sc__stage" data-w-next-tap>' + mock(sc.k) + '</div>' +
         '<div class="sc__text"><h1 class="sc__h" tabindex="-1">' + esc(sc.h) + '</h1><p class="sc__s">' + esc(sc.s) + '</p></div><div class="wiz__foot"><button class="btn btn--wide btn--dark" type="button" data-w-next>Next</button></div>';
-      if (!reduce) timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); focusIn(); } }, 5200);
+      if (!reduce && !goingBack) timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); } }, 5200);
     }
     function drawFact() {
       el.className = 'welcome welcome--scene welcome--fact'; el.setAttribute('data-scene', 'fact');
       var f = facts[Math.floor(Date.now() / 86400000) % facts.length];
       el.innerHTML = '<div class="sc__top">' + bars() + '<button class="wiz__skip" type="button" data-w-skip>Skip</button></div><div class="sc__stage"><div class="fact"><span class="fact__orb" aria-hidden="true">' + icon('bowl') + '</span><b class="fact__k">Did you know?</b><p class="fact__t">' + esc(f) + '</p></div></div>' +
         '<div class="sc__text"><h1 class="sc__h" tabindex="-1">A little lawn bowls</h1><p class="sc__s">Now let’s make the app yours.</p></div><div class="wiz__foot"><button class="btn btn--wide btn--dark" type="button" data-w-next>Continue</button></div>';
-      if (!reduce) timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); focusIn(); } }, 7000);
+      if (!reduce && !goingBack) timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); } }, 7000);
     }
     function drawWiz(step) {
       el.className = 'welcome welcome--wiz'; el.removeAttribute('data-scene');
@@ -4001,7 +4004,7 @@
       el.className = 'welcome welcome--custom'; el.removeAttribute('data-scene');
       var p = look().palette;
       el.innerHTML = '<div class="cust" data-pal="' + p + '"><span class="cust__orb" aria-hidden="true"></span><h1 class="cust__t" tabindex="-1">Customizing your app…</h1><p class="cust__s" aria-live="polite">Putting your interests first</p></div>';
-      timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); focusIn(); } }, reduce ? 900 : 2200);
+      timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); } }, reduce ? 900 : 2200);
     }
     function draw() {
       clearTimeout(timer);
@@ -4010,7 +4013,8 @@
       else if (st.t === 'fact') drawFact();
       else if (st.t === 'wiz') drawWiz(st.n);
       else if (st.t === 'custom') drawCustom();
-      else { el.className = 'welcome welcome--auth'; el.removeAttribute('data-scene'); el.innerHTML = authLanding('/photos/clubs/long-beach.jpg', false); }
+      else { el.className = 'welcome welcome--auth'; el.removeAttribute('data-scene'); el.innerHTML = authLanding('/photos/clubs/long-beach.jpg', true); }
+      goingBack = false;
     }
     // Modal behaviour: the page behind is inert, focus stays inside, Escape = skip, focus goes back when it closes
     var behind = Array.prototype.slice.call(document.querySelectorAll('#view, .tabbar, .skip'));
@@ -4036,9 +4040,12 @@
     }
     el.addEventListener('click', function (ev) {
       if (ev.target.closest('[data-w-skip]')) { done(); return; }
-      if (ev.target.closest('[data-w-next], [data-w-next-tap]')) { haptic(); i++; draw(); focusIn(); return; }
-      if (ev.target.closest('[data-w-prev]')) { haptic(); var cs = steps[i]; if (cs && cs.t === 'wiz') wizCollect(cs.n); i = Math.max(0, i - 1); while (i > 0 && (steps[i].t === 'custom')) i--; draw(); focusIn(); return; }
+      var navNow = Date.now(), quick = navNow - lastNav < 350;
+      if (ev.target.closest('[data-w-next], [data-w-next-tap]')) { if (quick) return; lastNav = navNow; haptic(); i++; draw(); focusIn(); return; }
+      if (ev.target.closest('[data-w-prev]')) { if (quick) return; lastNav = navNow; haptic(); var cs = steps[i]; if (cs && cs.t === 'wiz') wizCollect(cs.n); goingBack = true; i = Math.max(0, i - 1); while (i > 0 && (steps[i].t === 'custom' || steps[i].t === 'fact')) i--; draw(); focusIn(); return; }
+      if (ev.target.closest('[data-auth="back"]')) { haptic(); goingBack = true; i = steps.length - 3; draw(); focusIn(); return; }
       if (ev.target.closest('[data-w-int]')) {
+        if (quick) return; lastNav = navNow;
         haptic(); var cur = steps[i]; wizCollect(cur.n);
         if (cur.n === 2) {   // finished: keep the choices on this phone, nothing is sent anywhere
           if (wizState.topics.length || wizState.cats.length) store('interests', { topics: wizState.topics, cats: wizState.cats, at: Date.now() });
@@ -4053,6 +4060,7 @@
       if (k === 'email') { done(); go('/app/signin?step=email'); }
       else toast((k === 'apple' ? 'Continue with Apple' : 'Continue with Google') + ' switches on with the store release.');
     });
+    el.addEventListener('pointerdown', function () { clearTimeout(timer); });   // touching the screen pauses the auto-advance
     wireLook(el); document.body.appendChild(el); draw();
     behind.forEach(function (n) { n.setAttribute('inert', ''); n.setAttribute('aria-hidden', 'true'); });
     document.addEventListener('keydown', onKey, true);

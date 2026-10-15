@@ -15,7 +15,7 @@
 
    To force every phone to drop its saved copies, bump VERSION.
    ============================================================ */
-const VERSION = 'swd-v88';
+const VERSION = 'swd-v89';
 const NETWORK_TIMEOUT_MS = 4000;
 const PAGES = VERSION + '-pages';
 const MEDIA = VERSION + '-media';
@@ -25,6 +25,7 @@ const PRECACHE = [
   '/offline.html',
   '/app',
   '/assets/app/app.css',
+  '/legal-data.json',
   '/assets/app/app-logic.js',
   '/assets/app/app.js',
   '/assets/app/lqip.json',

@@ -2401,3 +2401,11 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .sc__h:focus, .cust__t:focus, .wiz__h:focus { outline: none; }
 .fy__acts { display: inline-flex; gap: 14px; }
 .fy__acts .section__more { background: none; border: 0; padding: 0 2px; min-height: 44px; font: inherit; font-weight: 560; color: var(--link); cursor: pointer; display: inline-flex; align-items: center; gap: 2px; }
+
+/* Review fixes: toasts above the welcome overlay; welcome screens keep light colors in dark mode; terms text follows the theme */
+.toast, .offpill { z-index: 70; }
+.welcome:not(.welcome--auth) { --heading: #14101a; --text: #14101a; --text-2: #5b5566; --surface: #fff; --line: rgba(20,16,26,.14); --bg: #fff; color: #14101a; }
+.welcome:not(.welcome--auth) h1, .welcome:not(.welcome--auth) h2, .welcome:not(.welcome--auth) h3, .welcome:not(.welcome--auth) label { color: #14101a; }
+.welcome:not(.welcome--auth) input[type=text] { color: #14101a; background: #fff; }
+.auth__terms, .auth__login { color: var(--text-2); } .auth__terms .linkbtn, .auth__login .linkbtn, .auth .linkbtn { color: var(--heading); } .auth__terms input { accent-color: var(--heading); }
+.signin__legal { margin-top: -6px; } .signin__legal .linkbtn { color: var(--heading); }
