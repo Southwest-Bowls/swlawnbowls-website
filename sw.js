@@ -15,7 +15,7 @@
 
    To force every phone to drop its saved copies, bump VERSION.
    ============================================================ */
-const VERSION = 'swd-v18';
+const VERSION = 'swd-v19';
 const PAGES = VERSION + '-pages';
 const MEDIA = VERSION + '-media';
 const MAX_MEDIA = 150;            // photos are big; keep the newest 150
@@ -26,6 +26,7 @@ const PRECACHE = [
   '/assets/app/app.css',
   '/assets/app/app-logic.js',
   '/assets/app/app.js',
+  '/assets/app/fonts/PlusJakartaSans-var.woff2',
   '/assets/app/art/saved-empty.png',
   '/assets/app/swd-logo.png',
   '/assets/icons/icon-192.png',

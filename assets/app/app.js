@@ -746,6 +746,9 @@
   function shareBtn(title, path) {
     return '<button class="btn btn--ghost" type="button" data-share="' + esc(path) + '" data-share-title="' + esc(title) + '">' + icon('share') + 'Share</button>';
   }
+  function shareBtnIcon(title, path) {
+    return '<button class="circbtn" type="button" data-share="' + esc(path) + '" data-share-title="' + esc(title) + '" aria-label="Share ' + esc(title) + '">' + icon('share') + '</button>';
+  }
   function share(title, path) {
     var url = Logic.canonicalUrl(path);
     function copied() { toast('Link copied.'); }
@@ -2026,8 +2029,9 @@
   function clubPhotoOf(c) { return c.image && /^\/photos\//.test(c.image) && !c.imageNeedsReview ? c.image : ''; }
   function clubsList(params) {
     setTitle('Clubs');
-    return getJSON('/clubs-data.json').then(function (d) {
-      var clubs = d.clubs || [];
+    return Promise.all([getJSON('/clubs-data.json'), loadEvents().catch(function () { return []; })]).then(function (all) {
+      var d = all[0], clubs = d.clubs || [], evAll = all[1], todayC = todayISO();
+      function upcomingAt(id) { return evAll.filter(function (x) { return (x.clubIds || []).indexOf(id) >= 0 && eventPhase(x, todayC) !== 'past'; }).length; }
       var q0 = params.get('q') || '', cview = params.get('view') === 'list' ? 'list' : params.get('view') === 'map' ? 'map' : 'cards', selId = '';
       var map = null, markers = [];
       var cchip = 'all';
@@ -2106,14 +2110,13 @@
       // Cards: one big club at a time, swipe left or right. Photo on top in the phone's own shape, details below.
       function drawDeck(box, list) {
         if (!list.length) { box.innerHTML = state('empty', 'No clubs match', cchip === 'following' ? 'Follow a club and it shows up here.' : 'Try another name or city.'); return; }
-        box.innerHTML = '<ul class="cfeed">' + list.map(function (c) {
-          var id = c.id || slugify(c.name), ph = clubPhotoOf(c), on = isFollowing(id);
-          return '<li class="fcard"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '>' +
-            '<a class="fcard__link" href="/app/more/clubs/' + encodeURIComponent(id) + '" aria-label="' + esc(c.name + ', ' + c.city) + '"></a>' +
-            '<button class="iconbtn gbtn fcard__fav" type="button" data-follow="' + esc(id) + '" data-name="' + esc(c.name) + '" aria-pressed="' + on + '" aria-label="Follow ' + esc(c.name) + '">' + icon('star') + '</button>' +
-            (c.status === 'private' ? '<span class="fcard__tag">Private club</span>' : '') +
-            '<div class="fcard__bar"><div class="fcard__txt"><span class="fcard__city">' + icon('pin', 'i--sm') + esc(c.city) + '</span><b class="fcard__name">' + esc(c.name) + '</b>' +
-            (c.summary ? '<span class="fcard__sum">' + esc(c.summary) + '</span>' : '') + '</div><span class="fcard__go" aria-hidden="true">' + icon('chev') + '</span></div></li>';
+        box.innerHTML = '<p class="count">' + list.length + ' club' + (list.length === 1 ? '' : 's') + '</p><ul class="clgrid">' + list.map(function (c, i) {
+          var id = c.id || slugify(c.name), ph = clubPhotoOf(c), on = isFollowing(id), up = upcomingAt(id);
+          return '<li class="clcard"><div class="clcard__ph clcard__ph--' + (i % 3) + '"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '>' +
+            '<a class="clcard__link" href="/app/more/clubs/' + encodeURIComponent(id) + '" aria-label="' + esc(c.name + ', ' + c.city) + '"></a>' +
+            '<button class="iconbtn gbtn clcard__fav" type="button" data-follow="' + esc(id) + '" data-name="' + esc(c.name) + '" aria-pressed="' + on + '" aria-label="Follow ' + esc(c.name) + '">' + icon('star') + '</button>' +
+            '<span class="clcard__tag' + (c.status === 'private' ? '' : ' clcard__tag--open') + '">' + (c.status === 'private' ? 'Private' : 'Open') + '</span></div>' +
+            '<a class="clcard__body" href="/app/more/clubs/' + encodeURIComponent(id) + '"><b>' + esc(c.name) + '</b><span><small>' + esc(c.city) + '</small>' + (up ? '<em>' + up + ' upcoming</em>' : '') + '</span></a></li>';
         }).join('') + '</ul>';
       }
       function syncUrl() {
@@ -2169,38 +2172,22 @@
       if (safeUrl(c.website) && maps) facts.push(menuRow(c.website, 'globe', 'Website'));
       var fon = isFollowing(cid), today = todayISO();
       var mine = allEv.filter(function (x) { return (x.clubIds || []).indexOf(cid) >= 0; });
-      var up = mine.filter(function (x) { return eventPhase(x, today) !== 'past'; }), past = mine.length - up.length;
-      var logo = c.logo && safeUrl(c.logo) ? c.logo : '';
-      var panels = {
-        events: up.length ? '<ul class="evlist">' + up.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '<p class="cempty">No events coming up here yet.</p>',
-        about: c.details || c.summary ? '<p class="cabout__p">' + esc(c.details || c.summary) + '</p>' : '<p class="cempty">No details yet.</p>',
-        contact: (function () {
-          var r = [];
-          if (c.phone) r.push(menuRow(tel(c.phone), 'phone', 'Call ' + c.phone));
-          if (c.email) r.push(menuRow('mailto:' + c.email, 'mail', c.email));
-          if (safeUrl(c.website)) r.push(menuRow(c.website, 'globe', c.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')));
-          return r.length ? '<ul class="rows rows--cards">' + r.join('') + '</ul>' : '<p class="cempty">No contact details yet.</p>';
-        })()
-      };
-      var tabs = [['events', 'Events' + (up.length ? ' · ' + up.length : '')], ['about', 'About'], ['contact', 'Contact']];
-      view.innerHTML = (photo ? '<div class="escene__bg" aria-hidden="true" style="--ph:url(\'' + esc(photo) + '\')"></div>' : '') +
-        '<div class="cphoto cphoto--short"' + (photo ? ' style="--ph:url(\'' + esc(photo) + '\')" role="img" aria-label="' + esc(c.name) + ' lawn bowling club"' : '') + '>' +
-          '<a class="iconbtn gbtn cphoto__back" href="/app/more/clubs" aria-label="Back to clubs">' + icon('chev') + '</a>' +
-          '<button class="iconbtn gbtn cphoto__fav" type="button" data-follow="' + esc(cid) + '" data-name="' + esc(c.name) + '" aria-pressed="' + fon + '" aria-label="Follow ' + esc(c.name) + '">' + icon('star') + '</button>' +
-          (photo ? '' : '<span class="cphoto__none">' + icon('pin') + '</span>') + '</div>' +
-        '<section class="clubhead"><span class="clubhead__badge" aria-hidden="true">' + (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy">' : icon('pin')) + '</span>' +
-          '<div class="clubhead__chips"><span>' + esc(c.city) + '</span><span>' + (c.status === 'private' ? 'Private club' : 'Open club') + '</span></div>' +
-          '<h1 class="clubhead__t">' + esc(c.name) + '</h1>' +
-          (c.summary ? '<p class="clubhead__s">' + esc(c.summary) + '</p>' : '') +
-          '<div class="clubhead__stats"><div><b>' + up.length + '</b><span>Upcoming</span></div><div><b>' + past + '</b><span>Played</span></div><div><b>' + (fon ? 'Yes' : 'No') + '</b><span>Following</span></div></div>' +
-          (primary ? primary.replace('btn btn--wide btn--dark', 'btn btn--wide btn--accent') : '') + '</section>' +
-        '<div class="segmented" role="tablist" aria-label="Club sections">' + tabs.map(function (t, i) { return '<button type="button" role="tab" data-ctab="' + t[0] + '" aria-selected="' + (i === 0) + '">' + t[1] + '</button>'; }).join('') + '</div>' +
-        '<div id="ctab" role="tabpanel">' + panels.events + '</div>';
-      view.addEventListener('click', function (ev) {
-        var tb = ev.target.closest('[data-ctab]'); if (!tb) return;
-        view.querySelectorAll('[data-ctab]').forEach(function (b) { b.setAttribute('aria-selected', b === tb); });
-        document.getElementById('ctab').innerHTML = panels[tb.getAttribute('data-ctab')];
-      });
+      var up = mine.filter(function (x) { return eventPhase(x, today) !== 'past'; });
+      var tiles = [];
+      if (maps) tiles.push(['map', 'Directions', maps, true]);
+      if (c.phone) tiles.push(['phone', 'Call', tel(c.phone), false]);
+      if (c.email) tiles.push(['mail', 'Email', 'mailto:' + c.email, false]);
+      if (safeUrl(c.website)) tiles.push(['globe', 'Website', c.website, true]);
+      view.innerHTML = '<div class="dhead"><a class="circbtn" href="/app/more/clubs" aria-label="Back to clubs">' + icon('back') + '</a><span class="dhead__t">Club details</span>' + shareBtnIcon(c.name, '/app/more/clubs/' + cid) + '</div>' +
+        '<div class="dframe"><div class="dframe__ph"' + (photo ? ' style="--ph:url(\'' + esc(photo) + '\')" role="img" aria-label="' + esc(c.name) + ' lawn bowling club"' : '') + '>' + (photo ? '' : '<span class="cphoto__none">' + icon('pin') + '</span>') +
+          '<button class="iconbtn gbtn dframe__fav" type="button" data-follow="' + esc(cid) + '" data-name="' + esc(c.name) + '" aria-pressed="' + fon + '" aria-label="Follow ' + esc(c.name) + '">' + icon('star') + '</button>' +
+          '<span class="clcard__tag' + (c.status === 'private' ? '' : ' clcard__tag--open') + '">' + (c.status === 'private' ? 'Private club' : 'Open club') + '</span></div></div>' +
+        '<div class="dtitle"><h1>' + esc(c.name) + '</h1></div>' +
+        '<p class="dmeta">' + icon('pin', 'i--sm') + esc(c.city) + (up.length ? '<span class="dmeta__s">' + up.length + ' upcoming</span>' : '') + '</p>' +
+        (tiles.length ? '<h2 class="dh2">Get in touch</h2><div class="dtiles2">' + tiles.map(function (t) { return '<a class="dt2" href="' + esc(t[2]) + '"' + (t[3] ? ' target="_blank" rel="noopener"' : '') + '><span class="dt2__ic" aria-hidden="true">' + icon(t[0]) + '</span>' + t[1] + '</a>'; }).join('') + '</div>' : '') +
+        ((c.details || c.summary) ? '<h2 class="dh2">About</h2><p class="dtext">' + esc(c.details || c.summary) + '</p>' : '') +
+        (up.length ? '<h2 class="dh2">Upcoming events</h2><ul class="list list--cards">' + up.slice(0, 4).map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : '') +
+        (primary ? '<div class="actionbar">' + primary + '</div>' : '');
       view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) { img.addEventListener('error', function () { img.hidden = true; }); });
     });
   }
