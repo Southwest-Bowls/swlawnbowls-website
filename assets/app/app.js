@@ -1248,7 +1248,7 @@
       var hubEnter = hubOn() && phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled';
       var entryOpen = phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && method !== 'none';
       var primaryBar = hubEnter ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/enter">Enter this tournament (preview)</a>' : entryOpen ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">' + (method === 'online' ? 'Enter online' : method === 'paypal' ? 'Enter and pay' : 'How to enter') + '</a>'
-        : phase !== 'past' && method === 'none' && flyer ? '<a class="btn btn--wide" href="' + esc(flyer) + '" target="_blank" rel="noopener">See the flyer</a>'
+        : phase !== 'past' && method === 'none' && flyer ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/doc/flyer">See the flyer</a>'
         : '';
       var onNow = isSaved(x.id);
       var html = (hostPhoto ? '<div class="escene__bg" aria-hidden="true" style="--ph:url(\'' + esc(hostPhoto) + '\')"></div>' : '') + backLink('/app/events', 'Events') +
@@ -1421,9 +1421,9 @@
   }
   function docsBlock(e, flyer, cops) {
     var docs = [];
-    function tile(url, ic, label, kind) { return '<a class="dtile" href="' + esc(url) + '" target="_blank" rel="noopener"><span class="dtile__ic" aria-hidden="true">' + icon(ic) + '</span><b>' + label + '</b><small>' + kind + ' · new window</small></a>'; }
-    if (flyer) docs.push(tile(flyer, 'doc', 'Flyer', e.flyer && e.flyer.type === 'image' ? 'Image' : 'PDF'));
-    if (cops) docs.push(tile(cops, 'trophy', 'Conditions', 'PDF'));
+    function tile(kind0, ic, label, kind) { return '<a class="dtile" href="/app/events/' + encodeURIComponent(e.id) + '/doc/' + kind0 + '"><span class="dtile__ic" aria-hidden="true">' + icon(ic) + '</span><b>' + label + '</b><small>' + kind + '</small></a>'; }
+    if (flyer) docs.push(tile('flyer', 'doc', 'Flyer', /\.(jpe?g|png|webp)$/i.test(flyer) ? 'Image' : 'Document'));
+    if (cops) docs.push(tile('conditions', 'trophy', 'Conditions', 'Document'));
     return docs.length ? '<div class="dtiles">' + docs.join('') + '</div>' : '';
   }
   // The real entry process, as published. Email or postal entry stays
@@ -1480,6 +1480,27 @@
         '</ul></section>';
     }
     return h;
+  }
+  // Flyer / conditions of play shown inside the app, with a back button and an "open in browser" fallback
+  function docScreen(params, id, kind) {
+    setTitle(kind === 'conditions' ? 'Conditions of play' : 'Flyer');
+    var root = view;
+    return loadEvents().then(function (events) {
+      if (root !== view) return;
+      var x = events.filter(function (y) { return y.id === id; })[0];
+      var d = x && x.e[kind === 'conditions' ? 'cops' : 'flyer'], url = safeUrl(d && (d.localPath || d.externalUrl));
+      if (!x || !url) { view.innerHTML = backLink('/app/events/' + encodeURIComponent(id), 'Event') + state('empty', 'Document not found', 'It may have been removed.', '<a class="btn" href="/app/events/' + encodeURIComponent(id) + '">Back to the event</a>'); return; }
+      var label = kind === 'conditions' ? 'Conditions of play' : 'Flyer';
+      var isImg = /\.(jpe?g|png|webp|gif)$/i.test(url), isPdf = /\.pdf($|\?)/i.test(url) || /export\?format=pdf/i.test(url), isDocx = /\.docx?$/i.test(url), gdoc = /docs\.google\.com\/document/.test(url) && !/export/.test(url);
+      var src = gdoc && !/embedded=true/.test(url) ? url + (url.indexOf('?') < 0 ? '?' : '&') + 'embedded=true' : url;
+      var body = isImg ? '<div class="docview__img"><img src="' + esc(url) + '" alt="' + esc(label + ' for ' + x.short) + '"></div>'
+        : isDocx ? state('empty', 'Preview not available', 'This file type can’t be shown here. Open it to read or save it.')
+        : '<iframe class="docview__frame" src="' + esc(src) + '" title="' + esc(label + ' for ' + x.short) + '"></iframe>';
+      view.innerHTML = '<div class="dhead"><a class="circbtn" href="/app/events/' + encodeURIComponent(id) + '" data-back aria-label="Back to ' + esc(x.short) + '">' + icon('back') + '</a><span class="dhead__t">' + esc(label) + '</span>' +
+        '<a class="circbtn" href="' + esc(url) + '" target="_blank" rel="noopener" aria-label="Open ' + esc(label) + ' in your browser">' + icon('ext') + '</a></div>' +
+        '<p class="docview__for">' + esc(x.short) + '</p>' + '<div class="docview' + (isImg || isDocx ? '' : ' docview--frame') + '">' + body + '</div>' +
+        '<p class="muted docview__hint">Not showing properly? <a class="textlink" href="' + esc(url) + '" target="_blank" rel="noopener">Open in your browser</a>. Use the back arrow to return to the event.</p>';
+    });
   }
   function docRow(url, label, type) {
     var kind = type === 'image' ? 'Image' : type === 'gdoc' ? 'Google Doc' : /\.pdf$/i.test(url) ? 'PDF' : 'Document';
@@ -3306,6 +3327,7 @@
     [/^\/app\/events\/?$/, eventsList, 'events'],
     [/^\/app\/events\/([^/]+)\/?$/, eventDetail, 'events'],
     [/^\/app\/events\/([^/]+)\/enter\/?$/, enterScreen, 'events'],
+    [/^\/app\/events\/([^/]+)\/doc\/(flyer|conditions)\/?$/, docScreen, 'events'],
     [/^\/app\/td\/?$/, tdScreen, 'more'],
     [/^\/app\/receipt\/([A-Za-z0-9-]+)\/?$/, receiptScreen, 'my'],
     [/^\/app\/results\/?$/, resultsList, 'results'],
@@ -3362,7 +3384,7 @@
       navDir = null;
     }
     var p;
-    try { p = route[1](params, match[1] && decodeURIComponent(match[1])); } catch (e) { p = Promise.reject(e); }
+    try { p = route[1](params, match[1] && decodeURIComponent(match[1]), match[2]); } catch (e) { p = Promise.reject(e); }
     return Promise.resolve(p).catch(function (err) {
       if (token !== renderToken) return;
       view.innerHTML = err instanceof URIError
