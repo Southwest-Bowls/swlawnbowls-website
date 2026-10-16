@@ -1,155 +1,94 @@
 {
   "id": "umpires",
   "title": "SWD Umpires",
-  "subtitle": "Becoming a certified umpire is a valuable way to deepen your knowledge of the sport, support fair play, and strengthen competition across the Southwest Division. Umpires play an important role in maintaining standards on the green and helping clubs and tournaments run smoothly.",
+  "subtitle": "Learn the Laws, support fair play and help tournaments run smoothly.",
   "sourceUrl": "https://www.swlawnbowls.org/umpires",
   "sections": [
     {
+      "type": "list",
+      "heading": "How to become an umpire",
+      "items": [
+        "Learn the role: review the Bowls USA information, domestic regulations and Laws.",
+        "Build your knowledge: study the laws, measuring and scorekeeping resources below.",
+        "Complete training and assessment for certification.",
+        "Keep developing with practical experience, UmpStumpers and The Lawman."
+      ]
+    },
+    {
       "type": "buttons",
       "items": [
-        { "label": "Become an Umpire", "url": "mailto:mavizenor@gmail.com?subject=Become%20an%20Umpire" }
-      ]
-    },
-    {
-      "type": "prose",
-      "heading": "Why Become an Umpire?",
-      "body": [
-        "Umpiring is not only about officiating matches. It is also about building confidence, improving your understanding of the game, and supporting your club and the wider bowls community."
+        {
+          "label": "Request information",
+          "url": "mailto:mavizenor@gmail.com?subject=SWD%20Umpire%20Information%20Request"
+        }
       ]
     },
     {
       "type": "cards",
-      "items": [
-        { "title": "Develop Expertise", "body": "Gain a stronger understanding of the Laws of the Sport, practical officiating procedures, and on-green decision making." },
-        { "title": "Support Fair Play", "body": "Help ensure competitions are played and officiated consistently, professionally, and fairly." },
-        { "title": "Give Back to the Game", "body": "Umpires provide an essential service to clubs, divisions, and tournaments, and help strengthen the sport at every level." }
-      ]
-    },
-    {
-      "type": "prose",
-      "heading": "Rules, Laws & Learning",
-      "body": [
-        "Start with Bowls USA guidance and domestic regulations, then use World Bowls resources to deepen your knowledge of laws, measuring, and umpire development."
-      ]
-    },
-    {
-      "type": "cards",
+      "heading": "Laws and learning",
       "items": [
         {
           "title": "Bowls USA Laws & Umpiring",
-          "body": "A practical starting point for U.S. bowlers and officials, including information on becoming an umpire, measuring resources, laws of the sport, domestic regulations, and UmpStumpers.",
+          "body": "Start here: becoming an umpire and measuring resources.",
           "link": "https://www.bowlsusa.us/lawn-bowling-laws.html"
         },
         {
           "title": "Domestic Regulations",
-          "body": "Review the approved domestic regulations used alongside the Laws of the Sport.",
+          "body": "The approved domestic regulations used with the Laws.",
           "link": "https://drive.google.com/file/d/1aASxwArm8WE7UhvHjJbW14LF7fcnjR9k/view"
         },
         {
           "title": "World Bowls Laws of the Sport",
-          "body": "The official World Bowls laws governing the sport internationally.",
+          "body": "The official World Bowls laws.",
           "link": "https://www.worldbowls.com/laws-of-the-sport/"
         },
         {
           "title": "World Bowls Measuring Equipment",
-          "body": "Official guidance on equipment and procedures used when measuring and determining shots.",
+          "body": "Equipment and procedures for measuring shots.",
           "link": "https://www.worldbowls.com/measuring-equipment/"
         },
         {
           "title": "World Bowls Umpire Development",
-          "body": "Official umpire development materials, including interactive training resources with videos and photographs to support learning.",
+          "body": "Training with videos and photographs.",
           "link": "https://www.worldbowls.com/umpire-development/"
         },
         {
-          "title": "Reference Library",
-          "body": "Additional reference materials, columns, and learning resources for SWD umpires.",
-          "link": "https://drive.google.com/drive/folders/1ZnwKBU05z-Pw7nPALMyP3v2pmow70WoR"
-        }
-      ]
-    },
-    {
-      "type": "prose",
-      "heading": "List of Current Umpires",
-      "body": ["The list below shows current Southwest Division umpires."]
-    },
-    {
-      "type": "embed",
-      "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJDWz5yBIoT_uYxRd_fYTx0bDWPS3kXxmBWJoYZ9h_0amvLU62XDU3MxZl11Xp9_TOYSeBAr85BV2j/pubhtml?widget=true&headers=false",
-      "height": 1000
-    },
-    {
-      "type": "prose",
-      "heading": "Ongoing Learning",
-      "body": [
-        "Umpiring knowledge develops over time. Use these resources to keep learning, test your understanding, and stay sharp on practical law and officiating scenarios."
-      ]
-    },
-    {
-      "type": "cards",
-      "items": [
-        {
           "title": "UmpStumpers",
-          "body": "A practical and interactive way to test your understanding of the Laws of the Sport and build confidence through regular challenges.",
+          "body": "Interactive challenges to test your knowledge of the Laws.",
           "link": "https://www.bowlsusa.us/lawn-bowling-laws.html"
         },
         {
           "title": "The Lawman",
-          "body": "Articles and officiating commentary from Bowls Victoria that provide useful scenarios, interpretations, and discussion points for officials.",
+          "body": "Officiating scenarios and commentary from Bowls Victoria.",
           "link": "https://www.bowlsvic.org.au/category/bowls-vic-news/the-lawman/"
         },
         {
-          "title": "SWD Reference Folder",
-          "body": "Access the shared folder for additional umpiring references, columns, and supporting documents.",
+          "title": "Reference Library",
+          "body": "Shared folder of references and columns for SWD umpires.",
           "link": "https://drive.google.com/drive/folders/1ZnwKBU05z-Pw7nPALMyP3v2pmow70WoR"
-        },
-        {
-          "title": "Scorekeeping Guide",
-          "body": "Use the scorecard reference below to review how to complete a lawn bowls scorecard correctly."
         }
       ]
     },
     {
-      "type": "prose",
-      "heading": "How to Fill Out a Scorecard",
-      "body": ["Use the guide below as a reference for completing a lawn bowls scorecard correctly."]
-    },
-    {
       "type": "image",
       "src": "/photos/pages/umpires/01-scorecard-guide.jpg",
-      "alt": "Annotated lawn bowls scorecard showing where to record player and team names, the end-by-end shots scored, the running total for each side, and the final result and signatures."
+      "alt": "Annotated lawn bowls scorecard showing where to record player and team names, the end-by-end shots scored, the running total for each side, and the final result and signatures.",
+      "heading": "How to fill out a scorecard"
     },
     {
-      "type": "prose",
-      "heading": "How to Become an Umpire",
-      "body": [
-        "The pathway begins with learning the role, reviewing the relevant laws and regulations, and then moving into training, assessment, and practical experience."
-      ]
-    },
-    {
-      "type": "list",
-      "ordered": true,
-      "items": [
-        "Learn the Role — Review Bowls USA umpiring information, domestic regulations, and the Laws of the Sport to understand the role and responsibilities of an umpire.",
-        "Build Your Knowledge — Study the official resources on laws, measuring equipment, procedures, and scorekeeping.",
-        "Complete Training & Assessment — Follow the applicable accreditation and assessment process for becoming a certified umpire.",
-        "Keep Developing — Continue learning through practical experience, refresher resources, UmpStumpers, and articles such as The Lawman."
-      ]
-    },
-    {
-      "type": "prose",
-      "heading": "Interested in Becoming an Umpire?",
-      "body": ["Send an email request for more information and next steps."]
-    },
-    {
-      "type": "buttons",
-      "items": [
-        { "label": "Request Information", "url": "mailto:mavizenor@gmail.com?subject=SWD%20Umpire%20Information%20Request" }
-      ]
+      "type": "embed",
+      "heading": "Current umpires",
+      "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJDWz5yBIoT_uYxRd_fYTx0bDWPS3kXxmBWJoYZ9h_0amvLU62XDU3MxZl11Xp9_TOYSeBAr85BV2j/pubhtml?widget=true&headers=false",
+      "height": 1000
     },
     {
       "type": "contact",
+      "heading": "Questions?",
       "items": [
-        { "label": "Umpire enquiries", "email": "mavizenor@gmail.com" }
+        {
+          "label": "Umpire enquiries",
+          "email": "mavizenor@gmail.com"
+        }
       ]
     }
   ],
