@@ -932,12 +932,9 @@
     });
   }
 
+  // Coming up on Home: every event as a calm white card with a colored edge (photo cards stay in Next up)
   function upHtml(list, mode, d, today) {
-    return mode === 'list'
-      ? '<ul class="list list--cards">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>'
-      : '<ul class="vcards">' + list.map(function (x, i) {   // every event is a calm white card with a colored edge; the photo cards stay in Next up
-          return eventRow(x, today).replace('class="evcard"', 'class="evcard evcard--calm"');
-        }).join('') + '</ul>';
+    return '<ul class="vcards">' + list.map(function (x) { return eventRow(x, today).replace('class="evcard"', 'class="evcard evcard--calm"'); }).join('') + '</ul>';
   }
   function drawHome(d) {
     var today = d.today;
@@ -1047,11 +1044,9 @@
     var champFirst = focusTopics && showT('results') && !showT('tournaments');
     if (champFirst && showT('results')) html += '<div id="home-champ"></div>';
     if (more.length && showT('tournaments')) {
-      var hview = store('homeView') === 'list' ? 'list' : 'cards';
       var totalMore = live.filter(function (x) { return !shownIds[x.id]; }).length;
-      html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head section__head--count"><div class="hcount"><h2 class="section__title" id="h-up">Coming up</h2><span class="hcount__n">' + totalMore + ' tournament' + (totalMore === 1 ? '' : 's') + '</span></div>' +
-        '<div class="vtoggle" role="group" aria-label="Show as"><button type="button" data-hview="cards" aria-pressed="' + (hview === 'cards') + '" aria-label="Cards">' + icon('sq') + '</button><button type="button" data-hview="list" aria-pressed="' + (hview === 'list') + '" aria-label="List">' + icon('rows') + '</button></div></div>' +
-        '<div id="home-up">' + upHtml(more, hview, d, today) + '</div><a class="btn btn--ghost btn--wide hmore" href="/app/events">See all tournaments' + icon('chev', 'i--sm') + '</a></section>';
+      html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head section__head--count"><div class="hcount"><h2 class="section__title" id="h-up">Coming up</h2><span class="hcount__n">' + totalMore + ' tournament' + (totalMore === 1 ? '' : 's') + '</span></div></div>' +
+        '<div id="home-up">' + upHtml(more, 'list', d, today) + '</div><a class="btn btn--ghost btn--wide hmore" href="/app/events">See all tournaments' + icon('chev', 'i--sm') + '</a></section>';
     }
 
     if (!champFirst && showT('results')) html += '<div id="home-champ"></div>';
@@ -1062,14 +1057,6 @@
     var hv = view;
     hv.querySelectorAll('[data-toggle-all]').forEach(function (b) { b.addEventListener('click', function () { var v = Object.assign({}, interests() || {}); v.all = !v.all; store('interests', v); haptic(); render(); }); });
     hv.querySelectorAll('[data-open-interests]').forEach(function (b) { b.addEventListener('click', function () { openInterests(function () { render(); }); }); });
-    hv.querySelectorAll('[data-hview]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var mode = b.getAttribute('data-hview'), box = hv.querySelector('#home-up'); if (!box) return;
-        store('homeView', mode); haptic();
-        hv.querySelectorAll('[data-hview]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
-        box.innerHTML = upHtml(more, mode, d, today); blurUp(box);
-      });
-    });
     view.querySelectorAll('img[data-hide-on-error]').forEach(function (img) {
       img.addEventListener('error', function () { img.hidden = true; });
     });

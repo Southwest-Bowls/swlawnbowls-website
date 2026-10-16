@@ -2582,3 +2582,6 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 .evcard--calm .tcard__wt small, .evcard--calm .tcard__time, .evcard--calm .tcard__st { color: var(--text-2); opacity: 1; }
 .evcard--calm > .iconbtn { background: var(--subtle); color: var(--heading); } .evcard--calm > .iconbtn .i { stroke: var(--heading); }
 .vcards .evcard { margin: 0; }
+
+/* Keep faces in: crops anchor near the top of the photo (winners' photos can be tall portraits) */
+.kcard__photo, .pcard, .ehero, .ccover, .clcard__ph, .dframe__ph { background-position: center 18%; }
