@@ -2555,3 +2555,12 @@ h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp
 @media (min-width: 768px) and (max-width: 899px) { .dframe__ph { aspect-ratio: auto; height: min(380px, 56vw); } }
 @media (min-width: 900px) { .view:has(> .dframe) .list--cards { grid-template-columns: 1fr; } }
 @media (min-width: 1100px) { .hscroll .pcard { min-height: 190px; } html[data-text="xxlarge"] .clgrid { column-count: 3; } }
+
+/* Results previews: every division on its own line */
+.rcard--multi .rcard__meta { display: block; -webkit-line-clamp: unset; overflow: visible; margin-top: 3px; }
+/* Clubs: read across rows (1, 2 / 3, 4), not down columns */
+.clgrid { column-count: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.clgrid .clcard { margin: 0; }
+.clcard__ph, .clcard__ph--1, .clcard__ph--2 { aspect-ratio: 4 / 3; }
+@media (min-width: 768px) { .clgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); column-count: auto; } }
+@media (min-width: 1100px) { .clgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); column-count: auto; } html[data-text="xxlarge"] .clgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

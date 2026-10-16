@@ -698,10 +698,11 @@
   }
   function resultRow(r) {
     var f = firsts(r);
-    var who = !f.length ? 'Published result' : f.length === 1 ? f[0].who : f[0].where + ' winners: ' + f[0].who;
-    return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(r.id) + '">' + resultBlock(r) +
+    // One line per division, so a two-division tournament shows both sets of winners
+    var lines = !f.length ? ['Published result'] : f.length === 1 ? [f[0].who] : f.slice(0, 4).map(function (x) { return x.where + ': ' + x.who; });
+    return '<li><a class="rcard rcard--multi" href="/app/results/' + encodeURIComponent(r.id) + '">' + resultBlock(r) +
       '<span class="rcard__body"><span class="rcard__title">' + esc(shortTitle(r.t.title)) + '</span>' +
-      '<span class="rcard__meta">' + esc(who) + '</span></span>' + CHEV + '</a></li>';
+      lines.map(function (l) { return '<span class="rcard__meta">' + esc(l) + '</span>'; }).join('') + '</span>' + CHEV + '</a></li>';
   }
 
   // Empty states get a small drawn illustration: soft brand-coloured discs behind a card with a line icon
