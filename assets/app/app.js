@@ -428,7 +428,9 @@
   /* ---------------------------------------------------------------
      Saved events (no account — kept on this phone)
      --------------------------------------------------------------- */
-  function saved() { return store('saved') || []; }
+  // Save (bookmark) is switched off for now. Set to true to bring the ribbon, the Saved tab and My SWD row back.
+  var SAVE_ON = false;
+  function saved() { return SAVE_ON ? (store('saved') || []) : []; }
   function isSaved(id) { return saved().indexOf(id) >= 0; }
   // Followed clubs: kept on this phone only. Following never turns on
   // notifications; it only puts the club's events first.
@@ -483,6 +485,7 @@
   }
   function saveLabel(on, title) { return (on ? 'Unsave ' : 'Save ') + title; }
   function saveBtn(id, title) {
+    if (!SAVE_ON) return '';
     var on = isSaved(id);
     return '<button class="iconbtn" type="button" data-save="' + esc(id) + '" data-title="' + esc(title) + '" data-on="' + on + '" aria-label="' +
       esc(saveLabel(on, title)) + '">' + icon('bookmark') + '</button>';
@@ -575,7 +578,7 @@
     opts = opts || {};
     var ph = eventPhoto(x, clubs), st = entryStatus(x, today), saved0 = isSaved(x.id);
     return '<a class="pcard ' + catClass(x) + (opts.big ? ' pcard--big' : '') + '" href="/app/events/' + encodeURIComponent(x.id) + '"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '>' +
-      '<span class="pcard__cat">' + esc(x.cat || 'Open') + '</span>' + (saved0 ? '<span class="pcard__saved" aria-label="Saved">' + icon('bookmark') + '</span>' : '') +
+      '<span class="pcard__cat">' + esc(x.cat || 'Open') + '</span>' + (SAVE_ON && saved0 ? '<span class="pcard__saved" aria-label="Saved">' + icon('bookmark') + '</span>' : '') +
       '<span class="pcard__body"><span class="pcard__date">' + esc(dateRangeLabel(x.dates, true)) + '</span><span class="pcard__title">' + esc(x.short) + '</span>' +
       '<span class="pcard__meta">' + esc([x.clubLabel, x.e.format && cap(x.e.format)].filter(Boolean).join(' · ')) + '</span>' +
       (st ? '<span class="pcard__status">' + icon(st.icon) + esc(st.label) + '</span>' : '') + '</span></a>';
@@ -932,8 +935,8 @@
   function upHtml(list, mode, d, today) {
     return mode === 'list'
       ? '<ul class="list list--cards">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>'
-      : '<ul class="vcards">' + list.map(function (x, i) {   // every other card keeps its photo; the rest are calm white cards with a colored edge
-          return i % 2 === 0 ? '<li>' + photoCard(x, d.clubs, today, { big: true }) + '</li>' : eventRow(x, today).replace('class="evcard"', 'class="evcard evcard--calm"');
+      : '<ul class="vcards">' + list.map(function (x, i) {   // every event is a calm white card with a colored edge; the photo cards stay in Next up
+          return eventRow(x, today).replace('class="evcard"', 'class="evcard evcard--calm"');
         }).join('') + '</ul>';
   }
   function drawHome(d) {
@@ -1220,6 +1223,7 @@
       var events = all[0];
       var hasPast = events.some(function (x) { return eventPhase(x, today) === 'past'; });
       var show = params.get('show') || 'upcoming';
+      if (show === 'saved' && !SAVE_ON) show = 'upcoming';
       if (show === 'past' && !hasPast) show = 'upcoming';
       var months = {}, clubs = {};
       events.forEach(function (x) {
@@ -1238,7 +1242,7 @@
       }
       var f = { q: params.get('q') || '', month: params.get('month') || '', cat: params.has('cat') ? params.get('cat') : (interestCats().length === 1 && CATS.indexOf(interestCats()[0]) >= 0 ? interestCats()[0] : ''), club: clubParam };
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
-      var segs = [['calendar', 'Calendar'], ['upcoming', 'Upcoming'], ['saved', 'Saved']].concat(hasPast ? [['past', 'Completed']] : []);
+      var segs = [['calendar', 'Calendar'], ['upcoming', 'Upcoming']].concat(SAVE_ON ? [['saved', 'Saved']] : []).concat(hasPast ? [['past', 'Completed']] : []);
       var calMonth = (f.month || today.slice(0, 7)), calDay = (/^\d{4}-\d{2}-\d{2}$/.test(params.get('day') || '') && params.get('day').slice(0, 7) === (f.month || today.slice(0, 7))) ? params.get('day') : '', evLimit = 10, evLastKey = '';
       var nSet = f.club ? 1 : 0;
       view.innerHTML = ((params.get('show') === 'saved' && history.state && /^\/app\/(my|more\/membership)\b/.test(String(history.state.from || '').split('?')[0])) ? backLink('/app/events', 'Events') : '') + pageHead('Events', '') +
@@ -2570,8 +2574,6 @@
       '<section class="settings" aria-labelledby="h-motion"><h2 id="h-motion">Animation</h2>' + motionChoices() + '</section>' +
       '<section class="settings" aria-labelledby="h-off"><h2 id="h-off">Offline copies</h2><p>Pages you open are kept so they work without a signal. Clearing them frees space; they come back as you browse.</p>' +
       '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-cache>Clear offline copies</button></div></section>' +
-      '<section class="settings" aria-labelledby="h-sv"><h2 id="h-sv">Saved events</h2><p>' + (n ? n + ' event' + (n === 1 ? '' : 's') + ' saved on this phone. Saving an event doesn’t enter you in it.' : 'No events saved yet.') + '</p>' +
-      (n ? '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-saved>Clear saved events</button></div>' : '') + '</section>' +
       '<section class="settings" aria-labelledby="h-fc"><h2 id="h-fc">Followed clubs</h2><div id="fc-list"></div></section>' +
       '<section class="settings settings--danger" aria-labelledby="h-del"><h2 id="h-del">Delete my account and data</h2>' +
         '<p>' + (memberSession() ? 'This deletes your sign-in account and everything kept for it, and clears this phone. It cannot be undone.' : 'You are using the app without an account. This clears your saved events, followed clubs, profile and photo from this phone. It cannot be undone.') + '</p>' +
@@ -3290,7 +3292,7 @@
         (memberSession() ? '' : '<span class="tag tag--preview">Preview</span>') + '</div><div id="m-box">' + loading() + '</div></section>' : '') +
       '<div class="psheet">' +
         (memberSession() ? '' : '<a class="pbanner" href="/app/signin"><span class="pbanner__t"><b>Sign in or create an account</b><small>Enter tournaments and keep your details</small></span><span class="pbanner__art" aria-hidden="true">' + icon('person') + '</span></a>') +
-        '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honors and results' : 'Add your name and bio') + prow('/app/events?show=saved', 'bookmark', 'Saved events', nSaved ? nSaved + ' saved' : 'Nothing saved yet') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + '</div>' +
+        '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honors and results' : 'Add your name and bio') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + '</div>' +
         '<div class="pgroup"><button type="button" class="prow prow--btn" data-open-interests><span class="prow__ic" aria-hidden="true">' + icon('star') + '</span><span class="prow__t"><b>My interests</b><small>' + (interests() && (interests().topics || []).length ? (interests().topics.length + ' picked') : 'Choose what you want first') + '</small></span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></button>' + prow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline') + '</div>' +
       '</div>' +
       '<div id="my-res"></div>' + myEntriesHtml();
@@ -3893,7 +3895,6 @@
           var on = isSaved(x.id), maps = x.e.club && safeUrl(x.e.club.mapUrl) ? x.e.club.mapUrl : '';
           openDialog(x.short, '<div class="qmenu">' +
             '<a class="qmenu__i" href="/app/events/' + encodeURIComponent(x.id) + '" data-close-dlg>' + icon('chev') + 'Open event</a>' +
-            '<button class="qmenu__i" type="button" data-save="' + esc(x.id) + '" data-title="' + esc(x.short) + '" data-on="' + on + '">' + icon('bookmark') + (on ? 'Remove from saved' : 'Save event') + '</button>' +
             '<button class="qmenu__i" type="button" data-share="/app/events/' + esc(x.id) + '" data-share-title="' + esc(x.e.title) + '">' + icon('share') + 'Share</button>' +
             (maps ? '<a class="qmenu__i" href="' + esc(maps) + '" target="_blank" rel="noopener">' + icon('map') + 'Directions</a>' : '') + '</div>');
         });
