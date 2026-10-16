@@ -2573,3 +2573,6 @@ h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp
 .lcard--big .lcard__logo--dark img { max-height: 62px; max-width: 62px; }
 
 .hub--home { margin: 0 0 var(--s4); box-shadow: 0 2px 4px rgba(35,17,32,.05), 0 10px 24px rgba(35,17,32,.08); }
+
+/* "Always on" lets the rolling numbers move even when the phone asks for reduced motion */
+html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !important; }

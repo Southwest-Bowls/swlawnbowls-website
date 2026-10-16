@@ -157,6 +157,11 @@
       b.setAttribute('aria-checked', on); b.setAttribute('tabindex', on ? 0 : -1);
     });
   }
+  function phoneWantsLessMotion() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+  function motionChoices() {
+    return radioGroup('Number animations', 'data-motion', [['system', 'Follow my phone'], ['on', 'Always on']], store('motion') === 'on' ? 'on' : 'system') +
+      '<p class="muted" id="motion-note">' + (phoneWantsLessMotion() ? 'Your phone is asking apps for less motion (Reduce Motion is on), so numbers stay still. Choose “Always on” to see them roll.' : 'Your phone allows animation, so numbers roll when a page opens.') + '</p>';
+  }
   function themeChoices() {
     return radioGroup('Appearance', 'data-theme-choice', [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], themePref());
   }
@@ -520,7 +525,7 @@
   }
   var rolledKeys = {};
   function rollIn(root) {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (phoneWantsLessMotion() && store('motion') !== 'on') return;
     var els = [];
     root.querySelectorAll('[data-roll]').forEach(function (el) {
       var key = el.getAttribute('data-roll-key') || el.getAttribute('data-roll');
@@ -2560,6 +2565,7 @@
     view.innerHTML = backLink('/app/more', 'More') + '<div class="intro"><h1>App settings</h1></div>' +
       '<section class="settings" aria-labelledby="h-appear"><h2 id="h-appear">Appearance</h2>' + themeChoices() + '</section>' +
       '<section class="settings" aria-labelledby="h-text"><h2 id="h-text">Text size</h2>' + textChoices() + '</section>' +
+      '<section class="settings" aria-labelledby="h-motion"><h2 id="h-motion">Animation</h2>' + motionChoices() + '</section>' +
       '<section class="settings" aria-labelledby="h-off"><h2 id="h-off">Offline copies</h2><p>Pages you open are kept so they work without a signal. Clearing them frees space; they come back as you browse.</p>' +
       '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-cache>Clear offline copies</button></div></section>' +
       '<section class="settings" aria-labelledby="h-sv"><h2 id="h-sv">Saved events</h2><p>' + (n ? n + ' event' + (n === 1 ? '' : 's') + ' saved on this phone. Saving an event doesn’t enter you in it.' : 'No events saved yet.') + '</p>' +
@@ -3690,6 +3696,8 @@
     // Appearance and text size
     var th = ev.target.closest('[data-theme-choice]');
     if (th) { store('theme', th.getAttribute('data-theme-choice')); applyTheme(); return; }
+    var mo = ev.target.closest('[data-motion]');
+    if (mo) { store('motion', mo.getAttribute('data-motion')); document.documentElement.setAttribute('data-motion', mo.getAttribute('data-motion')); markChecked('data-motion', mo.getAttribute('data-motion')); if (mo.getAttribute('data-motion') === 'on') { Object.keys(rolledKeys).forEach(function (k) { delete rolledKeys[k]; }); toast('Numbers will roll when a page opens'); } return; }
     var sz = ev.target.closest('[data-size]');
     if (sz) {
       store('text', sz.getAttribute('data-size')); applyTextSize();
@@ -4083,6 +4091,7 @@
     focusIn();
   }
 
+  document.documentElement.setAttribute('data-motion', store('motion') === 'on' ? 'on' : 'system');
   applyTheme();
   applyTextSize();
   // Poster thumbnails: YouTube's own still, then the official SW TV logo
