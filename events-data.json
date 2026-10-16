@@ -789,7 +789,10 @@
         "pubUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSxUyqn3pywrRQUQYltFlJzmhJQWm640mVFIWeOb9PsGIjXvRKeKkrpCh7APc3mDYyfv0WBfsYMk7IL/pubhtml?widget=true&headers=false",
         "height": 1800,
         "width": "100%"
-      }
+      },
+      "status": "postponed",
+      "alert": "This tournament has been postponed. A new date will be announced.",
+      "alertLabel": "Postponed"
     },
     {
       "id": "womens-vet-novice-pairs-2026",

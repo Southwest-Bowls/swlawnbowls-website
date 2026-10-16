@@ -339,6 +339,7 @@
   }
   function eventPhase(x, today) {
     if (!x.dates) return 'unknown';
+    if (x.e && x.e.status === 'postponed') return 'upcoming';   // no new date yet: stays on the list, never "Completed"
     if (x.dates.end < today) return 'past';
     if (x.dates.start <= today) return 'now';
     return 'upcoming';
@@ -355,6 +356,7 @@
   var RESULT_EVENTS = {};   // event id -> true when results are published
   function entryStatus(x, today) {
     var e = x.e, phase = eventPhase(x, today);
+    if (e.status === 'postponed') return { kind: 'postponed', label: 'Postponed · new date to come', icon: 'alert' };
     if (e.status === 'cancelled' || (e.alert && /cancel/i.test(e.alertLabel || ''))) return { kind: 'cancelled', label: 'Cancelled', icon: 'alert' };
     if (phase === 'past') return RESULT_EVENTS[x.id] ? { kind: 'results', label: 'Results available', icon: 'trophy' } : { kind: 'done', label: 'Completed', icon: 'check' };
     if (phase === 'now') {
@@ -468,10 +470,10 @@
     if (on) {
       var first = !store('savedExplained');
       store('savedExplained', true);
-      toast('Saved to Home', first ? 'Saving keeps this event handy. It doesn’t register you or turn on reminders.' : '',
-        function () { setSaved(id, false, title); }, 'Saved to Home:' + name + '.');
+      toast('Saved', first ? 'Find it under Events, then Saved. Saving doesn’t register you or turn on reminders.' : 'Find it under Events, then Saved.',
+        function () { setSaved(id, false, title); }, 'Saved:' + name + '. Find it under Events, then Saved.');
     } else {
-      toast('Removed from Home', '', function () { setSaved(id, true, title); }, 'Removed from Home:' + name + '.');
+      toast('Removed from saved', '', function () { setSaved(id, true, title); }, 'Removed from saved:' + name + '.');
     }
   }
   function saveLabel(on, title) { return (on ? 'Unsave ' : 'Save ') + title; }
@@ -622,7 +624,7 @@
     var update = e.alert && phase !== 'past' ? '<span class="tcard__st">' + icon('bell') + esc(e.alertLabel || 'Update') + '</span>' : '';
     return '<li class="evcard"><a class="tcard ' + catClass(x) + '" href="/app/events/' + encodeURIComponent(x.id) + '">' +
       '<span class="tcard__who"><span class="tcard__av"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '></span><span class="tcard__wt"><b>' + esc(x.clubLabel || 'Southwest Bowls') + '</b><small>' + esc(x.cat || 'Open') + (e.format ? ' · ' + esc(cap(e.format)) : '') + '</small></span></span>' +
-      '<span class="tcard__time">' + esc(dateRangeLabel(x.dates, true)) + (e.time && phase !== 'past' && x.dates && x.dates.start === x.dates.end ? ' · ' + esc(startTime(e.time) || e.time) : '') + '</span>' +
+      '<span class="tcard__time">' + (e.status === 'postponed' ? 'New date to come' : esc(dateRangeLabel(x.dates, true))) + (e.time && phase !== 'past' && x.dates && x.dates.start === x.dates.end ? ' · ' + esc(startTime(e.time) || e.time) : '') + '</span>' +
       '<span class="tcard__title">' + esc(x.short) + '</span>' +
       (st ? '<span class="tcard__st">' + icon(st.icon) + esc(st.label) + '</span>' : '') + update + '</a>' + saveBtn(x.id, x.short) + '</li>';
   }
@@ -930,7 +932,9 @@
   function drawHome(d) {
     var today = d.today;
     var live = d.events.filter(function (x) { var p = eventPhase(x, today); return p === 'upcoming' || p === 'now'; });
-    var liveAll = live;   // never filtered: saved-event alerts and the bell must not depend on your picks
+    var liveAll = live;
+    live = live.filter(function (x) { return x.e.status !== 'postponed'; });   // a postponed event has no date to count down to
+    // never filtered: saved-event alerts and the bell must not depend on your picks
     // Personal focus: with interests picked, Home shows only what you chose. "Show everything" brings the full Home back.
     var ivx = interests() || {}, focusTopics = !ivx.all && (ivx.topics || []).length > 0, focusCats = !ivx.all && (ivx.cats || []).length > 0;
     function showT(t) { return !focusTopics || (ivx.topics || []).indexOf(t) >= 0; }
@@ -1372,7 +1376,7 @@
       var ls = e.liveScoring || {};
       var hasDraw = safeUrl(ls.pubUrl) || (ls.sheets && ls.sheets.length) || ls.gated;
       var tabs = [['overview', 'Overview']];
-      var isClosed = !!(st && (st.kind === 'closed' || st.kind === 'cancelled'));
+      var isClosed = !!(st && (st.kind === 'closed' || st.kind === 'cancelled' || st.kind === 'postponed'));
       if (phase !== 'past' && !isClosed) tabs.push(['entry', 'Entry details']);
       if (hasEntries) tabs.push(['entries', 'Entries']);
       if (hasDraw) tabs.push(['draw', 'Draw']);
@@ -1385,8 +1389,8 @@
       var hostClub = (all[2].clubs || []).filter(function (c) { return (x.clubIds || []).indexOf(c.id) >= 0; })[0];
       var hostPhoto = hostClub && hostClub.image && /^\/photos\//.test(hostClub.image) && !hostClub.imageNeedsReview ? hostClub.image : '';
       var method = entryMethod(e);
-      var hubEnter = hubOn() && phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled';
-      var entryOpen = phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && method !== 'none';
+      var hubEnter = hubOn() && phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && st.kind !== 'postponed';
+      var entryOpen = phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && st.kind !== 'postponed' && method !== 'none';
       var primaryBar = hubEnter ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/enter">Enter this tournament (preview)</a>' : entryOpen ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">' + (method === 'online' ? 'Enter online' : method === 'paypal' ? 'Enter and pay' : 'How to enter') + '</a>'
         : phase !== 'past' && method === 'none' && flyer ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/doc/flyer">See the flyer</a>'
         : '';
@@ -1398,7 +1402,7 @@
           '<div class="ehero__body"><p class="ehero__sub">' + esc(String(e.subtitle || '').toLowerCase().indexOf(String(x.cat || '').toLowerCase().replace(/'s$/, '')) === 0 ? e.subtitle : (e.subtitle || season)).split(' · ')[0] + '</p>' +
           '<h1 class="ehero__title">' + esc(e.title) + '</h1>' +
           (x.club ? '<p class="ehero__club">' + icon('pin', 'i--sm') + esc(x.club) + '</p>' : '') + '</div></header>' +
-        '<div class="detail-date detail-date--plain"><div><b>' + esc(e.date || 'Date to be announced') + '</b>' + statusLine(st) + '</div></div>';
+        '<div class="detail-date detail-date--plain"><div><b>' + (e.status === 'postponed' ? 'New date to be announced' : esc(e.date || 'Date to be announced')) + '</b>' + (e.status === 'postponed' && e.date ? '<span class="muted" style="display:block">Was ' + esc(e.date) + '</span>' : '') + statusLine(st) + '</div></div>';
       if (e.alert) html += '<div class="note" role="note"><b>' + esc(e.alertLabel || 'Update') + '</b>' + esc(e.alert) + '</div>';
 
       html += '<div class="esheet"><div class="esheet__grab" aria-hidden="true"></div><div class="segmented segmented--cat ' + catClass(x) + '" role="tablist" aria-label="Event sections">' + tabs.map(function (t) {
@@ -1498,7 +1502,7 @@
     // Date, venue, format, deadline, fee and schedule first
     if (st && st.kind === 'closed') h += '<div class="note" role="note"><b>Entries are closed</b>' + ((e.contact && (e.contact.email || e.contact.phone)) ? 'Contact the organizer to ask about a late entry.' : 'Check the flyer for details.') + '</div>';
     // Ticket: event day(s) on the left, entry deadline (or end day) on the right, small round badges below
-    if (x.dates) {
+    if (x.dates && e.status !== 'postponed') {
       var multi = x.dates.start !== x.dates.end, st0 = startTime(e.time);
       var right = multi ? ['Ends', fmt(x.dates.end, { weekday: 'short', month: 'short', day: 'numeric' }), ''] : (x.deadline && phase !== 'past' ? ['Entries close', fmt(x.deadline, { weekday: 'short', month: 'short', day: 'numeric' }), ''] : null);
       var fb = formatBadges(x), badges = fb.badges;
@@ -1582,6 +1586,7 @@
     var e = x.e, c = e.contact || {}, method = entryMethod(e), today = todayISO(), st = entryStatus(x, today);
     var deadline = x.deadline ? fmt(x.deadline, { weekday: 'long', month: 'long', day: 'numeric' }) : (e.deadline ? String(e.deadline).replace(/^(entry\s+)?deadline:?\s*/i, '') : '');
     var h = '';
+    if (st && st.kind === 'postponed') return '<div class="note" role="note"><b>Postponed</b>' + esc(e.alert || 'A new date will be announced.') + '</div>' + docsBlock(e, flyer, cops);
     if (st && st.kind === 'cancelled') return '<div class="note" role="note"><b>This event is cancelled</b>' + esc(e.alert || '') + '</div>' + docsBlock(e, flyer, cops);
     if (st && st.kind === 'closed') h += '<div class="note" role="note"><b>Entries are closed</b>' + (c.email || c.phone ? 'Contact the organizer below to ask about a late entry.' : 'Check the flyer for details.') + '</div>';
     // Summary strip
@@ -2231,7 +2236,7 @@
       getJSON('/news-data.json').catch(function () { return {}; }), loadResults().catch(function () { return []; })]).then(function (all) {
       var events = all[0], nClubs = (all[1].clubs || []).length, results = all[3];
       var news = (all[2].items || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-      var played = events.filter(function (x) { return eventPhase(x, today) === 'past' && x.e.status !== 'cancelled'; }).length;
+      var played = events.filter(function (x) { return eventPhase(x, today) === 'past' && x.e.status !== 'cancelled' && x.e.status !== 'postponed'; }).length;
       var upcoming = events.filter(function (x) { var ph = eventPhase(x, today); return ph === 'upcoming' || ph === 'now'; }).length;
       currentNotices = events.filter(function (x) { var p = eventPhase(x, today); return x.e.alert && (p === 'upcoming' || p === 'now'); });
       var n = currentNotices.length;
@@ -2925,7 +2930,7 @@
       var x = all[0].filter(function (y) { return y.id === id; })[0], clubs = (all[1].clubs || []).map(function (c) { return c.name; }).sort();
       if (!x) { view.innerHTML = backLink('/app/events', 'Events') + state('empty', 'We couldn’t find that event', ''); return; }
       var e = x.e, c = e.contact || {}, st = entryStatus(x, todayISO()), phase = eventPhase(x, todayISO());
-      if (phase === 'past' || (st && (st.kind === 'closed' || st.kind === 'cancelled'))) {
+      if (phase === 'past' || (st && (st.kind === 'closed' || st.kind === 'cancelled' || st.kind === 'postponed'))) {
         view.innerHTML = backLink('/app/events/' + encodeURIComponent(id), 'Event') + state('empty', 'Entries are not open', st ? st.label : '', '<a class="btn" href="/app/events/' + encodeURIComponent(id) + '">Back to the event</a>'); return;
       }
       var roles = hubRoles(e).slice(), canAdd = !HUB_ROLES[String(e.format || '').toLowerCase()] && !(e.paypal && e.paypal.playerLabels && e.paypal.playerLabels.length);
