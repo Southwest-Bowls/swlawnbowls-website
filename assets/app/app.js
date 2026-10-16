@@ -945,12 +945,7 @@
       '<button class="circbtn" type="button" data-notices aria-haspopup="dialog" aria-label="Tournament updates' + (unread ? ', ' + unread + ' new' : '') + '">' + icon('bell') + (unread ? '<span class="circbtn__dot" aria-hidden="true"></span>' : '') + '</button>' +
       '<a class="circbtn" href="/app/more/settings" aria-label="App settings">' + icon('gear') + '</a></header>' +
       '<a class="hsearch" id="hq" href="/app/search" aria-label="Search tournaments, clubs or players">' + icon('search') + '<span>Search tournaments, clubs, players</span></a>' +
-      '<div class="hchips" role="group" aria-label="Quick filters">' +
-        '<a class="hchip" href="/app/search?s=open">' + icon('hourglass', 'i--sm') + 'Entries open</a><a class="hchip" href="/app/search?s=weekend">' + icon('cal', 'i--sm') + 'This weekend</a>' +
-        '<a class="hchip" href="/app/events?cat=' + encodeURIComponent("Women's") + '"><i class="chip__dot cat--w" aria-hidden="true"></i>Women’s</a><a class="hchip" href="/app/events?cat=' + encodeURIComponent("Men's") + '"><i class="chip__dot cat--m" aria-hidden="true"></i>Men’s</a>' +
-        '<a class="hchip" href="/app/events?cat=Mixed"><i class="chip__dot cat--x" aria-hidden="true"></i>Mixed</a></div>' +
-      (function () { var fol = followed(), fe = live.filter(function (x) { return (x.clubIds || []).some(function (id) { return fol.indexOf(id) >= 0; }); })[0];
-        return fe ? '<a class="hbar__club" href="/app/events/' + encodeURIComponent(fe.id) + '">' + icon('star', 'i--sm') + '<span>' + esc(fe.clubLabel) + ' hosts ' + esc(fe.short) + ' · ' + esc(dateRangeLabel(fe.dates, true)) + '</span></a>' : ''; })();
+      '';
 
     // Urgent: a change to a saved event
     var myAlerts = mineNext.filter(isCritical);
@@ -984,12 +979,6 @@
       if (underway.length) {
         var ue = underway[0], ls = ue.e.liveScoring || {}, hasDraw = (ls.sheets && ls.sheets.length) || ls.pubUrl;
         pc = '<a class="pulse pulse--live" href="/app/events/' + encodeURIComponent(ue.id) + (hasDraw ? '?tab=draw' : '') + '"><span class="pulse__dot" aria-hidden="true"></span><span class="pulse__t"><small>Happening now</small><b>' + esc(ue.short) + '</b><span>' + esc(ue.clubLabel) + (underway.length > 1 ? ' · +' + (underway.length - 1) + ' more' : '') + '</span></span>' + (hasDraw ? '<span class="pulse__go">Draw' + icon('chev', 'i--sm') + '</span>' : '') + '</a>';
-      } else if (future.length) {
-        var dd = daysBetween(today, nextStart);
-        pc = '<div class="pulse"><b class="pulse__n rollnum" data-roll="' + dd + '" data-roll-key="home-pulse-' + today + '-' + dd + '">' + dd + '</b><div class="pulse__t"><small>' + (dd === 1 ? 'day to go' : 'days to go') + ' · ' + esc(fmt(nextStart, { weekday: 'short', month: 'short', day: 'numeric' })) + '</small>' +
-          '<ul class="pulse__list">' + sameDay.slice(0, 3).map(function (ne) {
-            return '<li><a class="pulse__e ' + catClass(ne) + '" href="/app/events/' + encodeURIComponent(ne.id) + '"><i class="pulse__dot2" aria-hidden="true"></i><span><b>' + esc(ne.short) + '</b><small>' + esc([ne.clubLabel, ((/\d{1,2}(?::\d{2})?\s*[AP]M/i.exec(ne.e.time || '') || [''])[0])].filter(Boolean).join(' · ')) + '</small></span></a></li>'; }).join('') +
-          '</ul>' + (sameDay.length > 3 ? '<span class="pulse__more">+' + (sameDay.length - 3) + ' more that day</span>' : '') + '</div></div>';
       }
       var urg = live.map(function (x) { return { x: x, st: entryStatus(x, today) }; }).filter(function (o) { return o.st && o.st.kind === 'open' && o.st.left <= 3; }).sort(function (a, b) { return a.st.left - b.st.left; })[0];
       if (urg) pc += '<a class="pulse__nudge' + (urg.st.urgent ? ' pulse__nudge--hot' : '') + '" href="/app/events/' + encodeURIComponent(urg.x.id) + '">' + icon('hourglass', 'i--sm') + '<span><b>' + (urg.st.left === 0 ? 'Entries close today' : urg.st.left === 1 ? 'Entries close tomorrow' : 'Entries close in ' + urg.st.left + ' days') + '</b> · ' + esc(urg.x.short) + '</span></a>';
@@ -997,7 +986,9 @@
     })();
     if (heroEvs.length && showT('tournaments')) {
       var headLabel = underway.length && !sameDay.length ? 'On now' : underway.length ? 'On now and next' : (heroEvs.length > 1 ? 'Next up · ' + fmt(nextStart, { weekday: 'long', month: 'long', day: 'numeric' }) : 'Next event');
-      html += '<section aria-labelledby="h-next"><h2 class="hero-label" id="h-next" tabindex="-1">' + esc(headLabel) + '</h2><ul class="stage">' +
+      var ddays = (!underway.length && nextStart) ? daysBetween(today, nextStart) : -1;
+      var cdPill = ddays >= 0 ? '<span class="cdpill"><b class="rollnum" data-roll="' + ddays + '" data-roll-key="home-cd-' + today + '-' + ddays + '">' + ddays + '</b> ' + (ddays === 1 ? 'day to go' : 'days to go') + '</span>' : '';
+      html += '<section aria-labelledby="h-next"><div class="hero-row"><h2 class="hero-label" id="h-next" tabindex="-1">' + esc(headLabel) + '</h2>' + cdPill + '</div><ul class="stage">' +
         heroEvs.map(function (heroEv) { return '<li>' + photoCard(heroEv, d.clubs, today, { big: true }) + '</li>'; }).join('') + '</ul></section>';
     }
 
@@ -3354,8 +3345,8 @@
           if (k && k.indexOf('swd:memberPhoto:') === 0) localStorage.removeItem(k);
         }
       } catch (e) {}
-      // A fresh guest: the typed profile (name, bio, honors, photo) goes too. Saved events, followed clubs and display settings stay.
-      try { ['profile', 'memberPhoto:self'].forEach(function (k) { localStorage.removeItem('swd:' + k); }); } catch (e) {}
+      // A fresh guest: the typed profile (name, bio, honors, photo), interests and profile design go too. Saved events, followed clubs and display settings stay.
+      try { ['profile', 'memberPhoto:self', 'interests', 'look', 'memberCache', 'setupDone'].forEach(function (k) { localStorage.removeItem('swd:' + k); }); } catch (e) {}
       store('memberPreview', false);
       toast('Signed out'); render();   // redraw the whole page as signed out
     }
