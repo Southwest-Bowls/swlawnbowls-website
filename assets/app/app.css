@@ -2423,3 +2423,36 @@ h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp
 .hero-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; } .hero-row .hero-label { margin: 0; }
 .cdpill { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #14101a; color: #fff; font-size: .8rem; font-weight: 600; }
 .cdpill b { font-family: var(--font-display); font-size: 1rem; font-weight: 700; } .cdpill .roll, .cdpill .roll span { font-size: inherit; }
+
+/* ===== Photos much smaller everywhere; category pills, place numbers and champion pills are real glass ===== */
+.pcard { min-height: 150px; border-radius: 22px; box-shadow: 0 2px 4px rgba(35,17,32,.1), 0 8px 18px rgba(35,17,32,.16); }
+.pcard--big { min-height: 164px; }
+.pcard__body { padding: 42px 14px 12px; gap: 2px; }
+.pcard__date { font-size: .68rem; } .pcard__title { font-size: 1.1rem; } .pcard:not(.pcard--big) .pcard__title, .hscroll > li:has(> .pcard) .pcard__title { font-size: 1rem; }
+.pcard__meta { font-size: .8rem; } .pcard__status { margin-top: 6px; padding: 4px 10px; font-size: .75rem; }
+.pcard__cat { top: 10px; left: 10px; padding: 4px 10px; font-size: .72rem; }
+.stage > li { width: min(84%, 320px); } .stage { padding-bottom: 20px; margin-bottom: -6px; }
+.hscroll > li:has(> .pcard) { width: min(62%, 230px); } .vcards .pcard { min-height: 150px; } .vcards { gap: 10px; }
+.ehero { min-height: 160px; border-radius: 22px; } .ehero__cat { top: 10px; left: 10px; padding: 4px 10px; }
+.kcard__photo, .kcard--champ .kcard__photo, .kcard--pod .kcard__photo { aspect-ratio: 16 / 10; border-radius: 22px; }
+.clcard__ph, .clcard__ph--1, .clcard__ph--2 { aspect-ratio: 4 / 3; }
+.dframe__ph { aspect-ratio: 16 / 9; } .cphoto, .cphoto--short { height: 160px; min-height: 0; max-height: 200px; }
+.fcard { aspect-ratio: 16 / 10; } .ccover { min-height: 130px; } .sbrand__photo { height: 150px; } .auth__photo { height: 30dvh; max-height: 240px; }
+.story__img, .club__img, .chero__img, .chero__img--wide { aspect-ratio: 16 / 9; } .gallery img { aspect-ratio: 16 / 10; }
+.tcard__av { width: 44px; height: 44px; }
+/* real glass: tinted by the category, bright edge, soft shadow */
+.pcard__cat, .ehero__cat, .kcard__chip--cat, .kcard__chip, .ccover__chip {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--cat-solid, #ffffff) 60%, rgba(255,255,255,.12)), color-mix(in srgb, var(--cat-solid, #ffffff) 22%, rgba(255,255,255,.05))) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(190%); backdrop-filter: blur(16px) saturate(190%);
+  border: 1px solid rgba(255,255,255,.6); color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.45);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 4px 14px rgba(0,0,0,.2);
+}
+.kcard__place { background: linear-gradient(145deg, color-mix(in srgb, var(--medal, #fff) 62%, rgba(255,255,255,.12)), color-mix(in srgb, var(--medal, #fff) 24%, rgba(255,255,255,.05))) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(190%); backdrop-filter: blur(16px) saturate(190%); border: 1px solid rgba(255,255,255,.6) !important; color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.45);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 4px 14px rgba(0,0,0,.25) !important; width: 52px; height: 52px; top: 10px; left: 10px; }
+.kcard__place b { font-size: 1.5rem; color: #fff; } .kcard__place small { color: #fff; }
+.kcard__place.plc--1 { --medal: #f5c93a; } .kcard__place.plc--2 { --medal: #d5d9e0; } .kcard__place.plc--3 { --medal: #e0a56b; } .kcard__place.plc--n { --medal: #8a8494; }
+.pcard__cat, .ehero__cat, .kcard__chip--cat, .kcard__chip, .ccover__chip {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--cat-solid, #8a8494) 52%, rgba(20,16,26,.5)), color-mix(in srgb, var(--cat-solid, #8a8494) 28%, rgba(20,16,26,.32))) !important;
+}
+.kcard__place { background: linear-gradient(145deg, color-mix(in srgb, var(--medal, #8a8494) 55%, rgba(20,16,26,.45)), color-mix(in srgb, var(--medal, #8a8494) 30%, rgba(20,16,26,.3))) !important; }
