@@ -2456,3 +2456,22 @@ h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp
   background: linear-gradient(145deg, color-mix(in srgb, var(--cat-solid, #8a8494) 52%, rgba(20,16,26,.5)), color-mix(in srgb, var(--cat-solid, #8a8494) 28%, rgba(20,16,26,.32))) !important;
 }
 .kcard__place { background: linear-gradient(145deg, color-mix(in srgb, var(--medal, #8a8494) 55%, rgba(20,16,26,.45)), color-mix(in srgb, var(--medal, #8a8494) 30%, rgba(20,16,26,.3))) !important; }
+
+/* ===== Real glass: neutral frosted pills with a colored dot; text on a frosted panel so photos never fight the words ===== */
+.pcard::before { background: linear-gradient(180deg, rgba(18,8,16,0) 15%, rgba(18,8,16,.3) 50%, rgba(18,8,16,.7) 100%); }
+.pcard__body { width: auto; margin: 0 8px 8px; padding: 10px 12px; gap: 2px; border-radius: 16px; background: rgba(20,16,26,.46); -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%); border: 1px solid rgba(255,255,255,.16); }
+.pcard__title, .pcard__date, .pcard__meta { text-shadow: none; }
+.pcard__cat, .ehero__cat, .kcard__chip--cat, .kcard__chip, .ccover__chip, .pcard__status {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(20,16,26,.38) !important; -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%);
+  border: 1px solid rgba(255,255,255,.38) !important; color: #fff !important; text-shadow: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 4px 14px rgba(0,0,0,.18);
+}
+.pcard__cat::before, .ehero__cat::before, .kcard__chip--cat::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--cat-solid, #fff); box-shadow: 0 0 0 2px rgba(255,255,255,.75); }
+.kcard__place { background: rgba(20,16,26,.38) !important; border: 2px solid var(--medal, rgba(255,255,255,.5)) !important; -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 4px 14px rgba(0,0,0,.25) !important; }
+.kcard__place.plc--1 { --medal: #f5c93a; } .kcard__place.plc--2 { --medal: #d5d9e0; } .kcard__place.plc--3 { --medal: #e0a56b; }
+.ehero::before { background: linear-gradient(180deg, rgba(18,8,16,.05) 20%, rgba(18,8,16,.45) 100%) !important; }
+.ehero__body { margin: 0 10px 10px; padding: 10px 14px; border-radius: 18px; background: rgba(20,16,26,.46); -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%); border: 1px solid rgba(255,255,255,.16); width: auto; }
+.ehero__title, .ehero__sub, .ehero__body p, .ehero__body span { text-shadow: none; }
+.ehero { min-height: 215px; }
+.ehero__body { padding: 8px 12px; margin: 0 8px 8px; } .ehero__title { font-size: 1.3rem; } .ehero__sub { font-size: .7rem; margin-bottom: 2px; padding-right: 0; } .ehero__club { margin-top: 4px; font-size: .85rem; }
