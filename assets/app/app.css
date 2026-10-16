@@ -2527,3 +2527,31 @@ h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp
 @media (min-width: 768px) and (orientation: landscape) { .pcard { min-height: 160px; } }
 @media (min-width: 768px) { .dframe__ph { max-height: 380px; } }
 @media (min-width: 900px) { .view:has(> .dframe) .dframe__ph { max-height: 460px; } }
+
+/* ===== iPad review fixes ===== */
+@media (min-width: 768px) {
+  /* partner logos stay inside their slots */
+  .lcard__logo { overflow: hidden; } .lcard__logo img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; }
+  /* room for the category chip above the text panel on photo cards */
+  .pcard { padding-top: 44px; box-sizing: border-box; }
+  /* calendar day strip: an even grid, not ragged rows */
+  .wstrip { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); justify-content: stretch; overflow: visible; margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; flex-wrap: nowrap; }
+  .wstrip .wday { width: auto; }
+  .list--cards { align-items: stretch; }
+  /* club photo fills its frame */
+  .dframe__ph { width: 100%; }
+  .cdeck__track { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; scroll-padding-left: 0; -webkit-mask-image: linear-gradient(90deg, #000 94%, transparent); mask-image: linear-gradient(90deg, #000 94%, transparent); }
+  .dtext { margin-bottom: 4px; }
+  html[data-text="xxlarge"] .hub__stats { grid-template-columns: repeat(3, 1fr); }
+  .setup__s { width: 100%; box-sizing: border-box; }
+  .nform { padding-bottom: 8px; }
+  .legal__s { max-width: 68ch; }
+  .welcome--auth .auth { margin: 0 auto; max-width: 520px; }
+  .welcome--wiz .wiz__top { max-width: 520px; margin-left: auto; margin-right: auto; }
+  .welcome--scene .wiz__foot, .welcome--wiz .wiz__foot { background: none; }
+  .mk { zoom: 1.4; } .fact { zoom: 1.3; }
+  .clcard__body span { flex-wrap: wrap; row-gap: 0; }
+}
+@media (min-width: 768px) and (max-width: 899px) { .dframe__ph { aspect-ratio: auto; height: min(380px, 56vw); } }
+@media (min-width: 900px) { .view:has(> .dframe) .list--cards { grid-template-columns: 1fr; } }
+@media (min-width: 1100px) { .hscroll .pcard { min-height: 190px; } html[data-text="xxlarge"] .clgrid { column-count: 3; } }

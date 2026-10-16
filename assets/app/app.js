@@ -180,7 +180,11 @@
   function closeDialog() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
   var dlgHold = false;   // a long-press opened the sheet and the finger is still down (its release must not count as a backdrop tap)
   document.getElementById('dlg-close').addEventListener('click', closeDialog);
-  dlg.addEventListener('click', function (ev) { if (ev.target === dlg && !dlgHold) closeDialog(); });
+  dlg.addEventListener('click', function (ev) {
+    if (ev.target !== dlg || dlgHold) return;
+    var r = dlg.getBoundingClientRect();
+    if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closeDialog();   // padding inside the sheet is not the backdrop
+  });
   document.addEventListener('click', function (ev) {
     if (ev.target.closest('[data-theme-open]')) openDialog('Appearance', '<p>Light, dark, or match your phone’s setting.</p>' + themeChoices());
   });
@@ -1980,9 +1984,10 @@
       if (dk.dataset.wired) return; dk.dataset.wired = '1';
       var tr = dk.querySelector('.cdeck__track'), cn = dk.querySelector('.cdeck__count'), n = tr.children.length;
       function w() { var sl = tr.querySelector('.cdeck__slide'); return sl ? sl.getBoundingClientRect().width + 14 : 1; }
-      function cur() { return Math.max(0, Math.min(n - 1, Math.round(tr.scrollLeft / w()))); }
+      function cur() { if (tr.scrollLeft + tr.clientWidth >= tr.scrollWidth - 2) return n - 1; return Math.max(0, Math.min(n - 1, Math.round(tr.scrollLeft / w()))); }
       function step(d) { tr.scrollTo({ left: (cur() + d) * w(), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
       tr.addEventListener('scroll', function () { cn.textContent = (cur() + 1) + ' of ' + n; }, { passive: true });
+      window.addEventListener('resize', function () { if (cn && cn.isConnected) cn.textContent = (cur() + 1) + ' of ' + n; });
       tr.addEventListener('keydown', function (ev) { if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') { ev.preventDefault(); step(ev.key === 'ArrowRight' ? 1 : -1); } });
       dk.querySelectorAll('[data-deck]').forEach(function (b) { b.addEventListener('click', function () { step(+b.getAttribute('data-deck')); }); });
     });
