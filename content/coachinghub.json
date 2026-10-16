@@ -5,18 +5,10 @@
   "sourceUrl": "https://www.swlawnbowls.org/coachinghub",
   "sections": [
     {
-      "type": "buttons",
-      "items": [
-        { "label": "View HOW! Playlist", "url": "https://www.youtube.com/playlist?list=PLHSDPOGEH8batQ10BOOCBnrK-msAl-FUO" },
-        { "label": "Contact Scott Roberts", "url": "mailto:scottroberts1269@gmail.com?subject=SWD Coaching Inquiry" }
-      ]
-    },
-    {
       "type": "prose",
-      "heading": "The HOW! Series",
+      "heading": "The HOW! series",
       "body": [
-        "The HOW! series is a practical video series designed to help players think better on the green. It goes beyond simple delivery mechanics and focuses on reading the head, understanding options, evaluating percentages, and making stronger tactical decisions.",
-        "Watch the complete series on Southwest Lawn Bowls TV and use it as a repeatable resource before league play, tournaments, or practice."
+        "A practical video series on thinking better on the green: reading the head, weighing your options, and making stronger tactical decisions. Use it before league play, tournaments or practice."
       ]
     },
     {
@@ -27,125 +19,49 @@
     },
     {
       "type": "list",
-      "heading": "What players can learn",
-      "ordered": false,
+      "heading": "What you’ll learn",
       "items": [
-        "Shows how to read the head before choosing a shot",
-        "Explains when to draw, trail, run, or promote",
-        "Helps players evaluate risk versus reward",
-        "Builds better tactical communication within teams",
-        "Improves decision-making under pressure",
-        "Connects strategy with practical execution on the green"
-      ]
-    },
-    {
-      "type": "prose",
-      "body": [
-        "This is the kind of content that helps newer players improve faster and gives experienced bowlers a stronger tactical framework."
-      ]
-    },
-    {
-      "type": "prose",
-      "heading": "Coaching Resources",
-      "body": [
-        "Use these links to keep learning, explore more Southwest content, and find trusted bowls resources beyond the HOW! series."
-      ]
-    },
-    {
-      "type": "cards",
-      "heading": "Start here",
-      "items": [
-        {
-          "title": "HOW! Playlist",
-          "body": "Start with the full SWD HOW! instructional series.",
-          "link": "https://www.youtube.com/playlist?list=PLHSDPOGEH8batQ10BOOCBnrK-msAl-FUO"
-        },
-        {
-          "title": "Southwest Lawn Bowls TV",
-          "body": "Watch more coaching, match, and Southwest Lawn Bowls video content.",
-          "link": "https://www.youtube.com/@SouthwestLawnBowls"
-        },
-        {
-          "title": "Contact Scott Roberts",
-          "body": "Reach out with coaching questions, player development needs, or ideas.",
-          "link": "mailto:scottroberts1269@gmail.com?subject=SWD Coaching Inquiry"
-        }
-      ]
-    },
-    {
-      "type": "cards",
-      "heading": "SWD video and learning",
-      "items": [
-        {
-          "title": "HOW! Series",
-          "body": "Use the playlist as a practical study tool before events and practice sessions.",
-          "link": "https://www.youtube.com/playlist?list=PLHSDPOGEH8batQ10BOOCBnrK-msAl-FUO"
-        },
-        {
-          "title": "SWD YouTube Channel",
-          "body": "Browse the full Southwest Lawn Bowls channel for more video material.",
-          "link": "https://www.youtube.com/@SouthwestLawnBowls"
-        },
-        {
-          "title": "Upcoming Coaching",
-          "body": "Check the coaching calendar below for coaching sessions and development opportunities."
-        }
-      ]
-    },
-    {
-      "type": "cards",
-      "heading": "Additional resources",
-      "items": [
-        {
-          "title": "Bowls USA",
-          "body": "National bowls information, official programs, and development pathways.",
-          "link": "https://www.bowlsusa.us/"
-        },
-        {
-          "title": "Coach Bowls",
-          "body": "Useful coaching and technical content for players and developing coaches.",
-          "link": "https://coachbowls.com/"
-        },
-        {
-          "title": "World Bowls",
-          "body": "International bowls context, broader sport information, and governing body resources.",
-          "link": "https://www.worldbowls.com/"
-        }
-      ]
-    },
-    {
-      "type": "prose",
-      "heading": "Coaching Calendar",
-      "body": [
-        "Keep an eye on upcoming coaching sessions, instructional events, and opportunities for players to get involved."
+        "How to read the head before choosing a shot",
+        "When to draw, trail, run or promote",
+        "How to weigh risk against reward",
+        "How to communicate and decide under pressure"
       ]
     },
     {
       "type": "embed",
       "url": "https://calendar.google.com/calendar/u/1/embed?src=NDgyOTg1ZTNhYmNiODY3ZDFiZmIxZWI5ZTM3ZTNkMTcyOTE3ZTIzNjI2ZDFmNjU1YWRlYjk0MzA5MGZhYjVlNkBncm91cC5jYWxlbmRhci5nb29nbGUuY29t",
-      "height": 600
+      "height": 600,
+      "heading": "Coaching calendar"
     },
     {
-      "type": "list",
-      "heading": "How to use the Hub — a simple path for players",
-      "ordered": false,
+      "type": "cards",
+      "heading": "More to explore",
       "items": [
-        "Start with the HOW! series to build tactical understanding",
-        "Explore Southwest Lawn Bowls TV for more video content",
-        "Use trusted external resources for broader bowls learning",
-        "Check the calendar for upcoming coaching opportunities",
-        "Contact Scott Roberts with coaching-related questions"
-      ]
-    },
-    {
-      "type": "prose",
-      "heading": "Connect with Southwest Coaching",
-      "body": [
-        "For coaching inquiries, player development questions, and support related to the Southwest coaching program, please reach out directly to Scott Roberts."
+        {
+          "title": "Southwest Lawn Bowls TV",
+          "body": "More coaching, match and Southwest video content.",
+          "link": "https://www.youtube.com/@SouthwestLawnBowls"
+        },
+        {
+          "title": "Bowls USA",
+          "body": "National programs and development pathways.",
+          "link": "https://www.bowlsusa.us/"
+        },
+        {
+          "title": "Coach Bowls",
+          "body": "Coaching and technical content for players and coaches.",
+          "link": "https://coachbowls.com/"
+        },
+        {
+          "title": "World Bowls",
+          "body": "The sport’s world governing body.",
+          "link": "https://www.worldbowls.com/"
+        }
       ]
     },
     {
       "type": "contact",
+      "heading": "Questions about coaching?",
       "items": [
         {
           "label": "Coaching Contact",
