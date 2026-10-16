@@ -2531,7 +2531,7 @@ h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp
 /* ===== iPad review fixes ===== */
 @media (min-width: 768px) {
   /* partner logos stay inside their slots */
-  .lcard__logo { overflow: hidden; } .lcard__logo img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; }
+
   /* room for the category chip above the text panel on photo cards */
   .pcard { padding-top: 44px; box-sizing: border-box; }
   /* calendar day strip: an even grid, not ragged rows */
@@ -2564,3 +2564,10 @@ h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp
 .clcard__ph, .clcard__ph--1, .clcard__ph--2 { aspect-ratio: 4 / 3; }
 @media (min-width: 768px) { .clgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); column-count: auto; } }
 @media (min-width: 1100px) { .clgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); column-count: auto; } html[data-text="xxlarge"] .clgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* Partner logos: fixed pixel limits (percent heights are not reliable across Safari and Chrome) */
+.lcard__logo { overflow: hidden; }
+.lcard__logo img { width: auto; height: auto; max-width: 100%; max-height: 56px; object-fit: contain; }
+.lcard--big .lcard__logo img { max-height: 72px; }
+.lcard__logo--dark img { max-height: 46px; max-width: 46px; }
+.lcard--big .lcard__logo--dark img { max-height: 62px; max-width: 62px; }
