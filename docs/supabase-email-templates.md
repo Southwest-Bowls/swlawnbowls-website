@@ -38,7 +38,7 @@ The 6-digit code in the email is what the new sign-in screen asks for, and it wo
           <p style="margin:0;font-size:14px;line-height:1.5;color:#635861;">Southwest Bowls is the app of the Southwest Bowls Division of lawn bowls: tournaments, results, clubs and Southwest TV.</p>
         </td></tr>
         <tr><td style="padding:12px 28px 28px;">
-          <p style="margin:0;font-size:13px;line-height:1.5;color:#8a7f88;">Didn't ask for this? Ignore this email and nothing will happen. Nobody can sign in without the code. Questions: apps@giuliagallo.com</p>
+          <p style="margin:0;font-size:13px;line-height:1.5;color:#8a7f88;">Didn't ask for this? Ignore this email and nothing will happen. Nobody can sign in without the code. Questions: apps@swlawnbowls.org</p>
         </td></tr>
       </table>
     </td></tr>

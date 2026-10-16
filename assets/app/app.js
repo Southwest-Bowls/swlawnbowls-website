@@ -152,7 +152,7 @@
     }).join('') + '</div>';
   }
   function markChecked(attr, value) {
-    document.querySelectorAll('[' + attr + ']').forEach(function (b) {
+    document.querySelectorAll('[' + attr + ']:not(html)').forEach(function (b) {
       var on = b.getAttribute(attr) === value;
       b.setAttribute('aria-checked', on); b.setAttribute('tabindex', on ? 0 : -1);
     });
@@ -3688,7 +3688,7 @@
     // Appearance and text size
     var th = ev.target.closest('[data-theme-choice]');
     if (th) { store('theme', th.getAttribute('data-theme-choice')); applyTheme(); return; }
-    var mo = ev.target.closest('[data-motion]');
+    var mo = ev.target.closest('[data-motion]:not(html)');
     if (mo) { store('motion', mo.getAttribute('data-motion')); document.documentElement.setAttribute('data-motion', mo.getAttribute('data-motion')); markChecked('data-motion', mo.getAttribute('data-motion')); if (mo.getAttribute('data-motion') === 'on') { Object.keys(rolledKeys).forEach(function (k) { delete rolledKeys[k]; }); toast('Numbers will roll when a page opens'); } return; }
     var sz = ev.target.closest('[data-size]');
     if (sz) {
