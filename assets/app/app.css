@@ -2475,3 +2475,55 @@ h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp
 .ehero__title, .ehero__sub, .ehero__body p, .ehero__body span { text-shadow: none; }
 .ehero { min-height: 215px; }
 .ehero__body { padding: 8px 12px; margin: 0 8px 8px; } .ehero__title { font-size: 1.3rem; } .ehero__sub { font-size: .7rem; margin-bottom: 2px; padding-right: 0; } .ehero__club { margin-top: 4px; font-size: .85rem; }
+
+/* =====================================================================
+   iPad and other wide screens (768px and up): wider column, real grids,
+   two-column club page. The phone layout above is unchanged.
+   ===================================================================== */
+@media (min-width: 768px) {
+  :root { --gutter: 28px; }
+  html { font-size: 96%; }
+  .view, .netbar { max-width: 860px; }
+  .tabbar { max-width: 560px; }
+  /* Home */
+  .stage { display: grid; grid-template-columns: repeat(2, 1fr); overflow: visible; margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; scroll-snap-type: none; }
+  .stage > li { width: auto; }
+  .vcards { grid-template-columns: repeat(2, 1fr); }
+  .hscroll { display: grid; grid-template-columns: repeat(3, 1fr); overflow: visible; margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; gap: 14px; }
+  .hscroll > li, .hscroll > li:has(> .pcard) { width: auto; }
+  .shortcuts { max-width: 520px; margin-left: auto; margin-right: auto; }
+  /* Lists of events and cards */
+  .list--cards { grid-template-columns: repeat(2, 1fr); align-items: start; }
+  .clgrid { column-count: 3; }
+  .cstrip { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; flex-wrap: wrap; overflow: visible; }
+  .ccovers { grid-template-columns: repeat(2, 1fr); }
+  /* Search, results, settings keep a comfortable reading width */
+  .tl { max-width: 560px; }
+  .wstrip { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; justify-content: center; flex-wrap: wrap; }
+  .pulsewrap, .fy { max-width: 100%; }
+  .docview__frame { height: 78dvh; }
+  /* Sign-in and onboarding stay a centered card */
+  .auth { max-width: 520px; margin: 0 auto; } .signin { max-width: 520px; margin-left: auto; margin-right: auto; }
+  .welcome--scene .sc__top, .welcome--scene .sc__text, .welcome--scene .wiz__foot { max-width: 520px; margin-left: auto; margin-right: auto; }
+  .welcome--scene .sc__top { width: 100%; }
+  .mk { width: 360px; } .fact { width: 380px; } .sc__h { font-size: 1.9rem; } .sc__s { font-size: 1.05rem; }
+}
+@media (min-width: 900px) {
+  /* Club page: photo on the left, details on the right */
+  .view:has(> .dframe) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; align-items: start; max-width: 980px; }
+  .view:has(> .dframe) > .dhead { grid-column: 1 / -1; }
+  .view:has(> .dframe) > .dframe { grid-column: 1; grid-row: 2 / span 14; position: sticky; top: 16px; }
+  .view:has(> .dframe) > :not(.dhead):not(.dframe):not(.actionbar) { grid-column: 2; }
+  .view:has(> .dframe) > .actionbar { grid-column: 1 / -1; }
+  .view:has(> .dframe) .dframe__ph { aspect-ratio: 4 / 3; }
+}
+@media (min-width: 1100px) {
+  .view, .netbar { max-width: 980px; }
+  .vcards { grid-template-columns: repeat(3, 1fr); }
+  .hscroll { grid-template-columns: repeat(4, 1fr); }
+  .clgrid { column-count: 4; }
+  .list--cards { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 768px) and (orientation: landscape) { .pcard { min-height: 160px; } }
+@media (min-width: 768px) { .dframe__ph { max-height: 380px; } }
+@media (min-width: 900px) { .view:has(> .dframe) .dframe__ph { max-height: 460px; } }
