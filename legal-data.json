@@ -1,7 +1,7 @@
 {
   "privacy": {
     "title": "Privacy Policy",
-    "updated": "Draft, October 2026",
+    "updated": "Last updated October 16, 2026",
     "sections": [
       {
         "h": "Who we are",
@@ -47,6 +47,18 @@
         ]
       },
       {
+        "h": "Contact form",
+        "p": [
+          "If you use the contact form in the app, the name, email address and message you type are sent to the Southwest Division through a Google Form, and Google processes them as our service provider. We use them only to answer you."
+        ]
+      },
+      {
+        "h": "Videos, draws and entry lists",
+        "p": [
+          "Southwest TV videos are played from YouTube, and tournament draws and entry lists are shown from Google Sheets. When you open them, YouTube or Google receives your IP address and the usual details of a web request, as with any website. We do not send them your name or email."
+        ]
+      },
+      {
         "h": "No tracking, no ads",
         "p": [
           "We do not use advertising or analytics trackers, and we do not sell personal information."
@@ -55,7 +67,8 @@
       {
         "h": "Your choices",
         "p": [
-          "You can edit your profile in the app. You can delete your account and data in the app (More, then App settings, then Delete my account and data), or by emailing webmaster@swlawnbowls.org. We delete the account within 30 days. Deleted data may remain in backups for up to 7 days.",
+          "You can edit your profile in the app at any time.",
+          "To delete your account and data, email webmaster@swlawnbowls.org from the address you signed in with. We delete the account within 30 days, and deleted data may remain in backups for up to 7 days. In the app, More, then App settings, then Delete my account and data clears everything stored on your phone. For a signed-in account, it also asks us to delete the account, and if that does not complete the app tells you to email us.",
           "California residents may ask to know, correct or delete their personal information using the same contact."
         ]
       },
