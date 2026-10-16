@@ -15,7 +15,7 @@
 
    To force every phone to drop its saved copies, bump VERSION.
    ============================================================ */
-const VERSION = 'swd-v111';
+const VERSION = 'swd-v113';
 const NETWORK_TIMEOUT_MS = 4000;
 const PAGES = VERSION + '-pages';
 const MEDIA = VERSION + '-media';
@@ -68,6 +68,15 @@ async function trim(cacheName, max) {
   for (let i = 0; i < keys.length - max; i++) await cache.delete(keys[i]);
 }
 
+// Safari refuses to open a page the service worker serves if that response came through a
+// redirect ("Response served by service worker has redirections"). Rebuild it as a plain response.
+async function clean(response) {
+  if (!response || !response.redirected) return response;
+  const body = await response.blob();
+  const headers = new Headers(response.headers);
+  return new Response(body, { status: response.status, statusText: response.statusText, headers });
+}
+
 async function networkFirst(request) {
   const cache = await caches.open(PAGES);
   try {
@@ -80,8 +89,10 @@ async function networkFirst(request) {
     } finally {
       clearTimeout(timer);
     }
-    if (response.ok) cache.put(request, response.clone());
-    return response;
+    // A page visit that was redirected: hand the redirect back to the browser instead of serving it ourselves.
+    if (request.mode === 'navigate' && response.redirected && response.url) return Response.redirect(response.url, 302);
+    if (response.ok) cache.put(request, (await clean(response.clone())));
+    return clean(response);
   } catch (err) {
     const url = new URL(request.url);
     let saved = await cache.match(request, { ignoreVary: true });
@@ -89,7 +100,7 @@ async function networkFirst(request) {
     if (!saved && request.mode === 'navigate' && url.pathname.startsWith('/app')) {
       saved = await cache.match('/app', { ignoreSearch: true });
     }
-    if (saved) return markOffline(saved);
+    if (saved) return markOffline(await clean(saved));
     if (request.mode === 'navigate') return cache.match('/offline.html');
     throw err;
   }
@@ -107,13 +118,13 @@ async function markOffline(response) {
 async function cacheFirst(request) {
   const cache = await caches.open(MEDIA);
   const saved = await cache.match(request);
-  if (saved) return saved;
+  if (saved) return clean(saved);
   const response = await fetch(request);
   if (response.ok) {
-    cache.put(request, response.clone());
+    cache.put(request, (await clean(response.clone())));
     trim(MEDIA, MAX_MEDIA);
   }
-  return response;
+  return clean(response);
 }
 
 self.addEventListener('fetch', (event) => {

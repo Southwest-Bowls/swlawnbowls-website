@@ -2585,3 +2585,9 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 
 /* Keep faces in: crops anchor near the top of the photo (winners' photos can be tall portraits) */
 .kcard__photo, .pcard, .ehero, .ccover, .clcard__ph, .dframe__ph { background-position: center 18%; }
+
+.newcard { display: flex; align-items: center; gap: 14px; margin: var(--s4) 0; padding: 14px 16px; border-radius: 24px; text-decoration: none; color: var(--heading); background: linear-gradient(135deg, #e3f2ff, #e6f7ee); border: 1px solid rgba(255,255,255,.7); box-shadow: 0 1px 2px rgba(35,17,32,.06), 0 8px 20px rgba(35,17,32,.07); min-height: 44px; }
+.newcard__ic { flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: #14101a; } .newcard__ic .i { width: 24px; height: 24px; }
+.newcard__t { flex: 1; min-width: 0; display: flex; flex-direction: column; } .newcard__t b { font-family: var(--font-display); font-size: 1.05rem; color: #14101a; } .newcard__t small { color: #4a4455; font-size: var(--fs-sm); }
+.newcard__go { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.8); color: #14101a; }
+:root[data-theme="dark"] .newcard { background: linear-gradient(135deg, #243a52, #1f4033); } :root[data-theme="dark"] .newcard__t b, :root[data-theme="dark"] .newcard__t small { color: #fff; }

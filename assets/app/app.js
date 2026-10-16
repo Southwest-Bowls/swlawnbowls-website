@@ -1049,6 +1049,7 @@
         '<div id="home-up">' + upHtml(more, 'list', d, today) + '</div><a class="btn btn--ghost btn--wide hmore" href="/app/events">See all tournaments' + icon('chev', 'i--sm') + '</a></section>';
     }
 
+    if (!focusTopics) html += '<a class="newcard" href="/app/page/learnmore"><span class="newcard__ic" aria-hidden="true">' + icon('bowl') + '</span><span class="newcard__t"><b>New to bowls?</b><small>Learn to bowl: the game, equipment and finding a club</small></span><span class="newcard__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a>';
     if (!champFirst && showT('results')) html += '<div id="home-champ"></div>';
     html += '<div class="tagline"><span class="art-plate"><img src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls — A Sport for Life!" width="341" height="160" decoding="async" loading="lazy"></span></div>';
     html += '<div id="home-partners"></div>';
@@ -3954,7 +3955,7 @@
       { k: 'follow', h: 'Follow your clubs', s: 'Their events come first. Kept on your phone, no account needed.' },
       { k: 'calendar', h: 'Never miss a tournament day', s: 'A calendar of every event and a countdown to the next one.' }
     ];
-    var steps = SCENES.map(function (sc) { return { t: 'scene', sc: sc }; }).concat([{ t: 'fact' }, { t: 'wiz', n: 0 }, { t: 'wiz', n: 1 }, { t: 'wiz', n: 2 }, { t: 'custom' }, { t: 'auth' }]);
+    var steps = SCENES.map(function (sc) { return { t: 'scene', sc: sc }; }).concat([{ t: 'fact' }, { t: 'wiz', n: 0 }, { t: 'wiz', n: 1 }, { t: 'wiz', n: 2 }, { t: 'wiz', n: 3 }, { t: 'custom' }, { t: 'auth' }]);
     var i = 0, timer = null, facts = [], goingBack = false, lastNav = 0, reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     var el = document.createElement('div'); el.className = 'welcome'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Welcome');
     // Facts: two come from our own data (so they are always true), two are well-known
@@ -3970,7 +3971,7 @@
     function wizCollect(step) {
       if (step === 0) wizState.topics = readInterests(el).topics;
       if (step === 1) wizState.cats = readInterests(el).cats;
-      if (step === 2) { var nm = el.querySelector('#wz-name'); wizState.name = nm ? nm.value.trim() : ''; wizState.look = readLook(el) || wizState.look; }
+      if (step === 3) { var nm = el.querySelector('#wz-name'); wizState.name = nm ? nm.value.trim() : ''; wizState.look = readLook(el) || wizState.look; }
     }
     function bars() {
       return '<div class="sc__bars" aria-hidden="true">' + steps.map(function (_, k) { return '<i class="' + (k < i ? 'is-done' : k === i ? 'is-now' : '') + '"' + (k === i && !reduce ? ' style="--dur:5200ms"' : '') + '></i>'; }).join('') + '</div>';
@@ -4002,17 +4003,19 @@
     }
     function drawWiz(step) {
       el.className = 'welcome welcome--wiz'; el.removeAttribute('data-scene');
-      var top = '<div class="wiz__top"><button class="wiz__back" type="button" data-w-prev aria-label="Back">' + icon('back') + '</button><div class="wiz__bar" role="progressbar" aria-valuemin="0" aria-valuemax="3" aria-valuenow="' + (step + 1) + '" aria-label="Step ' + (step + 1) + ' of 3"><i style="width:' + Math.round((step + 1) / 3 * 100) + '%"></i></div><button class="wiz__skip" type="button" data-w-skip>Skip</button></div>';
+      var top = '<div class="wiz__top"><button class="wiz__back" type="button" data-w-prev aria-label="Back">' + icon('back') + '</button><div class="wiz__bar" role="progressbar" aria-valuemin="0" aria-valuemax="4" aria-valuenow="' + (step + 1) + '" aria-label="Step ' + (step + 1) + ' of 4"><i style="width:' + Math.round((step + 1) / 4 * 100) + '%"></i></div><button class="wiz__skip" type="button" data-w-skip>Skip</button></div>';
       var rows = function (list) { return '<div class="wrows">' + list.join('') + '</div>'; };
       var body;
       if (step === 0) body = '<h1 class="wiz__h" tabindex="-1">What are you here for?</h1><p class="wiz__s">Pick all that apply. We’ll put these first.</p>' + rows(TOPICS.map(function (t) {
         return '<button type="button" class="wrow" data-itopic="' + t[0] + '" aria-pressed="' + (wizState.topics.indexOf(t[0]) >= 0) + '"><span class="wrow__ic" aria-hidden="true">' + icon(t[1]) + '</span><span class="wrow__l">' + esc(t[2]) + '</span><span class="wrow__ck" aria-hidden="true">' + icon('check', 'i--sm') + '</span></button>'; }));
       else if (step === 1) body = '<h1 class="wiz__h" tabindex="-1">Which events?</h1><p class="wiz__s">Choose the ones you follow most.</p>' + rows(CAT_PICKS.map(function (c) {
         return '<button type="button" class="wrow" data-icat="' + esc(c) + '" aria-pressed="' + (wizState.cats.indexOf(c) >= 0) + '"><span class="wrow__ic" aria-hidden="true"><i class="chip__dot ' + CAT_DOT[c] + '"></i></span><span class="wrow__l">' + esc(c) + '</span><span class="wrow__ck" aria-hidden="true">' + icon('check', 'i--sm') + '</span></button>'; }));
+      else if (step === 2) body = '<h1 class="wiz__h" tabindex="-1">Text size</h1><p class="wiz__s">Pick what’s comfortable to read. The screen changes as you choose. You can change it later in Settings.</p>' + rows([['standard', 'Standard'], ['large', 'Large'], ['xlarge', 'Larger'], ['xxlarge', 'Extra large']].map(function (z) {
+        return '<button type="button" class="wrow" data-wsize="' + z[0] + '" aria-pressed="' + ((store('text') || 'standard') === z[0]) + '"><span class="wrow__l">' + z[1] + '</span><span class="wrow__ck" aria-hidden="true">' + icon('check', 'i--sm') + '</span></button>'; }));
       else body = '<h1 class="wiz__h" tabindex="-1">Design your profile</h1><p class="wiz__s">Make the app yours. You can change it later.</p>' + lookForm(wizState.look, wizState.name) +
         '<label class="mfield" style="margin-top:14px"><span>Your name (optional)</span><input id="wz-name" type="text" autocomplete="name" value="' + esc(wizState.name) + '" placeholder="Your name"></label>';
       el.innerHTML = top + '<div class="wiz__body">' + body + '</div><div class="wiz__foot"><button class="btn btn--wide btn--dark" type="button" data-w-int>Continue</button></div>';
-      if (step === 2) { var nm = el.querySelector('#wz-name'), card = el.querySelector('[data-lookcard] .lookcard__n'); nm.addEventListener('input', function () { card.textContent = nm.value.trim() || 'Your name'; }); }
+      if (step === 3) { var nm = el.querySelector('#wz-name'), card = el.querySelector('[data-lookcard] .lookcard__n'); nm.addEventListener('input', function () { card.textContent = nm.value.trim() || 'Your name'; }); }
     }
     function drawCustom() {
       el.className = 'welcome welcome--custom'; el.removeAttribute('data-scene');
@@ -4056,12 +4059,14 @@
       if (ev.target.closest('[data-w-skip]')) { done(); return; }
       var navNow = Date.now(), quick = navNow - lastNav < 350;
       if (ev.target.closest('[data-w-next], [data-w-next-tap]')) { if (quick) return; lastNav = navNow; haptic(); i++; draw(); focusIn(); return; }
+      var wsz = ev.target.closest('[data-wsize]');
+      if (wsz) { store('text', wsz.getAttribute('data-wsize')); applyTextSize(); el.querySelectorAll('[data-wsize]').forEach(function (b) { b.setAttribute('aria-pressed', b === wsz); }); haptic(); return; }
       if (ev.target.closest('[data-w-prev]')) { if (quick) return; lastNav = navNow; haptic(); var cs = steps[i]; if (cs && cs.t === 'wiz') wizCollect(cs.n); goingBack = true; i = Math.max(0, i - 1); while (i > 0 && (steps[i].t === 'custom' || steps[i].t === 'fact')) i--; draw(); focusIn(); return; }
       if (ev.target.closest('[data-auth="back"]')) { haptic(); goingBack = true; i = steps.length - 3; draw(); focusIn(); return; }
       if (ev.target.closest('[data-w-int]')) {
         if (quick) return; lastNav = navNow;
         haptic(); var cur = steps[i]; wizCollect(cur.n);
-        if (cur.n === 2) {   // finished: keep the choices on this phone, nothing is sent anywhere
+        if (cur.n === 3) {   // finished: keep the choices on this phone, nothing is sent anywhere
           if (wizState.topics.length || wizState.cats.length) store('interests', { topics: wizState.topics, cats: wizState.cats, at: Date.now() });
           store('look', wizState.look);
           if (wizState.name) store('profile', Object.assign({}, store('profile') || {}, { name: wizState.name }));
