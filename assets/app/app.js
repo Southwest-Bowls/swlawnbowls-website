@@ -932,7 +932,9 @@
   function upHtml(list, mode, d, today) {
     return mode === 'list'
       ? '<ul class="list list--cards">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>'
-      : '<ul class="vcards">' + list.map(function (x) { return '<li>' + photoCard(x, d.clubs, today, { big: true }) + '</li>'; }).join('') + '</ul>';
+      : '<ul class="vcards">' + list.map(function (x, i) {   // every other card keeps its photo; the rest are calm white cards with a colored edge
+          return i % 2 === 0 ? '<li>' + photoCard(x, d.clubs, today, { big: true }) + '</li>' : eventRow(x, today).replace('class="evcard"', 'class="evcard evcard--calm"');
+        }).join('') + '</ul>';
   }
   function drawHome(d) {
     var today = d.today;

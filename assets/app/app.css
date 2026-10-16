@@ -2576,3 +2576,9 @@ h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp
 
 /* "Always on" lets the rolling numbers move even when the phone asks for reduced motion */
 html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !important; }
+
+/* Calm cards: white surface, category shown as a colored edge, so photos are not everywhere */
+.evcard--calm .tcard { background: var(--surface); color: var(--heading); border-left: 6px solid var(--cat-solid, var(--line)); box-shadow: 0 1px 2px rgba(35,17,32,.06), 0 8px 20px rgba(35,17,32,.07); }
+.evcard--calm .tcard__wt small, .evcard--calm .tcard__time, .evcard--calm .tcard__st { color: var(--text-2); opacity: 1; }
+.evcard--calm > .iconbtn { background: var(--subtle); color: var(--heading); } .evcard--calm > .iconbtn .i { stroke: var(--heading); }
+.vcards .evcard { margin: 0; }
