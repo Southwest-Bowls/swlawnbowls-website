@@ -3345,8 +3345,13 @@
           if (k && k.indexOf('swd:memberPhoto:') === 0) localStorage.removeItem(k);
         }
       } catch (e) {}
-      // A fresh guest: the typed profile (name, bio, honors, photo), interests and profile design go too. Saved events, followed clubs and display settings stay.
-      try { ['profile', 'memberPhoto:self', 'interests', 'look', 'memberCache', 'setupDone'].forEach(function (k) { localStorage.removeItem('swd:' + k); }); } catch (e) {}
+      // A fresh guest: everything personal goes (profile, photo, interests, design, saved events, followed clubs, practice entries). Theme and text size stay.
+      // Clear everything personal on this phone. Only the look of the app (theme, text size) and "already welcomed" stay.
+      try {
+        var KEEP = ['swd:welcomed', 'swd:theme', 'swd:text'];
+        for (var q = localStorage.length - 1; q >= 0; q--) { var kk = localStorage.key(q); if (kk && kk.indexOf('swd:') === 0 && KEEP.indexOf(kk) < 0) localStorage.removeItem(kk); }
+        sessionStorage.clear();
+      } catch (e) {}
       store('memberPreview', false);
       toast('Signed out'); render();   // redraw the whole page as signed out
     }
