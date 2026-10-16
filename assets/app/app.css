@@ -2571,3 +2571,5 @@ h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp
 .lcard--big .lcard__logo img { max-height: 72px; }
 .lcard__logo--dark img { max-height: 46px; max-width: 46px; }
 .lcard--big .lcard__logo--dark img { max-height: 62px; max-width: 62px; }
+
+.hub--home { margin: 0 0 var(--s4); box-shadow: 0 2px 4px rgba(35,17,32,.05), 0 10px 24px rgba(35,17,32,.08); }

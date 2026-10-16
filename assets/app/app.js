@@ -956,6 +956,15 @@
       '<a class="hsearch" id="hq" href="/app/search" aria-label="Search tournaments, clubs or players">' + icon('search') + '<span>Search tournaments, clubs, players</span></a>' +
       '';
 
+    // Division card (same as the one on More): who we are and the season at a glance
+    (function () {
+      var played = d.events.filter(function (x) { return eventPhase(x, today) === 'past' && x.e.status !== 'cancelled' && x.e.status !== 'postponed'; }).length;
+      var ahead = d.events.filter(function (x) { var p = eventPhase(x, today); return (p === 'upcoming' || p === 'now') && x.e.status !== 'postponed'; }).length;
+      html += '<section class="hub hub--home" aria-label="Southwest Bowls Division"><span class="logo-plate hub__logo"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75"></span>' +
+        '<div class="hub__text"><span class="hub__name">Southwest Bowls Division</span><span class="hub__sub">Lawn bowls across Southern California</span></div>' +
+        '<div class="hub__stats">' + metric('home-clubs', (d.clubs || []).length, 'Clubs', 'in the Division') + metric('home-ahead', ahead, 'Tournaments', 'coming up') + metric('home-played', played, 'Tournaments', 'played this season') + '</div></section>';
+    })();
+
     // Urgent: a change to a saved event
     var myAlerts = mineNext.filter(isCritical);
     html += myAlerts.map(function (x) {
@@ -2237,7 +2246,7 @@
       var events = all[0], nClubs = (all[1].clubs || []).length, results = all[3];
       var news = (all[2].items || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
       var played = events.filter(function (x) { return eventPhase(x, today) === 'past' && x.e.status !== 'cancelled' && x.e.status !== 'postponed'; }).length;
-      var upcoming = events.filter(function (x) { var ph = eventPhase(x, today); return ph === 'upcoming' || ph === 'now'; }).length;
+      var upcoming = events.filter(function (x) { var ph = eventPhase(x, today); return (ph === 'upcoming' || ph === 'now') && x.e.status !== 'postponed'; }).length;
       currentNotices = events.filter(function (x) { var p = eventPhase(x, today); return x.e.alert && (p === 'upcoming' || p === 'now'); });
       var n = currentNotices.length;
       // Four plain groups, one row style. Icon colour tells the group, nothing else changes.
