@@ -3386,10 +3386,13 @@
           try {
             var mcName = m.club && (club && club.name || m.club.name) || '';
             store('memberCache', { name: m.name || '', club: mcName });
-            var pr0 = store('profile');
-            if ((!pr0 || !pr0.name) && m.name) {   // smart default: your own name and club from your membership, if you have not typed a profile yet
-              store('profile', { name: m.name, division: 'Southwest (SWD)', country: '', club: mcName, bio: '', badges: [], honours: [] });
-              toast('We added your name and club from your membership.');
+            var pr0 = store('profile') || {};
+            if (m.name) {   // smart default: fill any of name, division and club you have not typed yet from your membership
+              var np = Object.assign({ country: '', bio: '', badges: [], honours: [] }, pr0), added = false;
+              if (!np.name) { np.name = m.name; added = true; }
+              if (!np.division && !/^International/.test(np.division || '')) { np.division = 'Southwest (SWD)'; added = true; }
+              if (!np.club && mcName) { np.club = mcName; added = true; }
+              if (added) { store('profile', np); toast('We added your name and club from your membership.'); }
             }
           } catch (e) {}
           box.innerHTML = memberCardHtml(m, club) + foot; wireChange();
