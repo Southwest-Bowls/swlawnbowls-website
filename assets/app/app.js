@@ -2459,7 +2459,7 @@
             '<a class="clcard__link" href="/app/more/clubs/' + encodeURIComponent(id) + '" aria-label="' + esc(c.name + ', ' + c.city) + '"></a>' +
             '<button class="iconbtn gbtn clcard__fav" type="button" data-follow="' + esc(id) + '" data-name="' + esc(c.name) + '" aria-pressed="' + on + '" aria-label="Follow ' + esc(c.name) + '">' + icon('star') + '</button>' +
             '<span class="clcard__tag' + (c.status === 'private' ? '' : ' clcard__tag--open') + '">' + (c.status === 'private' ? 'Private' : 'Open') + '</span></div>' +
-            '<a class="clcard__body" href="/app/more/clubs/' + encodeURIComponent(id) + '"><b>' + esc(c.name) + '</b><span><small>' + esc(c.city) + '</small>' + (up ? '<em>' + up + ' upcoming</em>' : '') + '</span></a></li>';
+            '<a class="clcard__body" href="/app/more/clubs/' + encodeURIComponent(id) + '"><b>' + esc(c.name) + '</b>' + ((fold(c.city) !== fold(c.name) || up) ? '<span><small>' + (fold(c.city) !== fold(c.name) ? esc(c.city) : '') + '</small>' + (up ? '<em>' + up + ' upcoming</em>' : '') + '</span>' : '') + '</a></li>';
         }).join('') + '</ul>';
       }
       function syncUrl() {
