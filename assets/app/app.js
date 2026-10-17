@@ -322,10 +322,35 @@
   var EVENTS = null;
   var CLUB_ALIASES = {};
   var CLUBS_LIST = [];
+  // Sheet links kept in the database (table event_links), so a new link needs no deploy. They win over events-data.json;
+  // if the database does not answer, the links in events-data.json are used.
+  var LINKS = null;
+  function eventLinks() {
+    if (LINKS) return Promise.resolve(LINKS);
+    var ctl = window.AbortController ? new AbortController() : null, timer = ctl ? setTimeout(function () { ctl.abort(); }, 3500) : 0;
+    return fetch(MEMBERS_API.url + '/rest/v1/event_links?select=event_id,kind,label,url,height,sort&order=sort', { headers: { apikey: MEMBERS_API.key }, signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { clearTimeout(timer); return r.ok ? r.json() : null; })
+      .then(function (rows) { if (Array.isArray(rows)) LINKS = rows; return LINKS; }, function () { clearTimeout(timer); return null; });
+  }
+  function applyEventLinks(d, rows) {
+    if (!rows || !rows.length) return;
+    var by = {}; rows.forEach(function (r) { (by[r.event_id + '|' + r.kind] = by[r.event_id + '|' + r.kind] || []).push(r); });
+    (d.events || []).forEach(function (e) {
+      var en = by[e.id + '|entries'], dr = by[e.id + '|draw'];
+      if (en && en.length) e.entries = Object.assign({}, e.entries, { pubUrl: en[0].url, height: en[0].height });
+      if (dr && dr.length) {
+        var ls = Object.assign({}, e.liveScoring); delete ls.sheets; delete ls.gated;
+        if (dr.length === 1 && !dr[0].label) { ls.pubUrl = dr[0].url; ls.height = dr[0].height; }
+        else { ls.pubUrl = ''; ls.sheets = dr.map(function (r) { return { label: r.label || 'Draw', url: r.url, height: r.height }; }); }
+        e.liveScoring = ls;
+      }
+    });
+  }
   function loadEvents() {
-    return Promise.all([getJSON('/events-data.json'), getJSON('/clubs-data.json').catch(function () { return { clubs: [] }; })]).then(function (all) {
+    return Promise.all([getJSON('/events-data.json'), getJSON('/clubs-data.json').catch(function () { return { clubs: [] }; }), eventLinks()]).then(function (all) {
       var d = all[0]; CLUBS_LIST = all[1].clubs || [];
       if (EVENTS && EVENTS.src === d) return EVENTS.list;
+      applyEventLinks(d, all[2]);
       CLUB_ALIASES = Logic.aliasMapFrom(all[1].clubs);
       var list = (d.events || []).filter(function (e) { return e.id && e.title && !/^paypal-test/.test(e.id); })
         .map(decorateEvent);
@@ -3273,6 +3298,14 @@
   // My SWD: membership (sign-in, preview while testing), then the things
   // kept on this phone — saved events and followed clubs — which never need
   // an account. Entries and personal results appear here once they exist.
+  // Hidden director tools: switched on once with ?run=1 (off with ?run=0), and only shown to addresses in link_admins.
+  function runEntry(root) {
+    if (!store('run') || !memberSession()) return;
+    memberRpc('is_link_admin').then(function (ok) {
+      var el = root.querySelector('#run-entry'); if (ok !== true || !el || root !== view) return;
+      el.innerHTML = '<section class="block"><h2>Director tools <span class="muted">(beta)</span></h2><ul class="list list--plain"><li><a class="rcard" href="/app/run/womens-vet-novice-pairs-2026"><span class="rcard__body"><span class="rcard__title">Run: Women’s Vet/Novice Pairs</span><span class="rcard__meta">Teams, draw, scores and standings</span></span></a></li></ul></section>';
+    }, function () {});
+  }
   function mySwd(params) {
     setTitle('My SWD');
     if (params.get('preview') === '1') { store('memberPreview', true); history.replaceState(history.state, '', location.pathname); }
@@ -3293,7 +3326,8 @@
         '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honors and results' : 'Add your name and bio') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + '</div>' +
         '<div class="pgroup"><button type="button" class="prow prow--btn" data-open-interests><span class="prow__ic" aria-hidden="true">' + icon('star') + '</span><span class="prow__t"><b>My interests</b><small>' + (interests() && (interests().topics || []).length ? (interests().topics.length + ' picked') : 'Choose what you want first') + '</small></span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></button>' + prow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline') + '</div>' +
       '</div>' +
-      '<div id="my-res"></div>' + myEntriesHtml();
+      '<div id="my-res"></div><div id="run-entry"></div>' + myEntriesHtml();
+    runEntry(view);
     var box = view.querySelector('#m-box');
     wireProfile();
     view.onclick = function (ev) {
@@ -3591,6 +3625,7 @@
     [/^\/app\/search\/?$/, searchScreen, 'home'],
     [/^\/app\/page\/about-us\/?$/, aboutScreen, 'more'],
     [/^\/app\/(privacy|terms)\/?$/, legalScreen, 'more'],
+    [/^\/app\/run\/([a-z0-9-]+)\/?$/, runPage, 'my'],
     [/^\/app\/page\/([a-z0-9-]+)\/?$/, infoPage, 'more']
   ];
   var scrollMemory = {};
@@ -3939,6 +3974,157 @@
       view.innerHTML = backLink('/app/more/settings', 'Settings') + '<div class="intro"><h1>' + esc(t) + '</h1></div><div class="legal">' + legalHtml(k) + '</div>';
     });
   }
+  /* ---------------------------------------------------------------
+     RUN THIS EVENT (directors only, hidden): team names, draw, scores and standings kept in the database
+     instead of a Google Sheet. Address: /app/run/<event id>. Needs a signed-in address listed in link_admins.
+     Standings: win 3, tie 1, loss 0; plus points = points for minus points against.
+     --------------------------------------------------------------- */
+  function restReq(method, path, body, token, prefer) {
+    var h = { apikey: MEMBERS_API.key, authorization: 'Bearer ' + token, 'content-type': 'application/json' };
+    if (prefer) h.prefer = prefer;
+    return fetch(MEMBERS_API.url + '/rest/v1/' + path, { method: method, headers: h, body: body ? JSON.stringify(body) : undefined }).then(function (r) {
+      return r.text().then(function (t) {
+        var j = null; try { j = t ? JSON.parse(t) : null; } catch (e) {}
+        if (!r.ok) { var err = new Error((j && (j.message || j.hint || j.details)) || ('HTTP ' + r.status)); err.status = r.status; throw err; }
+        return j;
+      });
+    });
+  }
+  function runStandings(teams, games) {
+    var t = {};
+    teams.forEach(function (x) { t[x.team_no] = { no: x.team_no, name: x.name || '', green: x.green || '', p: 0, w: 0, d: 0, l: 0, pts: 0, pf: 0, pa: 0 }; });
+    games.forEach(function (g) {
+      if (g.score_a == null || g.score_b == null) return;
+      var a = t[g.team_a], b = t[g.team_b]; if (!a || !b) return;
+      a.p++; b.p++; a.pf += g.score_a; a.pa += g.score_b; b.pf += g.score_b; b.pa += g.score_a;
+      if (g.score_a > g.score_b) { a.w++; a.pts += 3; b.l++; }
+      else if (g.score_a < g.score_b) { b.w++; b.pts += 3; a.l++; }
+      else { a.d++; b.d++; a.pts += 1; b.pts += 1; }
+    });
+    return Object.keys(t).map(function (k) { return t[k]; }).sort(function (x, y) {
+      return (y.pts - x.pts) || ((y.pf - y.pa) - (x.pf - x.pa)) || (x.pa - y.pa) || (x.no - y.no);
+    });
+  }
+  function jwtEmail(tok) { try { return JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email || ''; } catch (e) { return ''; } }
+  function runPage(params, id) {
+    var root = view, evId = id, S = { teams: [], games: [], tab: 'scores', round: 1, tok: '', who: '', evTitle: '' };
+    setTitle('Run this event');
+    function shell(inner) { return backLink('/app/my', 'My SWD') + '<div class="intro"><h1>Run this event</h1><p class="muted">' + esc(S.evTitle || evId) + '</p></div>' + inner; }
+    view.innerHTML = shell('<p class="muted">Loading…</p>');
+    function load() {
+      var q = 'event_id=eq.' + encodeURIComponent(evId);
+      return Promise.all([restReq('GET', 'run_teams?' + q + '&order=team_no', null, S.tok), restReq('GET', 'run_games?' + q + '&order=round,rink', null, S.tok), getJSON('/events-data.json').catch(function () { return null; })]).then(function (r) {
+        S.teams = r[0] || []; S.games = r[1] || [];
+        var evs = r[2] && (Array.isArray(r[2]) ? r[2] : r[2].events) || [];
+        var e = evs.filter(function (x) { return x.id === evId; })[0]; S.evTitle = e ? e.title : evId;
+        var rounds = S.games.map(function (g) { return g.round; }); if (rounds.length && rounds.indexOf(S.round) < 0) S.round = Math.min.apply(null, rounds);
+      });
+    }
+    function teamLabel(n) { var t = S.teams.filter(function (x) { return x.team_no === n; })[0]; return '#' + n + (t && t.name ? ' ' + t.name : ''); }
+    function teamOpts(sel) { return S.teams.map(function (t) { return '<option value="' + t.team_no + '"' + (t.team_no === sel ? ' selected' : '') + '>' + esc(teamLabel(t.team_no)) + '</option>'; }).join(''); }
+    function tabsHtml() { return '<div class="segmented run__tabs" role="tablist">' + [['teams', 'Teams'], ['scores', 'Draw & scores'], ['standings', 'Standings']].map(function (t) { return '<button type="button" role="tab" aria-selected="' + (S.tab === t[0]) + '" data-run-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>'; }
+    function teamsHtml() {
+      return '<p class="muted">Type each team’s names after the card draw. Set A or B green if the event has two. Changes save as you go.</p><ul class="run__list">' + S.teams.map(function (t) {
+        return '<li class="run__team"><b class="run__no">' + t.team_no + '</b><input class="run__name" type="text" data-team="' + t.team_no + '" value="' + esc(t.name || '') + '" placeholder="Names, e.g. Ann Lee &amp; Sue Kim" autocomplete="off">' +
+          '<select class="run__green" data-green="' + t.team_no + '" aria-label="Green for team ' + t.team_no + '"><option value="">–</option><option value="A"' + (t.green === 'A' ? ' selected' : '') + '>A</option><option value="B"' + (t.green === 'B' ? ' selected' : '') + '>B</option></select>' +
+          '<button class="run__x" type="button" data-team-del="' + t.team_no + '" aria-label="Remove team ' + t.team_no + '">×</button></li>'; }).join('') + '</ul>' +
+        '<div class="actions"><button class="btn btn--ghost" type="button" data-team-add>Add a team</button></div>';
+    }
+    function scoresHtml() {
+      var rounds = []; S.games.forEach(function (g) { if (rounds.indexOf(g.round) < 0) rounds.push(g.round); }); rounds.sort(function (a, b) { return a - b; });
+      if (rounds.indexOf(S.round) < 0) rounds.push(S.round); rounds.sort(function (a, b) { return a - b; });
+      var chips = '<div class="run__rounds">' + rounds.map(function (r) { return '<button type="button" class="run__chip" aria-pressed="' + (r === S.round) + '" data-round="' + r + '">Game ' + r + '</button>'; }).join('') + '<button type="button" class="run__chip run__chip--add" data-round-add>+ Game ' + (Math.max.apply(null, rounds) + 1) + '</button></div>';
+      var gs = S.games.filter(function (g) { return g.round === S.round; });
+      var cards = gs.length ? gs.map(function (g) {
+        return '<div class="run__game" data-round="' + g.round + '" data-rink="' + g.rink + '"><div class="run__rink"><label>Rink <input class="run__rinkin" type="number" inputmode="numeric" min="1" max="30" value="' + g.rink + '" data-f="rink"></label>' +
+          '<button class="textlink run__del" type="button" data-game-del>Remove</button></div>' +
+          '<div class="run__side"><select data-f="team_a" aria-label="Team A">' + teamOpts(g.team_a) + '</select><input class="run__score" type="number" inputmode="numeric" min="0" max="99" value="' + (g.score_a == null ? '' : g.score_a) + '" data-f="score_a" aria-label="Score A"></div>' +
+          '<div class="run__vs">vs</div>' +
+          '<div class="run__side"><select data-f="team_b" aria-label="Team B">' + teamOpts(g.team_b) + '</select><input class="run__score" type="number" inputmode="numeric" min="0" max="99" value="' + (g.score_b == null ? '' : g.score_b) + '" data-f="score_b" aria-label="Score B"></div>' +
+          '<span class="run__saved" aria-live="polite"></span></div>'; }).join('') : '<p class="muted">No games in this round yet.</p>';
+      return '<p class="muted">Enter scores as games finish. You can change the rink or the teams, add or remove a game if the draw changes.</p>' + chips + cards + '<div class="actions"><button class="btn btn--ghost" type="button" data-game-add>Add a game to this round</button></div>';
+    }
+    function standingsHtml() {
+      var all = runStandings(S.teams, S.games), greens = ['A', 'B', ''].filter(function (g) { return all.some(function (x) { return x.green === g; }); });
+      var multi = greens.length > 1 || (greens.length === 1 && greens[0] !== '');
+      var tbl = function (rows, title) {
+        return (title ? '<h2 class="run__h">' + title + '</h2>' : '') + '<div class="run__scroll"><table class="run__table"><thead><tr><th>#</th><th>Team</th><th>P</th><th>W-T-L</th><th>Pts</th><th>+/−</th><th>For</th><th>Ag</th></tr></thead><tbody>' + rows.map(function (r, i) {
+          var diff = r.pf - r.pa; return '<tr><td>' + (i + 1) + '</td><td><b>' + r.no + '</b> ' + esc(r.name) + '</td><td>' + r.p + '</td><td>' + r.w + '-' + r.d + '-' + r.l + '</td><td><b>' + r.pts + '</b></td><td>' + (diff > 0 ? '+' : '') + diff + '</td><td>' + r.pf + '</td><td>' + r.pa + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      };
+      var body = multi ? greens.map(function (g) { return tbl(all.filter(function (x) { return x.green === g; }), g ? g + ' green' : 'No green set'); }).join('') : tbl(all, '');
+      return '<p class="muted">Win 3, tie 1, loss 0. Ties on points go to plus points (for minus against), then fewest points against.</p>' + body + '<div class="actions"><button class="btn btn--ghost" type="button" data-run-refresh>Refresh from the database</button></div>';
+    }
+    function draw() {
+      view.innerHTML = shell(tabsHtml() + '<div id="run-body">' + (S.tab === 'teams' ? teamsHtml() : S.tab === 'scores' ? scoresHtml() : standingsHtml()) + '</div><p class="footnote">Signed in as ' + esc(S.who) + '. Only directors can see this page.</p>');
+    }
+    function say(el, msg, bad) { if (!el) return; el.textContent = msg; el.className = 'run__saved' + (bad ? ' is-bad' : ''); }
+    function numOrNull(v) { v = String(v).trim(); if (v === '') return null; var n = +v; return (n >= 0 && n <= 99 && n === Math.floor(n)) ? n : NaN; }
+    var q = function (g) { return 'run_games?event_id=eq.' + encodeURIComponent(evId) + '&round=eq.' + g.round + '&rink=eq.' + g.rink; };
+    view.addEventListener('change', function (ev) {
+      if (root !== view) return;
+      var el = ev.target, card = el.closest('.run__game');
+      if (card) {
+        var g = S.games.filter(function (x) { return x.round === +card.dataset.round && x.rink === +card.dataset.rink; })[0]; if (!g) return;
+        var f = el.getAttribute('data-f'), val = (f === 'score_a' || f === 'score_b') ? numOrNull(el.value) : parseInt(el.value, 10), st = card.querySelector('.run__saved');
+        if (val !== null && (isNaN(val) || val < 0)) { say(st, 'Enter a whole number', true); return; }
+        if (f === 'rink' && S.games.some(function (x) { return x.round === g.round && x.rink === val; })) { say(st, 'That rink is already used in this game', true); el.value = g.rink; return; }
+        var patch = {}; patch[f] = val; patch.updated_at = new Date().toISOString(); patch.updated_by = S.who;
+        say(st, 'Saving…');
+        restReq('PATCH', q(g), patch, S.tok).then(function () {
+          var oldRink = g.rink; g[f] = val; if (f === 'rink') { card.dataset.rink = val; }
+          say(st, 'Saved ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
+          if (f === 'rink') S.games.sort(function (a, b) { return a.round - b.round || a.rink - b.rink; });
+        }, function (e) { say(st, 'Not saved: ' + (e.message || 'try again'), true); });
+        return;
+      }
+      var tn = el.getAttribute('data-team') || el.getAttribute('data-green'); if (!tn) return;
+      var t = S.teams.filter(function (x) { return x.team_no === +tn; })[0]; if (!t) return;
+      var p2 = el.hasAttribute('data-team') ? { name: el.value.trim() } : { green: el.value || null }; p2.updated_at = new Date().toISOString();
+      restReq('PATCH', 'run_teams?event_id=eq.' + encodeURIComponent(evId) + '&team_no=eq.' + t.team_no, p2, S.tok).then(function () { Object.assign(t, p2); toast('Saved'); }, function (e) { toast('Not saved', e.message || 'Try again.'); });
+    });
+    view.addEventListener('click', function (ev) {
+      if (root !== view) return;
+      var b = ev.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-run-tab')) { S.tab = b.getAttribute('data-run-tab'); if (S.tab === 'standings') { load().then(function () { if (root === view) draw(); }, function () { draw(); }); } else draw(); return; }
+      if (b.hasAttribute('data-run-refresh')) { load().then(function () { if (root === view) { draw(); toast('Refreshed'); } }, function (e) { toast('Could not refresh', e.message); }); return; }
+      if (b.hasAttribute('data-round')) { S.round = +b.getAttribute('data-round'); draw(); return; }
+      if (b.hasAttribute('data-round-add')) { var mx = Math.max.apply(null, S.games.map(function (g) { return g.round; }).concat([0])); S.round = mx + 1; draw(); return; }
+      if (b.hasAttribute('data-game-add')) {
+        var used = S.games.filter(function (g) { return g.round === S.round; }).map(function (g) { return g.rink; }), rk = 1; while (used.indexOf(rk) >= 0) rk++;
+        var nums = S.teams.map(function (t) { return t.team_no; }); if (nums.length < 2) { toast('Add at least two teams first'); return; }
+        var ng = { event_id: evId, round: S.round, rink: rk, team_a: nums[0], team_b: nums[1], updated_by: S.who };
+        restReq('POST', 'run_games', ng, S.tok).then(function () { ng.score_a = null; ng.score_b = null; S.games.push(ng); S.games.sort(function (a, c) { return a.round - c.round || a.rink - c.rink; }); draw(); }, function (e) { toast('Could not add', e.message); });
+        return;
+      }
+      if (b.hasAttribute('data-game-del')) {
+        var card = b.closest('.run__game'), g = S.games.filter(function (x) { return x.round === +card.dataset.round && x.rink === +card.dataset.rink; })[0]; if (!g) return;
+        if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Tap again to remove'; setTimeout(function () { b.dataset.sure = ''; b.textContent = 'Remove'; }, 3500); return; }
+        restReq('DELETE', q(g), null, S.tok).then(function () { S.games = S.games.filter(function (x) { return x !== g; }); draw(); toast('Game removed'); }, function (e) { toast('Could not remove', e.message); });
+        return;
+      }
+      if (b.hasAttribute('data-team-add')) {
+        var nx = Math.max.apply(null, S.teams.map(function (t) { return t.team_no; }).concat([0])) + 1, nt = { event_id: evId, team_no: nx, name: '', green: null };
+        restReq('POST', 'run_teams', nt, S.tok).then(function () { S.teams.push(nt); draw(); }, function (e) { toast('Could not add', e.message); });
+        return;
+      }
+      if (b.hasAttribute('data-team-del')) {
+        var n = +b.getAttribute('data-team-del');
+        if (S.games.some(function (g) { return g.team_a === n || g.team_b === n; })) { toast('That team is in a game', 'Change or remove its games first.'); return; }
+        if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = '?'; setTimeout(function () { b.dataset.sure = ''; b.textContent = '×'; }, 3000); return; }
+        restReq('DELETE', 'run_teams?event_id=eq.' + encodeURIComponent(evId) + '&team_no=eq.' + n, null, S.tok).then(function () { S.teams = S.teams.filter(function (t) { return t.team_no !== n; }); draw(); }, function (e) { toast('Could not remove', e.message); });
+      }
+    });
+    return freshToken().then(function (tok) {
+      if (root !== view) return;
+      if (!tok) { store('afterSignIn', location.pathname); view.innerHTML = shell('<p>Sign in with your director address to continue.</p><div class="actions"><a class="btn btn--wide" href="/app/signin">Sign in</a></div>'); return; }
+      S.tok = tok; S.who = jwtEmail(tok);
+      return memberRpc('is_link_admin').then(function (ok) {
+        if (root !== view) return;
+        if (ok !== true) { view.innerHTML = shell('<p>This page is for tournament directors.</p>'); return; }
+        return load().then(function () { if (root === view) draw(); });
+      });
+    }).catch(function (e) { if (root === view) view.innerHTML = shell('<div class="note" role="alert"><b>Could not open.</b>' + esc(e.message || 'Try again.') + '</div>'); });
+  }
   document.addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-legal]'); if (!b) return;
     ev.preventDefault(); var k = b.getAttribute('data-legal');
@@ -4110,6 +4296,7 @@
     img.removeAttribute('data-still');
     img.src = '/photos/home/livestream-tv-logo.png'; img.classList.add('poster__img--logo');
   }, true);
+  if (/[?&]run=1\b/.test(location.search)) store('run', true); else if (/[?&]run=0\b/.test(location.search)) { try { localStorage.removeItem('swd:run'); } catch (e) {} }
   captureSignIn();
   (function () {
     var q = new URLSearchParams(location.search), h = q.get('practice') || q.get('hub');

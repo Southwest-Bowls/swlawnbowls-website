@@ -2591,3 +2591,30 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 .newcard__t { flex: 1; min-width: 0; display: flex; flex-direction: column; } .newcard__t b { font-family: var(--font-display); font-size: 1.05rem; color: #14101a; } .newcard__t small { color: #4a4455; font-size: var(--fs-sm); }
 .newcard__go { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.8); color: #14101a; }
 :root[data-theme="dark"] .newcard { background: linear-gradient(135deg, #243a52, #1f4033); } :root[data-theme="dark"] .newcard__t b, :root[data-theme="dark"] .newcard__t small { color: #fff; }
+
+/* ---------- Run this event (directors only) ---------- */
+.run__tabs { margin: var(--s3) 0; }
+.run__list { list-style: none; margin: var(--s3) 0; padding: 0; display: grid; gap: 8px; }
+.run__team { display: grid; grid-template-columns: 28px 1fr 56px 36px; gap: 8px; align-items: center; }
+.run__no { text-align: center; color: var(--text-2); }
+.run__name, .run__team select, .run__game select, .run__score, .run__rinkin { min-height: 44px; border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); color: var(--text); padding: 0 10px; font: inherit; width: 100%; }
+.run__x { min-height: 44px; border: 0; background: none; color: var(--text-2); font-size: 1.3rem; cursor: pointer; }
+.run__rounds { display: flex; flex-wrap: wrap; gap: 8px; margin: var(--s3) 0; }
+.run__chip { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.run__chip[aria-pressed="true"] { background: var(--heading); color: #fff; border-color: var(--heading); }
+.run__chip--add { border-style: dashed; color: var(--text-2); }
+.run__game { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: 12px; margin: 10px 0; display: grid; gap: 8px; }
+.run__rink { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.run__rink label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.run__rinkin { width: 72px; }
+.run__side { display: grid; grid-template-columns: 1fr 76px; gap: 8px; }
+.run__score { text-align: center; font-weight: 700; font-size: 1.1rem; }
+.run__vs { text-align: center; color: var(--text-2); font-size: var(--fs-sm); }
+.run__saved { min-height: 1.2em; font-size: var(--fs-sm); color: var(--text-2); }
+.run__saved.is-bad { color: var(--brand-red); font-weight: 600; }
+.run__scroll { overflow-x: auto; margin: 8px 0; }
+.run__table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.run__table th, .run__table td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.run__table th:nth-child(2), .run__table td:nth-child(2) { text-align: left; white-space: normal; min-width: 130px; }
+.run__table th:first-child, .run__table td:first-child { text-align: center; }
+.run__h { font-size: var(--fs-lg); margin: var(--s4) 0 0; }
