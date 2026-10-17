@@ -4167,7 +4167,20 @@
         return '<h2 class="run__h run__gh">' + gp[1] + ' <span class="muted">· ' + grp.length + ' team' + (grp.length === 1 ? '' : 's') + '</span></h2><ul class="run__list">' + grp.map(teamRow).join('') + '</ul>'; }).join('') +
         '<div class="actions"><button class="btn btn--ghost" type="button" data-team-add>Add a team slot</button></div>' +
         '<h2 class="run__h">Late entry</h2><p class="muted">A team that is not on the list? Add it once here, on purpose. It then appears in the drop-downs.</p>' +
-        '<form class="run__addentry" data-entry-form><input class="run__name" type="text" name="n" placeholder="Names, e.g. Ann Lee &amp; Sue Kim" autocomplete="off" required><select class="run__green" name="g" aria-label="Green"><option value="A">A</option><option value="B">B</option></select><button class="btn btn--ghost" type="submit">Add</button></form>';
+        '<form class="run__addentry" data-entry-form><input class="run__name" type="text" name="n" placeholder="Names, e.g. Ann Lee &amp; Sue Kim" autocomplete="off" required><select class="run__green" name="g" aria-label="Green"><option value="A">A</option><option value="B">B</option></select><button class="btn btn--ghost" type="submit">Add</button></form>' + resetHtml();
+    }
+    function resetHtml() {
+      var scored = S.games.filter(function (g) { return g.score_a != null || g.score_b != null; }).length, cert = S.games.filter(function (g) { return g.certified_at; }).length, named = S.teams.filter(function (t) { return t.name; }).length;
+      var head = '<h2 class="run__h run__dz">\u26a0 Danger zone</h2>';
+      if (!S.resetAsk) return head + '<p class="muted">Start over: clears everything entered for this event, for example after practising. Maverick would want a second confirmation, so it asks twice.</p><div class="actions"><button class="btn btn--ghost run__dangerline" type="button" data-reset-open>Reset this event\u2026</button></div>';
+      if (S.resetAsk === 1) return head + '<div class="run__reset" role="alertdialog" aria-label="Reset this event"><p><b>Reset this event?</b> This cannot be undone.</p><ul>' +
+        '<li>Clears <b>' + scored + '</b> score' + (scored === 1 ? '' : 's') + (cert ? ', including <b>' + cert + ' certified</b> result' + (cert === 1 ? '' : 's') : '') + ' and all forfeits</li>' +
+        '<li>Clears <b>' + named + '</b> team name' + (named === 1 ? '' : 's') + ' (the greens stay)</li>' +
+        '<li>Rebuilds the standard draw for any green that has one (12 teams, or 4 teams), so removed games come back</li>' +
+        '<li>Keeps the entered teams list</li></ul>' +
+        '<div class="actions"><button class="btn run__danger" type="button" data-reset-next>Continue\u2026</button><button class="btn btn--ghost" type="button" data-reset-cancel>Cancel</button></div></div>';
+      return head + '<div class="run__reset" role="alertdialog" aria-label="Final confirmation"><p><b>Final confirmation.</b> ' + scored + ' score' + (scored === 1 ? '' : 's') + (cert ? ' (' + cert + ' certified)' : '') + ' and ' + named + ' team name' + (named === 1 ? '' : 's') + ' will be erased for good. Are you sure?</p>' +
+        '<div class="actions"><button class="btn run__danger" type="button" data-reset-go disabled>Wait 3\u2026</button><button class="btn btn--ghost" type="button" data-reset-cancel>No, keep everything</button></div></div>';
     }
     function teamRow(t) {
       return (function () {
@@ -4365,6 +4378,31 @@
         if (card) { card.scrollIntoView({ block: 'center' }); card.classList.add('is-focus'); setTimeout(function () { card.classList.remove('is-focus'); }, 2200); var sc = card.querySelector('[data-f="score_a"]:not([disabled])'); if (sc) sc.focus({ preventScroll: true }); } else window.scrollTo(0, 0);
         return; }
       var b = ev.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-reset-open')) { S.resetAsk = 1; draw(); return; }
+      if (b.hasAttribute('data-reset-next')) {
+        S.resetAsk = 2; draw();
+        var left = 3, tick = function () { var go = view.querySelector('[data-reset-go]'); if (!go || S.resetAsk !== 2) return; if (--left > 0) { go.textContent = 'Wait ' + left + '\u2026'; setTimeout(tick, 1000); } else { go.disabled = false; go.textContent = 'Yes, erase it all'; } };
+        setTimeout(tick, 1000); return;
+      }
+      if (b.hasAttribute('data-reset-cancel')) { S.resetAsk = false; draw(); return; }
+      if (b.hasAttribute('data-reset-go')) {
+        b.disabled = true; b.textContent = 'Resetting\u2026';
+        var clean = { score_a: null, score_b: null, forfeit: false, certified_at: null, certified_by: null, updated_at: new Date().toISOString(), updated_by: S.who }, rows = [];
+        ['A', 'B', ''].forEach(function (gk) {
+          var tn = S.teams.filter(function (t) { return (t.green || '') === gk; }).map(function (t) { return t.team_no; }).sort(function (x, y) { return x - y; });
+          var mine = S.games.filter(function (g) { return tn.indexOf(g.team_a) >= 0; });
+          var std = gk && DRAWS[tn.length] ? drawBuild(tn, Math.min.apply(null, mine.map(function (g) { return g.rink; }).concat([gk === 'B' ? 9 : 1]))) : null;
+          (std || mine).forEach(function (g) { rows.push(Object.assign({ event_id: evId, round: g.round, rink: g.rink, team_a: g.team_a, team_b: g.team_b }, clean)); });
+        });
+        var keep = {}; rows.forEach(function (r) { keep[r.round + '|' + r.rink] = 1; });
+        var extra = S.games.filter(function (g) { return !keep[g.round + '|' + g.rink]; });
+        restReq('POST', 'run_games?on_conflict=event_id,round,rink', rows, S.tok, 'resolution=merge-duplicates,return=minimal')
+          .then(function () { return Promise.all(extra.map(function (g) { return restReq('DELETE', q(g), null, S.tok); })); })
+          .then(function () { return restReq('PATCH', 'run_teams?event_id=eq.' + encodeURIComponent(evId), { name: '', updated_at: new Date().toISOString() }, S.tok); })
+          .then(function () { S.resetAsk = false; S.round = 1; return load(); })
+          .then(function () { draw(); toast('Event reset', 'Scores and names are cleared and the draw is rebuilt.'); }, function (e) { S.resetAsk = false; load().then(draw, draw); toast('Could not finish the reset', e.message); });
+        return;
+      }
       if (b.hasAttribute('data-gen-go')) {
         var gk = b.getAttribute('data-gen-go'), gts = S.teams.filter(function (t) { return (t.green || '') === gk; }).map(function (t) { return t.team_no; }).sort(function (x, y) { return x - y; });
         var gbox = b.closest('[data-gen]'), gri = gbox && gbox.querySelector('[data-gen-rink]'), sr = gri ? parseInt(gri.value, 10) : 1;

@@ -2699,3 +2699,11 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 .run__key { margin: var(--s2) 0; }
 .run__key summary { cursor: pointer; font-weight: 600; padding: var(--s2) 0; }
 .run__key ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 2px; }
+
+.run__reset { background: #fff5f5; border: 1px solid #e8b4b4; border-radius: 14px; padding: var(--s3); }
+.run__reset ul { margin: var(--s2) 0; padding-left: 1.2em; }
+.btn.run__danger { background: #c62828; color: #fff; border-color: #c62828; }
+
+.run__dz { color: #c62828; margin-top: var(--s5, 2rem); border-top: 2px dashed #e8b4b4; padding-top: var(--s3); }
+.btn.run__dangerline { color: #c62828; border-color: #e8b4b4; }
+.btn.run__danger:disabled { opacity: .55; }
