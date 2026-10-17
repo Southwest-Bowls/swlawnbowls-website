@@ -2618,6 +2618,8 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 .run__table th:nth-child(2), .run__table td:nth-child(2) { text-align: left; white-space: normal; min-width: 130px; }
 .run__table th:first-child, .run__table td:first-child { text-align: center; }
 .run__h { font-size: var(--fs-lg); margin: var(--s4) 0 0; }
+.run__gh { display: flex; align-items: baseline; gap: var(--s2); padding-bottom: var(--s1); border-bottom: 1px solid rgba(0,0,0,.12); }
+.run__gh .muted { font-size: .85em; font-weight: 400; }
 .run__checks { border: 1px solid var(--line); border-left: 4px solid #2f8f4e; background: var(--surface); border-radius: var(--r-control); padding: 10px 12px; margin: 10px 0; font-size: var(--fs-sm); }
 .run__checks.is-bad { border-left-color: var(--brand-red); }
 .run__checks ul { margin: 6px 0 0; padding-left: 18px; }

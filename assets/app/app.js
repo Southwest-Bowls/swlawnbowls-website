@@ -4152,16 +4152,22 @@
       setTimeout(function () { if (name === 'standings' || name === 'grid') load().then(show, show); else show(); }, 140);
     }
     function teamsHtml() {
-      return '<p class="muted">After the card draw, pick each team from the entered teams. Names always come from the entry list, so nothing is typed here by mistake.</p><ul class="run__list">' + S.teams.map(function (t) {
+      return '<p class="muted">After the card draw, pick each team from the entered teams. Names always come from the entry list, so nothing is typed here by mistake.</p>' + [['A', 'Green A'], ['B', 'Green B'], ['', 'Green not set']].map(function (gp) {
+        var grp = S.teams.filter(function (t) { return (t.green || '') === gp[0]; });
+        if (!grp.length) return '';
+        return '<h2 class="run__h run__gh">' + gp[1] + ' <span class="muted">· ' + grp.length + ' team' + (grp.length === 1 ? '' : 's') + '</span></h2><ul class="run__list">' + grp.map(teamRow).join('') + '</ul>'; }).join('') +
+        '<div class="actions"><button class="btn btn--ghost" type="button" data-team-add>Add a team slot</button></div>' +
+        '<h2 class="run__h">Late entry</h2><p class="muted">A team that is not on the list? Add it once here, on purpose. It then appears in the drop-downs.</p>' +
+        '<form class="run__addentry" data-entry-form><input class="run__name" type="text" name="n" placeholder="Names, e.g. Ann Lee &amp; Sue Kim" autocomplete="off" required><select class="run__green" name="g" aria-label="Green"><option value="A">A</option><option value="B">B</option></select><button class="btn btn--ghost" type="submit">Add</button></form>';
+    }
+    function teamRow(t) {
+      return (function () {
         var used = S.teams.filter(function (x) { return x.team_no !== t.team_no; }).map(function (x) { return x.name; });
         var opts = S.entries.filter(function (e) { return (!t.green || !e.green || e.green === t.green) && (e.name === t.name || used.indexOf(e.name) < 0); }).map(function (e) { return '<option value="' + e.id + '"' + (e.name === t.name ? ' selected' : '') + '>' + esc(e.name) + '</option>'; }).join('');
         var stray = t.name && !S.entries.some(function (e) { return e.name === t.name; }) ? '<option value="" selected>' + esc(t.name) + ' (not on the entry list)</option>' : '';
         return '<li class="run__team"><b class="run__no">' + t.team_no + '</b><select class="run__name" data-pick="' + t.team_no + '" aria-label="Team ' + t.team_no + '"><option value="">Pick a team…</option>' + stray + opts + '</select>' +
           '<select class="run__green" data-green="' + t.team_no + '" aria-label="Green for team ' + t.team_no + '"><option value="">–</option><option value="A"' + (t.green === 'A' ? ' selected' : '') + '>A</option><option value="B"' + (t.green === 'B' ? ' selected' : '') + '>B</option></select>' +
-          '<button class="run__x" type="button" data-team-del="' + t.team_no + '" aria-label="Remove team ' + t.team_no + '">×</button></li>'; }).join('') + '</ul>' +
-        '<div class="actions"><button class="btn btn--ghost" type="button" data-team-add>Add a team slot</button></div>' +
-        '<h2 class="run__h">Late entry</h2><p class="muted">A team that is not on the list? Add it once here, on purpose. It then appears in the drop-downs.</p>' +
-        '<form class="run__addentry" data-entry-form><input class="run__name" type="text" name="n" placeholder="Names, e.g. Ann Lee &amp; Sue Kim" autocomplete="off" required><select class="run__green" name="g" aria-label="Green"><option value="A">A</option><option value="B">B</option></select><button class="btn btn--ghost" type="submit">Add</button></form>';
+          '<button class="run__x" type="button" data-team-del="' + t.team_no + '" aria-label="Remove team ' + t.team_no + '">×</button></li>'; })();
     }
     function scoresHtml() {
       var rounds = []; S.games.forEach(function (g) { if (rounds.indexOf(g.round) < 0) rounds.push(g.round); }); rounds.sort(function (a, b) { return a - b; });
