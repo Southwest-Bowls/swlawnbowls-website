@@ -2618,3 +2618,47 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 .run__table th:nth-child(2), .run__table td:nth-child(2) { text-align: left; white-space: normal; min-width: 130px; }
 .run__table th:first-child, .run__table td:first-child { text-align: center; }
 .run__h { font-size: var(--fs-lg); margin: var(--s4) 0 0; }
+.run__checks { border: 1px solid var(--line); border-left: 4px solid #2f8f4e; background: var(--surface); border-radius: var(--r-control); padding: 10px 12px; margin: 10px 0; font-size: var(--fs-sm); }
+.run__checks.is-bad { border-left-color: var(--brand-red); }
+.run__checks ul { margin: 6px 0 0; padding-left: 18px; }
+.run__x-bad { color: var(--brand-red); font-weight: 600; }
+.run__x-warn { color: #8a6100; }
+.run__x-ok { color: #2f6f46; }
+.run__bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0; font-size: var(--fs-sm); }
+.run__game.is-cert { border-color: #2f8f4e; background: color-mix(in srgb, var(--surface) 92%, #2f8f4e); }
+.run__cert { display: flex; align-items: center; justify-content: space-between; color: #2f6f46; font-weight: 600; }
+.run__certbtn { width: 100%; }
+.run__certbtn[aria-disabled="true"] { opacity: .55; }
+.run__tog { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: var(--fs-sm); }
+.run__addentry { display: grid; grid-template-columns: 1fr 56px auto; gap: 8px; align-items: center; margin-top: 8px; }
+.run__grid { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: .78rem; }
+.run__grid th { text-align: center; font-weight: 600; padding: 4px 2px; }
+.run__grid td { padding: 0; }
+.run__gname { text-align: left; min-width: 96px; max-width: 120px; line-height: 1.15; padding: 4px 2px !important; }
+.run__c { text-align: center; border-radius: 8px; padding: 4px 2px !important; min-width: 58px; background: var(--surface); border: 1px solid var(--line); cursor: pointer; }
+.run__c small, .run__c b { display: block; line-height: 1.2; }
+.run__c small { color: var(--text-2); font-size: .68rem; }
+.run__c i { font-style: normal; font-size: .65rem; color: #2f6f46; }
+.run__c.is-win { background: #dff3e5; border-color: #8cc9a0; }
+.run__c.is-loss { background: #f9e1e1; border-color: #e0a0a0; }
+.run__c.is-tie { background: #ececf1; }
+.run__c.is-bad { outline: 3px solid var(--brand-red); background: #fff1f1; }
+.run__c--bye { color: var(--text-2); cursor: default; }
+.run__c--sum { cursor: default; background: transparent; border-style: dashed; }
+.run__sumrow .run__gname { font-weight: 600; font-size: .7rem; }
+.run__addgame { display: grid; grid-template-columns: 64px 1fr 1fr auto; gap: 6px; align-items: center; margin-top: 8px; }
+.run__addgame select { min-height: 44px; border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); color: var(--text); padding: 0 6px; font: inherit; min-width: 0; }
+.run__checks small, .run__why p small { display: block; font-weight: 400; color: var(--text-2); }
+.run__sub { margin: 8px 0 0; font-weight: 600; font-size: .8rem; color: var(--text-2); }
+.run__why { background: #fff6e0; border: 1px solid #ecd28f; border-radius: var(--r-control); padding: 8px 10px; font-size: var(--fs-sm); }
+.run__why p { margin: 4px 0; }
+.run__x-bad small, .run__x-warn small { font-weight: 400; color: var(--text); }
+.run__ff { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--text-2); }
+#run-body { transition: opacity .14s ease; }
+
+/* Sliding highlight for segmented controls (added by script when the selected button has a background) */
+.segmented.seg--anim { position: relative; }
+.segmented.seg--anim > button, .segmented.seg--anim > button[aria-selected="true"], .segmented.seg--anim > button[aria-pressed="true"] { position: relative; z-index: 1; background: transparent !important; box-shadow: none !important; transition: color .25s ease; }
+.segmented.seg--anim > button[aria-selected="true"], .segmented.seg--anim > button[aria-pressed="true"] { color: var(--seg-on); }
+.seg__pill { position: absolute; z-index: 0; top: 0; left: 0; pointer-events: none; transition: transform .3s cubic-bezier(.4, 0, .2, 1), width .3s cubic-bezier(.4, 0, .2, 1), height .3s cubic-bezier(.4, 0, .2, 1), opacity .2s ease; }
+@media (prefers-reduced-motion: reduce) { .seg__pill, .segmented.seg--anim > button { transition: none; } }

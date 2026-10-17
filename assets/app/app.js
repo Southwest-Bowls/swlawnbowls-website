@@ -3980,6 +3980,43 @@
     });
   }
   /* ---------------------------------------------------------------
+     Sliding highlight for every segmented control (event tabs, filters, director tabs): the dark or colored pill glides
+     from one button to the next instead of switching at once. Skipped when the selected button has no background.
+     --------------------------------------------------------------- */
+  (function () {
+    function selected(bar) { return bar.querySelector(':scope > [aria-selected="true"], :scope > [aria-pressed="true"]'); }
+    function move(bar, animate) {
+      var pill = bar.__seg, on = selected(bar); if (!pill) return;
+      if (!on) { pill.style.opacity = '0'; return; }
+      pill.style.opacity = '1';
+      if (!animate) pill.style.transition = 'none';
+      pill.style.width = on.offsetWidth + 'px'; pill.style.height = on.offsetHeight + 'px';
+      pill.style.transform = 'translate(' + on.offsetLeft + 'px,' + on.offsetTop + 'px)';
+      if (!animate) { void pill.offsetWidth; pill.style.transition = ''; }
+    }
+    function setup(bar) {
+      if (bar.__seg || bar.querySelector(':scope > .seg__pill')) return;
+      var on = selected(bar); if (!on) return;
+      var cs = getComputedStyle(on), bg = cs.backgroundColor;
+      if (!bg || bg === 'transparent' || /,\s*0\)$/.test(bg)) return;
+      var pill = document.createElement('span'); pill.className = 'seg__pill'; pill.setAttribute('aria-hidden', 'true');
+      pill.style.background = bg; pill.style.borderRadius = cs.borderRadius;
+      bar.insertBefore(pill, bar.firstChild); bar.style.setProperty('--seg-on', cs.color); bar.classList.add('seg--anim'); bar.__seg = pill;
+      move(bar, false);
+    }
+    var mo = new MutationObserver(function (list) {
+      var bars = [];
+      list.forEach(function (m) {
+        if (m.type === 'attributes') { var b = m.target.closest && m.target.closest('.segmented'); if (b && bars.indexOf(b) < 0) bars.push(b); }
+        else m.addedNodes.forEach(function (n) { if (n.nodeType !== 1) return; if (n.matches && n.matches('.segmented') && bars.indexOf(n) < 0) bars.push(n); if (n.querySelectorAll) n.querySelectorAll('.segmented').forEach(function (x) { if (bars.indexOf(x) < 0) bars.push(x); }); });
+      });
+      bars.forEach(function (b) { if (!b.__seg) setup(b); else move(b, true); });
+    });
+    mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-selected', 'aria-pressed'] });
+    document.querySelectorAll('.segmented').forEach(setup);
+    window.addEventListener('resize', function () { document.querySelectorAll('.segmented').forEach(function (b) { if (b.__seg) move(b, false); }); });
+  })();
+  /* ---------------------------------------------------------------
      RUN THIS EVENT (directors only, hidden): team names, draw, scores and standings kept in the database
      instead of a Google Sheet. Address: /app/run/<event id>. Needs a signed-in address listed in link_admins.
      Standings: win 3, tie 1, loss 0; plus points = points for minus points against.
@@ -4012,7 +4049,7 @@
   }
   function jwtEmail(tok) { try { return JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email || ''; } catch (e) { return ''; } }
   function runPage(params, id) {
-    var root = view, evId = id, S = { teams: [], games: [], entries: [], typing: {}, tab: 'scores', round: 1, tok: '', who: '', evTitle: '' };
+    var root = view, evId = id, S = { teams: [], games: [], entries: [], certOnly: false, tab: 'scores', round: 1, tok: '', who: '', evTitle: '' };
     setTitle('Run this event');
     function shell(inner) { return backLink('/app/my', 'My SWD') + '<div class="intro"><h1>Run this event</h1><p class="muted">' + esc(S.evTitle || evId) + '</p></div>' + inner; }
     view.innerHTML = shell('<p class="muted">Loading…</p>');
@@ -4025,69 +4062,196 @@
         var rounds = S.games.map(function (g) { return g.round; }); if (rounds.length && rounds.indexOf(S.round) < 0) S.round = Math.min.apply(null, rounds);
       });
     }
+    function teamOf(n) { return S.teams.filter(function (x) { return x.team_no === n; })[0]; }
+    function gameProblems(g) {
+      var out = [], a = teamOf(g.team_a), b = teamOf(g.team_b);
+      if (g.score_a == null || g.score_b == null) out.push('Enter both scores');
+      if (g.team_a === g.team_b) out.push('A team cannot play itself');
+      if (!a || !a.name || !b || !b.name) out.push('Pick both team names first');
+      if (a && b && a.green && b.green && a.green !== b.green) out.push('The two teams are on different greens');
+      S.games.forEach(function (o) { if (o !== g && o.round === g.round && (o.team_a === g.team_a || o.team_b === g.team_a || o.team_a === g.team_b || o.team_b === g.team_b)) out.push('A team is also in rink ' + o.rink + ' in this game'); });
+      return out.filter(function (x, i) { return out.indexOf(x) === i; });
+    }
+    function runChecks() {
+      var bad = [], warn = [], ok = [], games = S.games;
+      var P = function (list, t, h, g) { list.push({ t: t, h: h, round: g && g.round, rink: g && g.rink }); };
+      var where = function (g) { return 'Game ' + g.round + ', rink ' + g.rink; };
+      var rounds = {}; games.forEach(function (g) { (rounds[g.round] = rounds[g.round] || []).push(g); });
+      Object.keys(rounds).forEach(function (r) { var seen = {}; rounds[r].forEach(function (g) { [g.team_a, g.team_b].forEach(function (n) { (seen[n] = seen[n] || []).push(g); }); }); Object.keys(seen).forEach(function (n) { if (seen[n].length > 1) seen[n].forEach(function (g) { P(bad, where(g) + ': team ' + n + ' is in two games in game ' + r, 'A team plays once per game number. One of these cards has a wrong team number. Compare them with the paper cards.', g); }); }); });
+      games.forEach(function (g) {
+        var a = teamOf(g.team_a), b = teamOf(g.team_b), w = where(g);
+        if (g.team_a === g.team_b) P(bad, w + ': a team plays itself', 'One of the two team numbers on this card is wrong. Check the paper card.', g);
+        if (a && b && a.green && b.green && a.green !== b.green) P(bad, w + ': the teams are on different greens', 'A and B green teams do not play each other. Check both team numbers against the card.', g);
+        if ((g.score_a == null) !== (g.score_b == null)) P(bad, w + ': only one score is entered', 'The other score is missing. Look at the card for this rink, then enter it.', g);
+        if ((g.score_a != null || g.score_b != null) && (!a || !a.name || !b || !b.name)) P(bad, w + ': scores entered but a team has no name', 'Pick the team names in the Teams tab, so the result is attached to the right pair.', g);
+      });
+      var played = games.filter(function (g) { return g.score_a != null && g.score_b != null; });
+      // plausibility: things that are possible but worth a second look at the card
+      var tots = played.map(function (g) { return g.score_a + g.score_b; }).sort(function (x, y) { return x - y; }), med = tots.length ? tots[Math.floor(tots.length / 2)] : 0;
+      played.forEach(function (g) {
+        if (g.forfeit) return;   // forfeit scores are entered by hand: no plausibility warnings
+        var w = where(g), d = Math.abs(g.score_a - g.score_b), t = g.score_a + g.score_b;
+        if (t === 0) P(warn, w + ': 0 to 0', 'Was this game played? Check the card, a missing score is often typed as 0.', g);
+        else if (d >= 20) P(warn, w + ': a very large margin (' + d + ')', 'Re-read both scores on the card. A digit may be wrong, or a plus-point cap may apply.', g);
+        else if (tots.length >= 4 && med > 0 && (t > 2 * med || t < med / 2)) P(warn, w + ': total ' + t + ' is far from the other games (usually about ' + med + ')', 'One of the two scores may have a wrong digit. Check the card.', g);
+      });
+      // averages: a team whose average points for or against is far from the field's may have a mistyped score
+      (function () {
+        var tt = {}, tp = 0, tn = 0;
+        played.forEach(function (g) { if (g.forfeit) return; [[g.team_a, g.score_a, g.score_b], [g.team_b, g.score_b, g.score_a]].forEach(function (x) { var o = tt[x[0]] = tt[x[0]] || { f: 0, a: 0, n: 0 }; o.f += x[1]; o.a += x[2]; o.n++; tp += x[1]; tn++; }); });
+        var field = tn ? tp / tn : 0; if (!field || tn < 8) return;
+        Object.keys(tt).forEach(function (k) {
+          var o = tt[k]; if (o.n < 2) return; var af = o.f / o.n, aa = o.a / o.n, nm = '#' + k + (teamOf(+k) && teamOf(+k).name ? ' ' + teamOf(+k).name : '');
+          if (af > 1.6 * field || af < 0.4 * field) P(warn, nm + ' averages ' + af.toFixed(1) + ' points for (field average ' + field.toFixed(1) + ')', 'Re-read this team\u2019s cards. One score may have a wrong digit.');
+          if (aa > 1.6 * field || aa < 0.4 * field) P(warn, nm + ' averages ' + aa.toFixed(1) + ' points against (field average ' + field.toFixed(1) + ')', 'Re-read the cards of this team\u2019s opponents. One score may have a wrong digit.');
+        });
+        if (field) ok.push('Average points per team per game: ' + field.toFixed(1));
+      })();
+      var met = {}; games.forEach(function (g) { var k = Math.min(g.team_a, g.team_b) + ' and ' + Math.max(g.team_a, g.team_b); (met[k] = met[k] || []).push(g); }); Object.keys(met).forEach(function (k) { if (met[k].length > 1) P(warn, 'Teams ' + k + ' meet more than once', 'Normal only in a double round robin. Otherwise one card has a wrong team number.', met[k][1]); });
+      var rk = {}; games.forEach(function (g) { [g.team_a, g.team_b].forEach(function (n) { var k = n + '|' + g.rink; (rk[k] = rk[k] || []).push(g); }); }); Object.keys(rk).forEach(function (k) { if (rk[k].length > 1) P(warn, 'Team ' + k.split('|')[0] + ' plays rink ' + k.split('|')[1] + ' more than once', 'Avoid this if you can: swap rinks with another game in that round.', rk[k][1]); });
+      var tf = 0, ta = 0, st = runStandings(S.teams, played); st.forEach(function (x) { tf += x.pf; ta += x.pa; });
+      var sumGames = played.reduce(function (n, g) { return n + g.score_a + g.score_b; }, 0);   // all points scored in all games: teams' points for, and also their points against, must each equal this
+      if (tf !== ta) P(bad, 'Points for (' + tf + ') and against (' + ta + ') across all teams do not match', 'Reload the page. If it stays, a score was not saved correctly: re-enter the latest scores.'); else ok.push('Points for and against match across all teams (' + tf + ')');
+      if (tf !== sumGames || ta !== sumGames) P(bad, 'Team totals (for ' + tf + ', against ' + ta + ') do not match the scores entered (' + sumGames + ' points in all)', 'A team may be missing from the Teams tab or listed in the wrong game. Check the Grid for gaps.'); else ok.push('Team totals add up to the scores entered');
+      var ties = played.filter(function (g) { return g.score_a === g.score_b; }).length, expected = 3 * (played.length - ties) + 2 * ties, got = st.reduce(function (n, x) { return n + x.pts; }, 0);
+      if (got !== expected) P(bad, 'Game points (' + got + ') should be ' + expected, 'Reload the page; if it stays, check for a game with a team missing.'); else ok.push('Game points add up (' + got + ')');
+      if (st.reduce(function (n, x) { return n + x.w; }, 0) !== st.reduce(function (n, x) { return n + x.l; }, 0)) P(bad, 'Wins and losses do not match', 'Reload the page; a game may be missing a team.'); else ok.push('Wins equal losses');
+      var unc = played.filter(function (g) { return !g.certified_at; }).length; if (unc) P(warn, unc + ' game' + (unc === 1 ? '' : 's') + ' with scores not certified yet', 'Certify each game once you have checked its card.');
+      var open = games.filter(function (g) { return g.score_a == null && g.score_b == null; }).length; if (open) P(warn, open + ' game' + (open === 1 ? '' : 's') + ' still to be played', '');
+      return { bad: bad, warn: warn, ok: ok };
+    }
+    function li(cls, x) { return '<li class="' + cls + '">' + esc(x.t) + (x.h ? '<small>' + esc(x.h) + '</small>' : '') + '</li>'; }
+    function checksHtml() {
+      var c = runChecks();
+      return '<div class="run__checks' + (c.bad.length ? ' is-bad' : '') + '" role="status"><b>' + (c.bad.length ? c.bad.length + ' problem' + (c.bad.length === 1 ? '' : 's') + ' to fix' : 'No errors found') + '</b>' +
+        (c.bad.length ? '<ul>' + c.bad.map(function (x) { return li('run__x-bad', x); }).join('') + '</ul>' : '') +
+        (c.warn.length ? '<p class="run__sub">Worth a second look</p><ul>' + c.warn.map(function (x) { return li('run__x-warn', x); }).join('') + '</ul>' : '') +
+        (!c.bad.length && c.ok.length ? '<ul>' + c.ok.map(function (x) { return '<li class="run__x-ok">' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+    }
+    function refreshLive() {   // after a score is saved: update each card's hints and Certify button without redrawing the inputs
+      var cc = runChecks(), why = {}; cc.bad.concat(cc.warn).forEach(function (x) { if (x.round != null) (why[x.round + '|' + x.rink] = why[x.round + '|' + x.rink] || []).push(x); });
+      view.querySelectorAll('.run__game').forEach(function (card) {
+        var g = S.games.filter(function (x) { return x.round === +card.dataset.round && x.rink === +card.dataset.rink; })[0]; if (!g) return;
+        var items = why[g.round + '|' + g.rink] || [], el = card.querySelector('.run__why');
+        var html = items.map(function (x) { return '<p><b>' + esc(x.t.replace(/^Game \d+, rink \d+: /, '')) + '.</b> ' + esc(x.h) + '</p>'; }).join('');
+        if (html) { if (!el) { el = document.createElement('div'); el.className = 'run__why'; card.insertBefore(el, card.querySelector('.run__certbtn, .run__cert')); } el.innerHTML = html; } else if (el) el.remove();
+        var cb = card.querySelector('[data-cert]'); if (cb) { if (g.score_a == null || g.score_b == null) cb.setAttribute('aria-disabled', 'true'); else cb.removeAttribute('aria-disabled'); }
+      });
+    }
     function teamLabel(n) { var t = S.teams.filter(function (x) { return x.team_no === n; })[0]; return '#' + n + (t && t.green ? ' (' + t.green + ')' : '') + (t && t.name ? ' ' + t.name : ''); }
     function teamOpts(sel) { return S.teams.map(function (t) { return '<option value="' + t.team_no + '"' + (t.team_no === sel ? ' selected' : '') + '>' + esc(teamLabel(t.team_no)) + '</option>'; }).join(''); }
-    function tabsHtml() { return '<div class="segmented run__tabs" role="tablist">' + [['teams', 'Teams'], ['scores', 'Draw & scores'], ['standings', 'Standings']].map(function (t) { return '<button type="button" role="tab" aria-selected="' + (S.tab === t[0]) + '" data-run-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>'; }
+    function tabsHtml() { return '<div class="segmented run__tabs" role="tablist">' + [['teams', 'Teams'], ['scores', 'Scores'], ['grid', 'Grid'], ['standings', 'Standings']].map(function (t) { return '<button type="button" role="tab" aria-selected="' + (S.tab === t[0]) + '" data-run-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>'; }
+    function bodyHtml() { return S.tab === 'teams' ? teamsHtml() : S.tab === 'scores' ? scoresHtml() : S.tab === 'grid' ? gridHtml() : standingsHtml(); }
+    function switchTab(name) {
+      if (name === S.tab) return;
+      S.tab = name;
+      view.querySelectorAll('.run__tabs [role="tab"]').forEach(function (x) { x.setAttribute('aria-selected', x.getAttribute('data-run-tab') === name ? 'true' : 'false'); });
+      var body = view.querySelector('#run-body'); if (!body) { draw(); return; }
+      body.style.opacity = '0';
+      var show = function () { if (root !== view) return; body.innerHTML = bodyHtml(); body.style.opacity = '1'; };
+      setTimeout(function () { if (name === 'standings' || name === 'grid') load().then(show, show); else show(); }, 140);
+    }
     function teamsHtml() {
-      return '<p class="muted">After the card draw, pick each team from the entered teams (no typing). Choose “Other” to type a name. Changes save as you go.</p><ul class="run__list">' + S.teams.map(function (t) {
-        var known = S.entries.some(function (e) { return e.name === t.name; }), typed = !S.entries.length || S.typing[t.team_no] || (t.name && !known);
+      return '<p class="muted">After the card draw, pick each team from the entered teams. Names always come from the entry list, so nothing is typed here by mistake.</p><ul class="run__list">' + S.teams.map(function (t) {
         var used = S.teams.filter(function (x) { return x.team_no !== t.team_no; }).map(function (x) { return x.name; });
         var opts = S.entries.filter(function (e) { return (!t.green || !e.green || e.green === t.green) && (e.name === t.name || used.indexOf(e.name) < 0); }).map(function (e) { return '<option value="' + e.id + '"' + (e.name === t.name ? ' selected' : '') + '>' + esc(e.name) + '</option>'; }).join('');
-        var field = typed ? '<input class="run__name" type="text" data-team="' + t.team_no + '" value="' + esc(t.name || '') + '" placeholder="Names, e.g. Ann Lee &amp; Sue Kim" autocomplete="off">'
-          : '<select class="run__name" data-pick="' + t.team_no + '" aria-label="Team ' + t.team_no + '"><option value="">Pick a team…</option>' + opts + '<option value="__other">Other (type a name)…</option></select>';
-        return '<li class="run__team"><b class="run__no">' + t.team_no + '</b>' + field +
+        var stray = t.name && !S.entries.some(function (e) { return e.name === t.name; }) ? '<option value="" selected>' + esc(t.name) + ' (not on the entry list)</option>' : '';
+        return '<li class="run__team"><b class="run__no">' + t.team_no + '</b><select class="run__name" data-pick="' + t.team_no + '" aria-label="Team ' + t.team_no + '"><option value="">Pick a team…</option>' + stray + opts + '</select>' +
           '<select class="run__green" data-green="' + t.team_no + '" aria-label="Green for team ' + t.team_no + '"><option value="">–</option><option value="A"' + (t.green === 'A' ? ' selected' : '') + '>A</option><option value="B"' + (t.green === 'B' ? ' selected' : '') + '>B</option></select>' +
           '<button class="run__x" type="button" data-team-del="' + t.team_no + '" aria-label="Remove team ' + t.team_no + '">×</button></li>'; }).join('') + '</ul>' +
-        '<div class="actions"><button class="btn btn--ghost" type="button" data-team-add>Add a team</button></div>';
+        '<div class="actions"><button class="btn btn--ghost" type="button" data-team-add>Add a team slot</button></div>' +
+        '<h2 class="run__h">Late entry</h2><p class="muted">A team that is not on the list? Add it once here, on purpose. It then appears in the drop-downs.</p>' +
+        '<form class="run__addentry" data-entry-form><input class="run__name" type="text" name="n" placeholder="Names, e.g. Ann Lee &amp; Sue Kim" autocomplete="off" required><select class="run__green" name="g" aria-label="Green"><option value="A">A</option><option value="B">B</option></select><button class="btn btn--ghost" type="submit">Add</button></form>';
     }
     function scoresHtml() {
       var rounds = []; S.games.forEach(function (g) { if (rounds.indexOf(g.round) < 0) rounds.push(g.round); }); rounds.sort(function (a, b) { return a - b; });
       if (rounds.indexOf(S.round) < 0) rounds.push(S.round); rounds.sort(function (a, b) { return a - b; });
       var chips = '<div class="run__rounds">' + rounds.map(function (r) { return '<button type="button" class="run__chip" aria-pressed="' + (r === S.round) + '" data-round="' + r + '">Game ' + r + '</button>'; }).join('') + '<button type="button" class="run__chip run__chip--add" data-round-add>+ Game ' + (Math.max.apply(null, rounds) + 1) + '</button></div>';
       var gs = S.games.filter(function (g) { return g.round === S.round; });
+      var cc = runChecks(), why = {}; cc.bad.concat(cc.warn).forEach(function (x) { if (x.round != null) (why[x.round + '|' + x.rink] = why[x.round + '|' + x.rink] || []).push(x); });
       var cardHtml = function (g) {
-        return '<div class="run__game" data-round="' + g.round + '" data-rink="' + g.rink + '"><div class="run__rink"><label>Rink <input class="run__rinkin" type="number" inputmode="numeric" min="1" max="30" value="' + g.rink + '" data-f="rink"></label>' +
-          '<button class="textlink run__del" type="button" data-game-del>Remove</button></div>' +
-          '<div class="run__side"><select data-f="team_a" aria-label="Team A">' + teamOpts(g.team_a) + '</select><input class="run__score" type="number" inputmode="numeric" min="0" max="99" value="' + (g.score_a == null ? '' : g.score_a) + '" data-f="score_a" aria-label="Score A"></div>' +
+        var cert = !!g.certified_at, dis = cert ? ' disabled' : '';
+        return '<div class="run__game' + (cert ? ' is-cert' : '') + '" data-round="' + g.round + '" data-rink="' + g.rink + '"><div class="run__rink"><label>Rink <input class="run__rinkin" type="number" inputmode="numeric" min="1" max="30" value="' + g.rink + '" data-f="rink"' + dis + '></label>' +
+          (cert ? '' : '<button class="textlink run__del" type="button" data-game-del>Remove</button>') + '</div>' +
+          '<div class="run__side"><select data-f="team_a" aria-label="Team A"' + dis + '>' + teamOpts(g.team_a) + '</select><input class="run__score" type="number" inputmode="numeric" min="0" max="99" value="' + (g.score_a == null ? '' : g.score_a) + '" data-f="score_a" aria-label="Score A"' + dis + '></div>' +
           '<div class="run__vs">vs</div>' +
-          '<div class="run__side"><select data-f="team_b" aria-label="Team B">' + teamOpts(g.team_b) + '</select><input class="run__score" type="number" inputmode="numeric" min="0" max="99" value="' + (g.score_b == null ? '' : g.score_b) + '" data-f="score_b" aria-label="Score B"></div>' +
+          '<div class="run__side"><select data-f="team_b" aria-label="Team B"' + dis + '>' + teamOpts(g.team_b) + '</select><input class="run__score" type="number" inputmode="numeric" min="0" max="99" value="' + (g.score_b == null ? '' : g.score_b) + '" data-f="score_b" aria-label="Score B"' + dis + '></div>' +
+          '<label class="run__ff"><input type="checkbox" data-ff' + (g.forfeit ? ' checked' : '') + dis + '> Forfeit: enter the score by hand</label>' +
+          (why[g.round + '|' + g.rink] ? '<div class="run__why">' + why[g.round + '|' + g.rink].map(function (x) { return '<p><b>' + esc(x.t.replace(/^Game \d+, rink \d+: /, '')) + '.</b> ' + esc(x.h) + '</p>'; }).join('') + '</div>' : '') +
+          (cert ? '<div class="run__cert"><span>Certified ✓ ' + new Date(g.certified_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '</span><button class="textlink" type="button" data-uncert>Reopen</button></div>'
+            : '<button class="btn btn--sm run__certbtn" type="button" data-cert' + (g.score_a == null || g.score_b == null ? ' aria-disabled="true"' : '') + '>Certify result</button>') +
           '<span class="run__saved" aria-live="polite"></span></div>'; };
       var gOf = function (g) { var t = S.teams.filter(function (x) { return x.team_no === g.team_a; })[0]; return (t && t.green) || ''; };
       var groups = ['A', 'B', ''].filter(function (k) { return gs.some(function (g) { return gOf(g) === k; }); });
       var cards = !gs.length ? '<p class="muted">No games in this round yet.</p>' : groups.map(function (k) {
         return (groups.length > 1 || k ? '<h2 class="run__h">' + (k ? 'Green ' + k : 'Green not set') + '</h2>' : '') + gs.filter(function (g) { return gOf(g) === k; }).map(cardHtml).join('');
       }).join('');
-      return '<p class="muted">Enter scores as games finish. You can change the rink or the teams, add or remove a game if the draw changes.</p>' + chips + cards + '<div class="actions"><button class="btn btn--ghost" type="button" data-game-add>Add a game to this round</button></div>';
+      var inRound = gs.length, certN = gs.filter(function (g) { return g.certified_at; }).length, c0 = runChecks();
+      var head = '<div class="run__bar"><span>' + certN + ' of ' + inRound + ' certified in game ' + S.round + '</span><button class="btn btn--ghost btn--sm" type="button" data-round-cert>Certify all complete games</button></div>' + (c0.bad.length ? '<div class="run__checks is-bad"><b>' + c0.bad.length + ' problem' + (c0.bad.length === 1 ? '' : 's') + ' to fix</b><ul>' + c0.bad.slice(0, 3).map(function (x) { return li('run__x-bad', x); }).join('') + '</ul></div>' : '');
+      return head + '<p class="muted">Enter scores as games finish. You can change the rink or the teams, add or remove a game if the draw changes.</p>' + chips + cards + '<h2 class="run__h">Add a game</h2><form class="run__addgame" data-game-form><input class="run__rinkin" type="number" inputmode="numeric" min="1" max="30" name="rink" placeholder="Rink" required><select name="a" required aria-label="Team A"><option value="">Team A…</option>' + teamOpts(0) + '</select><select name="b" required aria-label="Team B"><option value="">Team B…</option>' + teamOpts(0) + '</select><button class="btn btn--ghost" type="submit">Add</button></form>';
+    }
+    function gridHtml() {
+      var rounds = []; S.games.forEach(function (g) { if (rounds.indexOf(g.round) < 0) rounds.push(g.round); }); rounds.sort(function (x, y) { return x - y; });
+      var greens = ['A', 'B', ''].filter(function (k) { return S.teams.some(function (t) { return (t.green || '') === k; }); });
+      var bad = {}, tip = {}; runChecks().bad.forEach(function (x) { if (x.round != null) { bad[x.round + '|' + x.rink] = 1; (tip[x.round + '|' + x.rink] = tip[x.round + '|' + x.rink] || []).push(x.t.replace(/^Game \d+, rink \d+: /, '') + '. ' + x.h); } });
+      function cell(t, r) {
+        var gs = S.games.filter(function (g) { return g.round === r && (g.team_a === t.team_no || g.team_b === t.team_no); });
+        if (!gs.length) return '<td class="run__c run__c--bye">–</td>';
+        if (gs.length > 1) return '<td class="run__c is-bad" data-goto="' + r + '">2 games!</td>';
+        var g = gs[0], mine = g.team_a === t.team_no, opp = mine ? g.team_b : g.team_a, f = mine ? g.score_a : g.score_b, ag = mine ? g.score_b : g.score_a, done = f != null && ag != null;
+        var cls = !done ? 'is-wait' : f > ag ? 'is-win' : f < ag ? 'is-loss' : 'is-tie';
+        if (bad[g.round + '|' + g.rink] || (!done && (f != null || ag != null))) cls = 'is-bad';
+        return '<td class="run__c ' + cls + '" data-goto="' + r + '" title="' + esc((tip[g.round + '|' + g.rink] || []).join(' ')) + '"><small>R' + g.rink + ' v' + opp + '</small><b>' + (done ? f + '–' + ag : '·') + '</b>' + (g.forfeit ? '<i>F</i>' : '') + (g.certified_at ? '<i>✓</i>' : '') + '</td>';
+      }
+      return '<p class="muted">One row per team, one column per game: rink, opponent number and score. Green won, red lost, grey tied, white waiting. A red outline is a problem. Tap a cell to open that game.</p>' + greens.map(function (k) {
+        var ts = S.teams.filter(function (t) { return (t.green || '') === k; }), ids = ts.map(function (t) { return t.team_no; });
+        var foot = rounds.map(function (r) {
+          var f = 0, ag = 0; S.games.filter(function (g) { return g.round === r && g.score_a != null && g.score_b != null && (ids.indexOf(g.team_a) >= 0 || ids.indexOf(g.team_b) >= 0); }).forEach(function (g) { f += g.score_a; ag += g.score_b; });
+          return '<td class="run__c run__c--sum"><small>' + f + ' / ' + ag + '</small><b>' + (f === ag ? '=' : '≠') + '</b></td>';
+        }).join('');
+        // each game is counted once, so for and against below are the two sides of the same scores
+        var tot = rounds.map(function (r) { var f = 0, ag = 0; S.games.filter(function (g) { return g.round === r && g.score_a != null && g.score_b != null && (ids.indexOf(g.team_a) >= 0 || ids.indexOf(g.team_b) >= 0); }).forEach(function (g) { f += g.score_a + g.score_b; }); return f; });
+        return (greens.length > 1 || k ? '<h2 class="run__h">' + (k ? 'Green ' + k : 'Green not set') + '</h2>' : '') + '<div class="run__scroll"><table class="run__grid"><thead><tr><th>#</th><th>Team</th>' + rounds.map(function (r) { return '<th>G' + r + '</th>'; }).join('') + '</tr></thead><tbody>' +
+          ts.map(function (t) { return '<tr><td><b>' + t.team_no + '</b></td><td class="run__gname">' + esc(t.name || '—') + '</td>' + rounds.map(function (r) { return cell(t, r); }).join('') + '</tr>'; }).join('') +
+          '<tr class="run__sumrow"><td></td><td class="run__gname">Total for / against</td>' + foot + '</tr></tbody></table></div>';
+      }).join('');
     }
     function standingsHtml() {
-      var all = runStandings(S.teams, S.games), greens = ['A', 'B', ''].filter(function (g) { return all.some(function (x) { return x.green === g; }); });
+      var base = S.certOnly ? S.games.filter(function (g) { return g.certified_at; }) : S.games, all = runStandings(S.teams, base), greens = ['A', 'B', ''].filter(function (g) { return all.some(function (x) { return x.green === g; }); });
       var multi = greens.length > 1 || (greens.length === 1 && greens[0] !== '');
       var tbl = function (rows, title) {
-        return (title ? '<h2 class="run__h">' + title + '</h2>' : '') + '<div class="run__scroll"><table class="run__table"><thead><tr><th>#</th><th>Team</th><th>P</th><th>W-T-L</th><th>Pts</th><th>+/−</th><th>For</th><th>Ag</th></tr></thead><tbody>' + rows.map(function (r, i) {
-          var diff = r.pf - r.pa; return '<tr><td>' + (i + 1) + '</td><td><b>' + r.no + '</b> ' + esc(r.name) + '</td><td>' + r.p + '</td><td>' + r.w + '-' + r.d + '-' + r.l + '</td><td><b>' + r.pts + '</b></td><td>' + (diff > 0 ? '+' : '') + diff + '</td><td>' + r.pf + '</td><td>' + r.pa + '</td></tr>'; }).join('') + '</tbody></table></div>';
+        return (title ? '<h2 class="run__h">' + title + '</h2>' : '') + '<div class="run__scroll"><table class="run__table"><thead><tr><th>#</th><th>Team</th><th>P</th><th>W-T-L</th><th>Pts</th><th>+/−</th><th>For</th><th>Ag</th><th>Avg F/A</th></tr></thead><tbody>' + rows.map(function (r, i) {
+          var diff = r.pf - r.pa; return '<tr><td>' + (i + 1) + '</td><td><b>' + r.no + '</b> ' + esc(r.name) + '</td><td>' + r.p + '</td><td>' + r.w + '-' + r.d + '-' + r.l + '</td><td><b>' + r.pts + '</b></td><td>' + (diff > 0 ? '+' : '') + diff + '</td><td>' + r.pf + '</td><td>' + r.pa + '</td><td>' + (r.p ? (r.pf / r.p).toFixed(1) + ' / ' + (r.pa / r.p).toFixed(1) : '–') + '</td></tr>'; }).join('') + '</tbody></table></div>';
       };
       var body = multi ? greens.map(function (g) { return tbl(all.filter(function (x) { return x.green === g; }), g ? g + ' green' : 'No green set'); }).join('') : tbl(all, '');
-      return '<p class="muted">Win 3, tie 1, loss 0. Ties on points go to plus points (for minus against), then fewest points against.</p>' + body + '<div class="actions"><button class="btn btn--ghost" type="button" data-run-refresh>Refresh from the database</button></div>';
+      var cn = S.games.filter(function (g) { return g.certified_at; }).length, pn = S.games.filter(function (g) { return g.score_a != null && g.score_b != null; }).length;
+      return checksHtml() + '<p class="muted">' + (cn < pn ? 'Provisional: ' : '') + cn + ' of ' + pn + ' played games certified. Win 3, tie 1, loss 0. Ties on points go to plus points (for minus against), then fewest points against.</p><label class="run__tog"><input type="checkbox" data-cert-only' + (S.certOnly ? ' checked' : '') + '> Count certified games only</label>' + body + '<div class="actions"><button class="btn btn--ghost" type="button" data-run-refresh>Refresh from the database</button></div>';
     }
     function draw() {
-      view.innerHTML = shell(tabsHtml() + '<div id="run-body">' + (S.tab === 'teams' ? teamsHtml() : S.tab === 'scores' ? scoresHtml() : standingsHtml()) + '</div><p class="footnote">Signed in as ' + esc(S.who) + '. Only directors can see this page.</p>');
+      view.innerHTML = shell(tabsHtml() + '<div id="run-body">' + bodyHtml() + '</div><p class="footnote">Signed in as ' + esc(S.who) + '. Only directors can see this page.</p>');
     }
     function say(el, msg, bad) { if (!el) return; el.textContent = msg; el.className = 'run__saved' + (bad ? ' is-bad' : ''); }
-    function numOrNull(v) { v = String(v).trim(); if (v === '') return null; var n = +v; return (n >= 0 && n <= 99 && n === Math.floor(n)) ? n : NaN; }
+    function numOrNull(v) { v = String(v).trim(); if (v === '') return null; return /^\d{1,2}$/.test(v) ? parseInt(v, 10) : NaN; }   // whole numbers 0 to 99 only; blank stays blank, never a default
     var q = function (g) { return 'run_games?event_id=eq.' + encodeURIComponent(evId) + '&round=eq.' + g.round + '&rink=eq.' + g.rink; };
     view.addEventListener('change', function (ev) {
       if (root !== view) return;
       var el = ev.target, card = el.closest('.run__game');
       if (card) {
         var g = S.games.filter(function (x) { return x.round === +card.dataset.round && x.rink === +card.dataset.rink; })[0]; if (!g) return;
-        var f = el.getAttribute('data-f'), val = (f === 'score_a' || f === 'score_b') ? numOrNull(el.value) : parseInt(el.value, 10), st = card.querySelector('.run__saved');
-        if (val !== null && (isNaN(val) || val < 0)) { say(st, 'Enter a whole number', true); return; }
+        if (el.hasAttribute('data-ff')) {
+        var fg = S.games.filter(function (x) { return x.round === +card.dataset.round && x.rink === +card.dataset.rink; })[0]; if (!fg) return;
+        restReq('PATCH', q(fg), { forfeit: el.checked, updated_at: new Date().toISOString(), updated_by: S.who }, S.tok).then(function () { fg.forfeit = el.checked; draw(); toast(el.checked ? 'Marked as a forfeit' : 'Forfeit removed'); }, function (e) { el.checked = !el.checked; toast('Not saved', e.message); });
+        return;
+      }
+      var f = el.getAttribute('data-f'), val = (f === 'score_a' || f === 'score_b') ? numOrNull(el.value) : (/^\d{1,2}$/.test(String(el.value).trim()) ? parseInt(el.value, 10) : NaN), st = card.querySelector('.run__saved');
+        if (val === null && f !== 'score_a' && f !== 'score_b') { say(st, 'Enter a rink number', true); el.value = g[f]; return; }
+        if (val !== null && (isNaN(val) || val < 0 || (f === 'rink' && val < 1))) { say(st, 'Enter a whole number', true); if (f === 'rink') el.value = g.rink; return; }
         if (f === 'rink' && S.games.some(function (x) { return x.round === g.round && x.rink === val; })) { say(st, 'That rink is already used in this game', true); el.value = g.rink; return; }
         var patch = {}; patch[f] = val; patch.updated_at = new Date().toISOString(); patch.updated_by = S.who;
         say(st, 'Saving…');
         restReq('PATCH', q(g), patch, S.tok).then(function () {
           var oldRink = g.rink; g[f] = val; if (f === 'rink') { card.dataset.rink = val; }
-          say(st, 'Saved ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
+          say(st, 'Saved ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })); refreshLive();
           if (f === 'rink') S.games.sort(function (a, b) { return a.round - b.round || a.rink - b.rink; });
         }, function (e) { say(st, 'Not saved: ' + (e.message || 'try again'), true); });
         return;
@@ -4095,7 +4259,6 @@
       var pk = el.getAttribute('data-pick');
       if (pk) {
         var tp = S.teams.filter(function (x) { return x.team_no === +pk; })[0]; if (!tp) return;
-        if (el.value === '__other') { S.typing[tp.team_no] = true; draw(); var inp = view.querySelector('[data-team="' + tp.team_no + '"]'); if (inp) inp.focus(); return; }
         var en = S.entries.filter(function (x) { return String(x.id) === el.value; })[0];
         var pp = en ? { name: en.name, green: en.green || tp.green || null } : { name: '' }; pp.updated_at = new Date().toISOString();
         restReq('PATCH', 'run_teams?event_id=eq.' + encodeURIComponent(evId) + '&team_no=eq.' + tp.team_no, pp, S.tok).then(function () { Object.assign(tp, pp); draw(); toast('Saved'); }, function (e) { toast('Not saved', e.message || 'Try again.'); });
@@ -4106,20 +4269,57 @@
       var p2 = el.hasAttribute('data-team') ? { name: el.value.trim() } : { green: el.value || null }; p2.updated_at = new Date().toISOString();
       restReq('PATCH', 'run_teams?event_id=eq.' + encodeURIComponent(evId) + '&team_no=eq.' + t.team_no, p2, S.tok).then(function () { Object.assign(t, p2); toast('Saved'); }, function (e) { toast('Not saved', e.message || 'Try again.'); });
     });
+    view.addEventListener('submit', function (ev) {
+      var gf = ev.target.closest('[data-game-form]'); if (!gf || root !== view) return;
+      ev.preventDefault();
+      var rk = gf.elements.rink.value.trim(), ta = parseInt(gf.elements.a.value, 10), tb = parseInt(gf.elements.b.value, 10);
+      if (!/^\d{1,2}$/.test(rk) || +rk < 1) { toast('Enter a rink number'); return; }
+      if (!ta || !tb) { toast('Pick both teams'); return; }
+      var ng = { event_id: evId, round: S.round, rink: +rk, team_a: ta, team_b: tb, updated_by: S.who };
+      if (S.games.some(function (g) { return g.round === ng.round && g.rink === ng.rink; })) { toast('That rink is already used in this game'); return; }
+      var pr = gameProblems(Object.assign({ score_a: 0, score_b: 0 }, ng)).filter(function (x) { return x !== 'Enter both scores'; });
+      if (pr.length) { toast('Cannot add this game', pr[0]); return; }
+      restReq('POST', 'run_games', ng, S.tok).then(function () { ng.score_a = null; ng.score_b = null; S.games.push(ng); S.games.sort(function (x, y) { return x.round - y.round || x.rink - y.rink; }); draw(); toast('Game added'); }, function (e) { toast('Could not add', e.message); });
+    });
+    view.addEventListener('submit', function (ev) {
+      var f = ev.target.closest('[data-entry-form]'); if (!f || root !== view) return;
+      ev.preventDefault();
+      var nm = f.elements.n.value.trim().replace(/\s+/g, ' '); if (!nm) return;
+      if (S.entries.some(function (e) { return e.name.toLowerCase() === nm.toLowerCase(); })) { toast('Already on the list', nm); return; }
+      var ne = { event_id: evId, name: nm, green: f.elements.g.value };
+      restReq('POST', 'run_entries', ne, S.tok, 'return=representation').then(function (r) { S.entries.push((r && r[0]) || ne); draw(); toast('Added to the entered teams'); }, function (e) { toast('Could not add', e.message); });
+    });
+    view.addEventListener('change', function (ev) { if (ev.target.hasAttribute && ev.target.hasAttribute('data-cert-only')) { S.certOnly = ev.target.checked; draw(); } });
     view.addEventListener('click', function (ev) {
       if (root !== view) return;
+      var gc = ev.target.closest('[data-goto]'); if (gc) { S.round = +gc.getAttribute('data-goto'); S.tab = 'scores'; draw(); window.scrollTo(0, 0); return; }
       var b = ev.target.closest('button'); if (!b) return;
-      if (b.hasAttribute('data-run-tab')) { S.tab = b.getAttribute('data-run-tab'); if (S.tab === 'standings') { load().then(function () { if (root === view) draw(); }, function () { draw(); }); } else draw(); return; }
+      if (b.hasAttribute('data-run-tab')) { switchTab(b.getAttribute('data-run-tab')); return; }
       if (b.hasAttribute('data-run-refresh')) { load().then(function () { if (root === view) { draw(); toast('Refreshed'); } }, function (e) { toast('Could not refresh', e.message); }); return; }
-      if (b.hasAttribute('data-round')) { S.round = +b.getAttribute('data-round'); draw(); return; }
-      if (b.hasAttribute('data-round-add')) { var mx = Math.max.apply(null, S.games.map(function (g) { return g.round; }).concat([0])); S.round = mx + 1; draw(); return; }
-      if (b.hasAttribute('data-game-add')) {
-        var used = S.games.filter(function (g) { return g.round === S.round; }).map(function (g) { return g.rink; }), rk = 1; while (used.indexOf(rk) >= 0) rk++;
-        var nums = S.teams.map(function (t) { return t.team_no; }); if (nums.length < 2) { toast('Add at least two teams first'); return; }
-        var ng = { event_id: evId, round: S.round, rink: rk, team_a: nums[0], team_b: nums[1], updated_by: S.who };
-        restReq('POST', 'run_games', ng, S.tok).then(function () { ng.score_a = null; ng.score_b = null; S.games.push(ng); S.games.sort(function (a, c) { return a.round - c.round || a.rink - c.rink; }); draw(); }, function (e) { toast('Could not add', e.message); });
+      if (b.hasAttribute('data-cert')) {
+        var cd = b.closest('.run__game'), cg = S.games.filter(function (x) { return x.round === +cd.dataset.round && x.rink === +cd.dataset.rink; })[0]; if (!cg) return;
+        var pr = gameProblems(cg); if (pr.length) { toast('Cannot certify yet', pr[0]); return; }
+        var cp = { certified_at: new Date().toISOString(), certified_by: S.who };
+        restReq('PATCH', q(cg), cp, S.tok).then(function () { Object.assign(cg, cp); draw(); toast('Certified'); }, function (e) { toast('Not certified', e.message); });
         return;
       }
+      if (b.hasAttribute('data-uncert')) {
+        var ud = b.closest('.run__game'), ug = S.games.filter(function (x) { return x.round === +ud.dataset.round && x.rink === +ud.dataset.rink; })[0]; if (!ug) return;
+        if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Tap again to reopen'; setTimeout(function () { b.dataset.sure = ''; b.textContent = 'Reopen'; }, 3500); return; }
+        var up = { certified_at: null, certified_by: null };
+        restReq('PATCH', q(ug), up, S.tok).then(function () { Object.assign(ug, up); draw(); toast('Reopened for changes'); }, function (e) { toast('Could not reopen', e.message); });
+        return;
+      }
+      if (b.hasAttribute('data-round-cert')) {
+        var todo = S.games.filter(function (g) { return g.round === S.round && !g.certified_at && g.score_a != null && g.score_b != null && !gameProblems(g).length; });
+        var skipped = S.games.filter(function (g) { return g.round === S.round && !g.certified_at && g.score_a != null && g.score_b != null && gameProblems(g).length; }).length;
+        if (!todo.length) { toast('Nothing to certify', skipped ? skipped + ' game(s) have problems to fix first' : 'No complete games waiting'); return; }
+        var stamp = { certified_at: new Date().toISOString(), certified_by: S.who };
+        Promise.all(todo.map(function (g) { return restReq('PATCH', q(g), stamp, S.tok).then(function () { Object.assign(g, stamp); }); })).then(function () { draw(); toast('Certified ' + todo.length + ' game' + (todo.length === 1 ? '' : 's'), skipped ? skipped + ' skipped: fix the problems first' : ''); }, function (e) { draw(); toast('Some were not certified', e.message); });
+        return;
+      }
+      if (b.hasAttribute('data-round')) { S.round = +b.getAttribute('data-round'); draw(); return; }
+      if (b.hasAttribute('data-round-add')) { var mx = Math.max.apply(null, S.games.map(function (g) { return g.round; }).concat([0])); S.round = mx + 1; draw(); return; }
       if (b.hasAttribute('data-game-del')) {
         var card = b.closest('.run__game'), g = S.games.filter(function (x) { return x.round === +card.dataset.round && x.rink === +card.dataset.rink; })[0]; if (!g) return;
         if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Tap again to remove'; setTimeout(function () { b.dataset.sure = ''; b.textContent = 'Remove'; }, 3500); return; }
