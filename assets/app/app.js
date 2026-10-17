@@ -4253,14 +4253,13 @@
       return '<p class="muted">One row per team, one column per game. Tap a cell to open that game.</p><div class="run__legend"><p><b>How to read a cell</b></p><div class="run__ex"><span class="run__c is-win"><small>Rink 2 v 4</small><b>12–7</b></span><span>= played on <b>rink 2</b> <b>versus team 4</b>, won 12 to 7.</span></div><ul><li><span class="run__dot is-win"></span> Won</li><li><span class="run__dot is-loss"></span> Lost</li><li><span class="run__dot is-tie"></span> Tied</li><li><span class="run__dot is-wait"></span> Waiting for a score</li><li><span class="run__dot is-bad"></span> Red outline: a problem to fix</li><li><b>F</b> forfeit · <b>✓</b> certified · <b>–</b> no game (bye)</li></ul></div>' + greens.map(function (k) {
         var ts = S.teams.filter(function (t) { return (t.green || '') === k; }), ids = ts.map(function (t) { return t.team_no; });
         var foot = rounds.map(function (r) {
-          var f = 0, ag = 0; S.games.filter(function (g) { return g.round === r && g.score_a != null && g.score_b != null && (ids.indexOf(g.team_a) >= 0 || ids.indexOf(g.team_b) >= 0); }).forEach(function (g) { f += g.score_a; ag += g.score_b; });
-          return '<td class="run__c run__c--sum"><small>' + f + ' / ' + ag + '</small><b>' + (f === ag ? '=' : '≠') + '</b></td>';
+          var mine = S.games.filter(function (g) { return g.round === r && (ids.indexOf(g.team_a) >= 0 || ids.indexOf(g.team_b) >= 0); }), pts = 0, n = 0;
+          mine.forEach(function (g) { if (g.score_a != null && g.score_b != null) { n++; pts += g.score_a + g.score_b; } });
+          return '<td class="run__c run__c--sum"><small>' + n + ' of ' + mine.length + ' games in</small><b>' + pts + '</b></td>';
         }).join('');
-        // each game is counted once, so for and against below are the two sides of the same scores
-        var tot = rounds.map(function (r) { var f = 0, ag = 0; S.games.filter(function (g) { return g.round === r && g.score_a != null && g.score_b != null && (ids.indexOf(g.team_a) >= 0 || ids.indexOf(g.team_b) >= 0); }).forEach(function (g) { f += g.score_a + g.score_b; }); return f; });
         return (greens.length > 1 || k ? '<h2 class="run__h">' + (k ? 'Green ' + k : 'Green not set') + '</h2>' : '') + '<div class="run__scroll"><table class="run__grid"><thead><tr><th>#</th><th>Team</th>' + rounds.map(function (r) { return '<th>G' + r + '</th>'; }).join('') + '</tr></thead><tbody>' +
           ts.map(function (t) { return '<tr><td><b>' + t.team_no + '</b></td><td class="run__gname">' + esc(t.name || '—') + '</td>' + rounds.map(function (r) { return cell(t, r); }).join('') + '</tr>'; }).join('') +
-          '<tr class="run__sumrow"><td></td><td class="run__gname">Total for / against</td>' + foot + '</tr></tbody></table></div>';
+          '<tr class="run__sumrow"><td></td><td class="run__gname">Points scored in the game</td>' + foot + '</tr></tbody></table></div>';
       }).join('');
     }
     function standingsHtml() {
