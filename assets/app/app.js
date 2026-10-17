@@ -4227,13 +4227,13 @@
       var tm = function (n) { var t = S.teams.filter(function (x) { return x.team_no === n; })[0]; return '<b>#' + n + '</b> ' + (t && t.name ? esc(t.name) : '<span class="muted">name not set</span>'); };
       var gOf = function (g) { var t = S.teams.filter(function (x) { return x.team_no === g.team_a; })[0]; return (t && t.green) || ''; };
       if (!rounds.length) return '<p class="muted">No games yet. Open <b>Scores</b>, choose a game and use <b>Add a game</b>: a rink and two teams for each match. Once you add them, the rink sheet appears here for the director to read.</p>' + drawToolsHtml();
-      return '<p class="muted">Who plays on which rink, game by game. Read-only: change the draw in Scores.</p>' + rounds.map(function (r) {
+      return '<p class="muted">Who plays on which rink, game by game. Tap a rink to open that game and change the rink, the teams or the score.</p>' + rounds.map(function (r) {
         var gs = S.games.filter(function (g) { return g.round === r; }).sort(function (a, b) { return a.rink - b.rink; });
         var groups = ['A', 'B', ''].filter(function (k) { return gs.some(function (g) { return gOf(g) === k; }); });
         return '<h2 class="run__h">Game ' + r + '</h2>' + groups.map(function (k) {
           return (groups.length > 1 || k ? '<h3 class="run__sub">' + (k ? 'Green ' + k : 'Green not set') + '</h3>' : '') + '<ul class="run__sheet">' + gs.filter(function (g) { return gOf(g) === k; }).map(function (g) {
             var done = g.score_a != null && g.score_b != null;
-            return '<li><span class="run__rk">Rink ' + g.rink + '</span><span class="run__tm">' + tm(g.team_a) + '</span><span class="run__vs">vs</span><span class="run__tm">' + tm(g.team_b) + '</span>' + (done ? '<span class="run__res">' + g.score_a + '–' + g.score_b + '</span>' : '') + '</li>'; }).join('') + '</ul>';
+            return '<li data-goto="' + g.round + '" data-goto-rink="' + g.rink + '" role="button" tabindex="0"><span class="run__rk">Rink ' + g.rink + '</span><span class="run__tm">' + tm(g.team_a) + '</span><span class="run__vs">vs</span><span class="run__tm">' + tm(g.team_b) + '</span>' + (done ? '<span class="run__res">' + g.score_a + '–' + g.score_b + '</span>' : '') + '</li>'; }).join('') + '</ul>';
         }).join('');
       }).join('') + '<div class="actions"><button class="btn btn--ghost" type="button" data-draw-print>Print or save as PDF</button></div>' + drawToolsHtml();
     }
@@ -4292,7 +4292,7 @@
       var f = el.getAttribute('data-f'), val = (f === 'score_a' || f === 'score_b') ? numOrNull(el.value) : (/^\d{1,2}$/.test(String(el.value).trim()) ? parseInt(el.value, 10) : NaN), st = card.querySelector('.run__saved');
         if (val === null && f !== 'score_a' && f !== 'score_b') { say(st, 'Enter a rink number', true); el.value = g[f]; return; }
         if (val !== null && (isNaN(val) || val < 0 || (f === 'rink' && val < 1))) { say(st, 'Enter a whole number', true); if (f === 'rink') el.value = g.rink; return; }
-        if (f === 'rink' && S.games.some(function (x) { return x.round === g.round && x.rink === val; })) { say(st, 'That rink is already used in this game', true); el.value = g.rink; return; }
+        if (f === 'rink' && S.games.some(function (x) { return x.round === g.round && x.rink === val; })) { var oc = S.games.filter(function (x) { return x.round === g.round && x.rink === val; })[0]; say(st, 'That rink is already used in this game', true); toast('Rink ' + val + ' is already taken in game ' + g.round, 'Team ' + oc.team_a + ' v ' + oc.team_b + ' are on it. Change their rink first, or move them to a free rink.'); el.value = g.rink; return; }
         var patch = {}; patch[f] = val; patch.updated_at = new Date().toISOString(); patch.updated_by = S.who;
         say(st, 'Saving…');
         restReq('PATCH', q(g), patch, S.tok).then(function () {
