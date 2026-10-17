@@ -4172,7 +4172,7 @@
     function resetHtml() {
       var scored = S.games.filter(function (g) { return g.score_a != null || g.score_b != null; }).length, cert = S.games.filter(function (g) { return g.certified_at; }).length, named = S.teams.filter(function (t) { return t.name; }).length;
       var head = '<h2 class="run__h run__dz">\u26a0 Danger zone</h2>';
-      if (!S.resetAsk) return head + '<p class="muted">Start over: clears everything entered for this event, for example after practising. Maverick would want a second confirmation, so it asks twice.</p><div class="actions"><button class="btn btn--ghost run__dangerline" type="button" data-reset-open>Reset this event\u2026</button></div>';
+      if (!S.resetAsk) return head + '<p class="muted">Start over: clears everything entered for this event, for example after practicing. Maverick would want a second confirmation, so it asks twice.</p><div class="actions"><button class="btn btn--ghost run__dangerline" type="button" data-reset-open>Reset this event\u2026</button></div>';
       if (S.resetAsk === 1) return head + '<div class="run__reset" role="alertdialog" aria-label="Reset this event"><p><b>Reset this event?</b> This cannot be undone.</p><ul>' +
         '<li>Clears <b>' + scored + '</b> score' + (scored === 1 ? '' : 's') + (cert ? ', including <b>' + cert + ' certified</b> result' + (cert === 1 ? '' : 's') : '') + ' and all forfeits</li>' +
         '<li>Clears <b>' + named + '</b> team name' + (named === 1 ? '' : 's') + ' (the greens stay)</li>' +
