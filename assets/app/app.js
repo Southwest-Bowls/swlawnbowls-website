@@ -4307,7 +4307,13 @@
         restReq('PATCH', q(g), patch, S.tok).then(function () {
           var oldRink = g.rink; g[f] = val; if (f === 'rink') { card.dataset.rink = val; }
           say(st, 'Saved ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })); refreshLive();
-          if (f === 'rink') S.games.sort(function (a, b) { return a.round - b.round || a.rink - b.rink; });
+          if (f === 'rink') {
+            S.games.sort(function (a, b) { return a.round - b.round || a.rink - b.rink; });
+            draw();
+            var mv = view.querySelector('.run__game[data-round="' + g.round + '"][data-rink="' + val + '"]');
+            if (mv) { mv.scrollIntoView({ block: 'center' }); mv.classList.add('is-focus'); setTimeout(function () { mv.classList.remove('is-focus'); }, 2200); }
+            toast('Moved to rink ' + val, 'Games are listed by rink, so it now sits in that place.');
+          }
         }, function (e) { say(st, 'Not saved: ' + (e.message || 'try again'), true); });
         return;
       }
