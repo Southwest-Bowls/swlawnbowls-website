@@ -4121,6 +4121,15 @@
       return { bad: bad, warn: warn, ok: ok };
     }
     function li(cls, x) { return '<li class="' + cls + '">' + esc(x.t) + (x.h ? '<small>' + esc(x.h) + '</small>' : '') + '</li>'; }
+    function checksStatusHtml() {
+      var c = runChecks(), n = c.warn.length;
+      return '<div class="run__checks run__status' + (c.bad.length ? ' is-bad' : '') + '" role="status"><b>' + (c.bad.length ? c.bad.length + ' problem' + (c.bad.length === 1 ? '' : 's') + ' to fix' : '\u2713 No errors found') + '</b>' +
+        (n ? ' <button type="button" class="textlink" data-run-tab="checks">' + n + ' worth a second look \u203a</button>' : (c.bad.length ? ' <button type="button" class="textlink" data-run-tab="checks">See details \u203a</button>' : '')) + '</div>';
+    }
+    function checksPageHtml() {
+      var c = runChecks();
+      return '<p class="muted">Every check the app runs on the draw and the scores. <b>Problems</b> must be fixed before results are certified. <b>Worth a second look</b> is not an error: it is something unusual that is worth a glance before you certify.</p>' + checksHtml();
+    }
     function checksHtml() {
       var c = runChecks();
       return '<div class="run__checks' + (c.bad.length ? ' is-bad' : '') + '" role="status"><b>' + (c.bad.length ? c.bad.length + ' problem' + (c.bad.length === 1 ? '' : 's') + ' to fix' : 'No errors found') + '</b>' +
@@ -4140,8 +4149,8 @@
     }
     function teamLabel(n) { var t = S.teams.filter(function (x) { return x.team_no === n; })[0]; return '#' + n + (t && t.green ? ' (' + t.green + ')' : '') + (t && t.name ? ' ' + t.name : ''); }
     function teamOpts(sel) { return S.teams.map(function (t) { return '<option value="' + t.team_no + '"' + (t.team_no === sel ? ' selected' : '') + '>' + esc(teamLabel(t.team_no)) + '</option>'; }).join(''); }
-    function tabsHtml() { return '<div class="segmented run__tabs" role="tablist">' + [['teams', 'Teams'], ['draw', 'Draw'], ['scores', 'Scores'], ['grid', 'Grid'], ['standings', 'Standings']].map(function (t) { return '<button type="button" role="tab" aria-selected="' + (S.tab === t[0]) + '" data-run-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>'; }
-    function bodyHtml() { return S.tab === 'teams' ? teamsHtml() : S.tab === 'draw' ? drawSheetHtml() : S.tab === 'scores' ? scoresHtml() : S.tab === 'grid' ? gridHtml() : standingsHtml(); }
+    function tabsHtml() { return '<div class="segmented run__tabs" role="tablist">' + [['teams', 'Teams'], ['draw', 'Draw'], ['scores', 'Scores'], ['grid', 'Grid'], ['standings', 'Standings'], ['checks', 'Checks']].map(function (t) { return '<button type="button" role="tab" aria-selected="' + (S.tab === t[0]) + '" data-run-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>'; }
+    function bodyHtml() { return S.tab === 'teams' ? teamsHtml() : S.tab === 'draw' ? drawSheetHtml() : S.tab === 'scores' ? scoresHtml() : S.tab === 'grid' ? gridHtml() : S.tab === 'checks' ? checksPageHtml() : standingsHtml(); }
     function switchTab(name) {
       if (name === S.tab) return;
       S.tab = name;
@@ -4149,7 +4158,7 @@
       var body = view.querySelector('#run-body'); if (!body) { draw(); return; }
       body.style.opacity = '0';
       var show = function () { if (root !== view) return; body.innerHTML = bodyHtml(); body.style.opacity = '1'; };
-      setTimeout(function () { if (name === 'standings' || name === 'grid' || name === 'draw') load().then(show, show); else show(); }, 140);
+      setTimeout(function () { if (name === 'standings' || name === 'grid' || name === 'draw' || name === 'checks') load().then(show, show); else show(); }, 140);
     }
     function teamsHtml() {
       return '<p class="muted">After the card draw, pick each team from the entered teams. Names always come from the entry list, so nothing is typed here by mistake.</p>' + [['A', 'Green A'], ['B', 'Green B'], ['', 'Green not set']].map(function (gp) {
@@ -4271,7 +4280,7 @@
       };
       var body = multi ? greens.map(function (g) { return tbl(all.filter(function (x) { return x.green === g; }), g ? g + ' green' : 'No green set'); }).join('') : tbl(all, '');
       var cn = S.games.filter(function (g) { return g.certified_at; }).length, pn = S.games.filter(function (g) { return g.score_a != null && g.score_b != null; }).length;
-      return checksHtml() + '<p class="muted">' + (cn < pn ? 'Provisional: ' : '') + cn + ' of ' + pn + ' played games certified. Win 3, tie 1, loss 0. Ties on points go to plus points (for minus against), then fewest points against.</p><label class="run__tog"><input type="checkbox" data-cert-only' + (S.certOnly ? ' checked' : '') + '> Count certified games only</label>' + body + '<div class="actions"><button class="btn btn--ghost" type="button" data-run-refresh>Refresh from the database</button></div>';
+      return checksStatusHtml() + '<p class="muted">' + (cn < pn ? 'Provisional: ' : '') + cn + ' of ' + pn + ' played games certified. Win 3, tie 1, loss 0. Ties on points go to plus points (for minus against), then fewest points against.</p><label class="run__tog"><input type="checkbox" data-cert-only' + (S.certOnly ? ' checked' : '') + '> Count certified games only</label>' + body + '<div class="actions"><button class="btn btn--ghost" type="button" data-run-refresh>Refresh from the database</button></div>';
     }
     function draw() {
       view.innerHTML = shell(tabsHtml() + '<div id="run-body">' + bodyHtml() + '</div><p class="footnote">Signed in as ' + esc(S.who) + '. Only directors can see this page.</p>');
