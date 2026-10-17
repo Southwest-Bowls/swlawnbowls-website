@@ -2686,3 +2686,5 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 
 .run__sheet li[data-goto] { cursor: pointer; }
 .run__sheet li[data-goto]:active { background: #f3eff2; }
+
+.run__legnote { margin: var(--s2) 0 0; color: var(--muted, #6b5f69); }
