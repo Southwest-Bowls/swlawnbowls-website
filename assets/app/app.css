@@ -2691,3 +2691,11 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 
 .run__status { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s3); }
 .run__tabs button { padding-left: 6px; padding-right: 6px; font-size: .92em; }
+
+.run__drawgrid th, .run__drawgrid td { text-align: center; }
+.run__drawgrid .run__c { display: table-cell; cursor: pointer; }
+.run__drawgrid .run__c b { display: block; }
+.run__drawgrid .run__c.is-done { background: #ececf1; }
+.run__key { margin: var(--s2) 0; }
+.run__key summary { cursor: pointer; font-weight: 600; padding: var(--s2) 0; }
+.run__key ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 2px; }

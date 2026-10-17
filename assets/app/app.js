@@ -4236,14 +4236,20 @@
       var tm = function (n) { var t = S.teams.filter(function (x) { return x.team_no === n; })[0]; return '<b>#' + n + '</b> ' + (t && t.name ? esc(t.name) : '<span class="muted">name not set</span>'); };
       var gOf = function (g) { var t = S.teams.filter(function (x) { return x.team_no === g.team_a; })[0]; return (t && t.green) || ''; };
       if (!rounds.length) return '<p class="muted">No games yet. Open <b>Scores</b>, choose a game and use <b>Add a game</b>: a rink and two teams for each match. Once you add them, the rink sheet appears here for the director to read.</p>' + drawToolsHtml();
-      return '<p class="muted">Who plays on which rink, game by game. Tap a rink to open that game and change the rink, the teams or the score.</p>' + rounds.map(function (r) {
-        var gs = S.games.filter(function (g) { return g.round === r; }).sort(function (a, b) { return a.rink - b.rink; });
-        var groups = ['A', 'B', ''].filter(function (k) { return gs.some(function (g) { return gOf(g) === k; }); });
-        return '<h2 class="run__h">Game ' + r + '</h2>' + groups.map(function (k) {
-          return (groups.length > 1 || k ? '<h3 class="run__sub">' + (k ? 'Green ' + k : 'Green not set') + '</h3>' : '') + '<ul class="run__sheet">' + gs.filter(function (g) { return gOf(g) === k; }).map(function (g) {
-            var done = g.score_a != null && g.score_b != null;
-            return '<li data-goto="' + g.round + '" data-goto-rink="' + g.rink + '" role="button" tabindex="0"><span class="run__rk">Rink ' + g.rink + '</span><span class="run__tm">' + tm(g.team_a) + '</span><span class="run__vs">vs</span><span class="run__tm">' + tm(g.team_b) + '</span>' + (done ? '<span class="run__res">' + g.score_a + '–' + g.score_b + '</span>' : '') + '</li>'; }).join('') + '</ul>';
-        }).join('');
+      var greens = ['A', 'B', ''].filter(function (k) { return S.games.some(function (g) { return gOf(g) === k; }); });
+      return '<p class="muted">The whole draw on one page: a row for each rink, a column for each game, and the two team numbers that play there. Tap a box to open that game.</p>' + greens.map(function (k) {
+        var gs = S.games.filter(function (g) { return gOf(g) === k; }), rinks = [], ts = S.teams.filter(function (t) { return (t.green || '') === k; });
+        gs.forEach(function (g) { if (rinks.indexOf(g.rink) < 0) rinks.push(g.rink); }); rinks.sort(function (x, y) { return x - y; });
+        var cell = function (r, rk) {
+          var g = gs.filter(function (x) { return x.round === r && x.rink === rk; })[0];
+          if (!g) return '<td class="run__c run__c--bye">\u2013</td>';
+          var done = g.score_a != null && g.score_b != null;
+          return '<td class="run__c ' + (done ? 'is-done' : '') + '" data-goto="' + r + '" data-goto-rink="' + rk + '" role="button" tabindex="0"><b>' + g.team_a + ' v ' + g.team_b + '</b>' + (done ? '<small>' + g.score_a + '\u2013' + g.score_b + '</small>' : '') + '</td>';
+        };
+        var head = '<tr><th>Rink</th>' + rounds.map(function (r) { return '<th>Game ' + r + '</th>'; }).join('') + '</tr>';
+        return (greens.length > 1 || k ? '<h2 class="run__h">' + (k ? 'Green ' + k : 'Green not set') + '</h2>' : '') +
+          '<div class="run__scroll"><table class="run__grid run__drawgrid"><thead>' + head + '</thead><tbody>' + rinks.map(function (rk) { return '<tr><td><b>' + rk + '</b></td>' + rounds.map(function (r) { return cell(r, rk); }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
+          '<details class="run__key"><summary>Team numbers and names</summary><ul>' + ts.map(function (t) { return '<li><b>' + t.team_no + '</b> ' + (t.name ? esc(t.name) : '<span class="muted">name not set</span>') + '</li>'; }).join('') + '</ul></details>';
       }).join('') + '<div class="actions"><button class="btn btn--ghost" type="button" data-draw-print>Print or save as PDF</button></div>' + drawToolsHtml();
     }
     function gridHtml() {
