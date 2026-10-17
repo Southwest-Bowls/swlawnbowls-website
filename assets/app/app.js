@@ -4196,11 +4196,37 @@
       var head = '<div class="run__bar"><span>' + certN + ' of ' + inRound + ' certified in game ' + S.round + '</span><button class="btn btn--ghost btn--sm" type="button" data-round-cert>Certify all complete games</button></div>' + (c0.bad.length ? '<div class="run__checks is-bad"><b>' + c0.bad.length + ' problem' + (c0.bad.length === 1 ? '' : 's') + ' to fix</b><ul>' + c0.bad.slice(0, 3).map(function (x) { return li('run__x-bad', x); }).join('') + '</ul></div>' : '');
       return head + '<p class="muted">Enter scores as games finish. You can change the rink or the teams, add or remove a game if the draw changes.</p>' + chips + cards + '<h2 class="run__h">Add a game</h2><form class="run__addgame" data-game-form><input class="run__rinkin" type="number" inputmode="numeric" min="1" max="30" name="rink" placeholder="Rink" required><select name="a" required aria-label="Team A"><option value="">Team A…</option>' + teamOpts(0) + '</select><select name="b" required aria-label="Team B"><option value="">Team B…</option>' + teamOpts(0) + '</select><button class="btn btn--ghost" type="submit">Add</button></form>';
     }
+    // Fixed draws by number of teams on a green. Fixed tables are [game, rink, position a, position b].
+    // 12 teams x 4 games is Anne's sheet; 4 teams is a plain 3-game round robin whose rinks start at a rink the director sets.
+    var DRAWS = {
+      12: { label: '12 teams, 4 games (from Anne\u2019s sheet)', fixed: [[1,2,1,4],[1,3,11,12],[1,4,5,10],[1,5,6,9],[1,6,7,8],[1,7,2,3],[2,1,5,7],[2,2,9,11],[2,5,3,4],[2,6,2,10],[2,7,1,12],[2,8,6,8],[3,1,4,12],[3,2,8,10],[3,3,6,7],[3,4,2,11],[3,7,5,9],[3,8,1,3],[4,1,10,11],[4,4,3,12],[4,5,5,8],[4,6,1,6],[4,7,4,7],[4,8,2,9]] },
+      4: { label: '4 teams, 3 games, everyone plays everyone', rr: [[[1,2],[3,4]], [[1,3],[2,4]], [[1,4],[2,3]]] }
+    };
+    function drawBuild(nos, startRink) {
+      var d = DRAWS[nos.length], out = []; if (!d) return null;
+      if (d.fixed) d.fixed.forEach(function (r) { out.push({ round: r[0], rink: r[1], team_a: nos[r[2] - 1], team_b: nos[r[3] - 1] }); });
+      else d.rr.forEach(function (pairs, i) { pairs.forEach(function (pr, j) { out.push({ round: i + 1, rink: startRink + j, team_a: nos[pr[0] - 1], team_b: nos[pr[1] - 1] }); }); });
+      return out;
+    }
+    function drawToolsHtml() {
+      var cards = ['A', 'B', ''].map(function (k) {
+        var ts = S.teams.filter(function (t) { return (t.green || '') === k; }); if (!ts.length) return '';
+        var nm = k ? 'Green ' + k : 'Green not set', has = S.games.filter(function (g) { return ts.some(function (t) { return t.team_no === g.team_a; }); }), scored = has.some(function (g) { return g.score_a != null || g.score_b != null || g.certified_at; });
+        var d = DRAWS[ts.length];
+        if (!k) return '<div class="run__gen"><b>' + nm + '</b><p class="muted">Set the green for these teams first (Teams tab).</p></div>';
+        if (!d) return '<div class="run__gen"><b>' + nm + ' · ' + ts.length + ' teams</b><p class="muted">There is no standard draw for ' + ts.length + ' teams yet. Add the games by hand in Scores.</p></div>';
+        return '<div class="run__gen" data-gen="' + k + '"><b>' + nm + ' · ' + d.label + '</b>' +
+          (d.rr ? '<label class="muted">First rink <input class="run__rinkin" type="number" inputmode="numeric" min="1" max="29" value="' + (k === 'B' ? 9 : 1) + '" data-gen-rink></label>' : '') +
+          '<p class="muted">Team numbers on this green, lowest first, take places 1 to ' + ts.length + '. ' + (has.length ? (scored ? 'Scores are already entered here, so the draw is locked.' : 'This replaces the ' + has.length + ' games it has now.') : 'No games yet.') + '</p>' +
+          '<button class="btn btn--ghost" type="button" data-gen-go="' + k + '"' + (scored ? ' disabled' : '') + '>' + (has.length ? 'Replace the draw' : 'Create the draw') + '</button></div>';
+      }).join('');
+      return '<h2 class="run__h">Create the whole draw</h2><p class="muted">After the card draw and the team numbers are set, one tap builds every game for a green.</p>' + cards;
+    }
     function drawSheetHtml() {
       var rounds = []; S.games.forEach(function (g) { if (rounds.indexOf(g.round) < 0) rounds.push(g.round); }); rounds.sort(function (a, b) { return a - b; });
       var tm = function (n) { var t = S.teams.filter(function (x) { return x.team_no === n; })[0]; return '<b>#' + n + '</b> ' + (t && t.name ? esc(t.name) : '<span class="muted">name not set</span>'); };
       var gOf = function (g) { var t = S.teams.filter(function (x) { return x.team_no === g.team_a; })[0]; return (t && t.green) || ''; };
-      if (!rounds.length) return '<p class="muted">No games yet. Open <b>Scores</b>, choose a game and use <b>Add a game</b>: a rink and two teams for each match. Once you add them, the rink sheet appears here for the director to read.</p>';
+      if (!rounds.length) return '<p class="muted">No games yet. Open <b>Scores</b>, choose a game and use <b>Add a game</b>: a rink and two teams for each match. Once you add them, the rink sheet appears here for the director to read.</p>' + drawToolsHtml();
       return '<p class="muted">Who plays on which rink, game by game. Read-only: change the draw in Scores.</p>' + rounds.map(function (r) {
         var gs = S.games.filter(function (g) { return g.round === r; }).sort(function (a, b) { return a.rink - b.rink; });
         var groups = ['A', 'B', ''].filter(function (k) { return gs.some(function (g) { return gOf(g) === k; }); });
@@ -4209,7 +4235,7 @@
             var done = g.score_a != null && g.score_b != null;
             return '<li><span class="run__rk">Rink ' + g.rink + '</span><span class="run__tm">' + tm(g.team_a) + '</span><span class="run__vs">vs</span><span class="run__tm">' + tm(g.team_b) + '</span>' + (done ? '<span class="run__res">' + g.score_a + '–' + g.score_b + '</span>' : '') + '</li>'; }).join('') + '</ul>';
         }).join('');
-      }).join('') + '<div class="actions"><button class="btn btn--ghost" type="button" data-draw-print>Print or save as PDF</button></div>';
+      }).join('') + '<div class="actions"><button class="btn btn--ghost" type="button" data-draw-print>Print or save as PDF</button></div>' + drawToolsHtml();
     }
     function gridHtml() {
       var rounds = []; S.games.forEach(function (g) { if (rounds.indexOf(g.round) < 0) rounds.push(g.round); }); rounds.sort(function (x, y) { return x - y; });
@@ -4222,9 +4248,9 @@
         var g = gs[0], mine = g.team_a === t.team_no, opp = mine ? g.team_b : g.team_a, f = mine ? g.score_a : g.score_b, ag = mine ? g.score_b : g.score_a, done = f != null && ag != null;
         var cls = !done ? 'is-wait' : f > ag ? 'is-win' : f < ag ? 'is-loss' : 'is-tie';
         if (bad[g.round + '|' + g.rink] || (!done && (f != null || ag != null))) cls = 'is-bad';
-        return '<td class="run__c ' + cls + '" data-goto="' + r + '" title="' + esc((tip[g.round + '|' + g.rink] || []).join(' ')) + '"><small>R' + g.rink + ' v' + opp + '</small><b>' + (done ? f + '–' + ag : '·') + '</b>' + (g.forfeit ? '<i>F</i>' : '') + (g.certified_at ? '<i>✓</i>' : '') + '</td>';
+        return '<td class="run__c ' + cls + '" data-goto="' + r + '" data-goto-rink="' + g.rink + '" role="button" tabindex="0" title="' + esc((tip[g.round + '|' + g.rink] || []).join(' ')) + '"><small>Rink ' + g.rink + ' v ' + opp + '</small><b>' + (done ? f + '–' + ag : '·') + '</b>' + (g.forfeit ? '<i>F</i>' : '') + (g.certified_at ? '<i>✓</i>' : '') + '</td>';
       }
-      return '<p class="muted">One row per team, one column per game: rink, opponent number and score. Green won, red lost, grey tied, white waiting. A red outline is a problem. Tap a cell to open that game.</p>' + greens.map(function (k) {
+      return '<p class="muted">One row per team, one column per game. Tap a cell to open that game.</p><div class="run__legend"><p><b>How to read a cell</b></p><div class="run__ex"><span class="run__c is-win"><small>Rink 2 v 4</small><b>12–7</b></span><span>= played on <b>rink 2</b> <b>versus team 4</b>, won 12 to 7.</span></div><ul><li><span class="run__dot is-win"></span> Won</li><li><span class="run__dot is-loss"></span> Lost</li><li><span class="run__dot is-tie"></span> Tied</li><li><span class="run__dot is-wait"></span> Waiting for a score</li><li><span class="run__dot is-bad"></span> Red outline: a problem to fix</li><li><b>F</b> forfeit · <b>✓</b> certified · <b>–</b> no game (bye)</li></ul></div>' + greens.map(function (k) {
         var ts = S.teams.filter(function (t) { return (t.green || '') === k; }), ids = ts.map(function (t) { return t.team_no; });
         var foot = rounds.map(function (r) {
           var f = 0, ag = 0; S.games.filter(function (g) { return g.round === r && g.score_a != null && g.score_b != null && (ids.indexOf(g.team_a) >= 0 || ids.indexOf(g.team_b) >= 0); }).forEach(function (g) { f += g.score_a; ag += g.score_b; });
@@ -4313,8 +4339,29 @@
     view.addEventListener('change', function (ev) { if (ev.target.hasAttribute && ev.target.hasAttribute('data-cert-only')) { S.certOnly = ev.target.checked; draw(); } });
     view.addEventListener('click', function (ev) {
       if (root !== view) return;
-      var gc = ev.target.closest('[data-goto]'); if (gc) { S.round = +gc.getAttribute('data-goto'); S.tab = 'scores'; draw(); window.scrollTo(0, 0); return; }
+      var gc = ev.target.closest('[data-goto]'); if (gc) {
+        S.round = +gc.getAttribute('data-goto'); S.tab = 'scores'; var gr = gc.getAttribute('data-goto-rink'); draw();
+        var card = gr && view.querySelector('.run__game[data-round="' + S.round + '"][data-rink="' + gr + '"]');
+        if (card) { card.scrollIntoView({ block: 'center' }); card.classList.add('is-focus'); setTimeout(function () { card.classList.remove('is-focus'); }, 2200); var sc = card.querySelector('[data-f="score_a"]:not([disabled])'); if (sc) sc.focus({ preventScroll: true }); } else window.scrollTo(0, 0);
+        return; }
       var b = ev.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-gen-go')) {
+        var gk = b.getAttribute('data-gen-go'), gts = S.teams.filter(function (t) { return (t.green || '') === gk; }).map(function (t) { return t.team_no; }).sort(function (x, y) { return x - y; });
+        var gbox = b.closest('[data-gen]'), gri = gbox && gbox.querySelector('[data-gen-rink]'), sr = gri ? parseInt(gri.value, 10) : 1;
+        if (!(sr >= 1 && sr <= 29)) { toast('Enter the first rink'); return; }
+        var old = S.games.filter(function (g) { return gts.indexOf(g.team_a) >= 0; });
+        if (old.some(function (g) { return g.score_a != null || g.score_b != null || g.certified_at; })) { toast('Scores are already entered', 'Remove them first.'); return; }
+        var clash = drawBuild(gts, sr).filter(function (n) { return S.games.some(function (g) { return old.indexOf(g) < 0 && g.round === n.round && g.rink === n.rink; }); })[0];
+        if (clash) { toast('Rink ' + clash.rink + ' is already used in game ' + clash.round, 'Choose a different first rink.'); return; }
+        if (!b.dataset.sure) { b.dataset.sure = '1'; var t0 = b.textContent; b.textContent = 'Tap again to confirm'; setTimeout(function () { b.dataset.sure = ''; b.textContent = t0; }, 4000); return; }
+        var made = drawBuild(gts, sr).map(function (g) { return Object.assign({ event_id: evId, updated_by: S.who }, g); });
+        b.disabled = true;
+        Promise.all(old.map(function (g) { return restReq('DELETE', q(g), null, S.tok); })).then(function () { return restReq('POST', 'run_games', made, S.tok); }).then(function () {
+          S.games = S.games.filter(function (g) { return old.indexOf(g) < 0; }).concat(made.map(function (g) { return Object.assign({ score_a: null, score_b: null }, g); })); S.games.sort(function (x, y) { return x.round - y.round || x.rink - y.rink; });
+          draw(); toast('Draw created', made.length + ' games for Green ' + gk);
+        }, function (e) { b.disabled = false; load().then(draw, draw); toast('Could not create the draw', e.message); });
+        return;
+      }
       if (b.hasAttribute('data-draw-print')) { window.print(); return; }
       if (b.hasAttribute('data-run-tab')) { switchTab(b.getAttribute('data-run-tab')); return; }
       if (b.hasAttribute('data-run-refresh')) { load().then(function () { if (root === view) { draw(); toast('Refreshed'); } }, function (e) { toast('Could not refresh', e.message); }); return; }
