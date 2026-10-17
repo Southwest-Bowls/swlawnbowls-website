@@ -3328,6 +3328,11 @@
       '</div>' +
       '<div id="my-res"></div><div id="run-entry"></div>' + myEntriesHtml();
     runEntry(view);
+    (function () {   // hidden switch for directors: tap your name five times on My SWD
+      var nm = view.querySelector('.phero__name'); if (!nm || !memberSession()) return;
+      var taps = 0, last = 0;
+      nm.addEventListener('click', function () { var now = Date.now(); taps = now - last < 2500 ? taps + 1 : 1; last = now; if (taps >= 5) { taps = 0; store('run', true); runEntry(view); toast('Director tools switched on'); } });
+    })();
     var box = view.querySelector('#m-box');
     wireProfile();
     view.onclick = function (ev) {
