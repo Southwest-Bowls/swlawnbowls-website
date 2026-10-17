@@ -2664,3 +2664,11 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 .segmented.seg--anim > button[aria-selected="true"], .segmented.seg--anim > button[aria-pressed="true"] { color: var(--seg-on); }
 .seg__pill { position: absolute; z-index: 0; top: 0; left: 0; pointer-events: none; transition: transform .3s cubic-bezier(.4, 0, .2, 1), width .3s cubic-bezier(.4, 0, .2, 1), height .3s cubic-bezier(.4, 0, .2, 1), opacity .2s ease; }
 @media (prefers-reduced-motion: reduce) { .seg__pill, .segmented.seg--anim > button { transition: none; } }
+
+.run__sub { font-size: var(--fs-md, 1rem); margin: var(--s3) 0 var(--s1); color: var(--muted, #6b5f69); }
+.run__sheet { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.run__sheet li { display: grid; grid-template-columns: auto 1fr; gap: 2px var(--s3); align-items: baseline; padding: var(--s2) var(--s3); background: #fff; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.run__sheet .run__rk { grid-row: span 3; font-weight: 700; min-width: 4.2em; }
+.run__sheet .run__vs { font-size: .8em; color: var(--muted, #6b5f69); text-align: left; padding: 0; margin: 0; }
+.run__sheet .run__res { font-weight: 700; }
+@media print { .run__tabs, .actions, .tabbar, nav, header { display: none !important; } }

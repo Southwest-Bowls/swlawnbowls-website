@@ -4140,8 +4140,8 @@
     }
     function teamLabel(n) { var t = S.teams.filter(function (x) { return x.team_no === n; })[0]; return '#' + n + (t && t.green ? ' (' + t.green + ')' : '') + (t && t.name ? ' ' + t.name : ''); }
     function teamOpts(sel) { return S.teams.map(function (t) { return '<option value="' + t.team_no + '"' + (t.team_no === sel ? ' selected' : '') + '>' + esc(teamLabel(t.team_no)) + '</option>'; }).join(''); }
-    function tabsHtml() { return '<div class="segmented run__tabs" role="tablist">' + [['teams', 'Teams'], ['scores', 'Scores'], ['grid', 'Grid'], ['standings', 'Standings']].map(function (t) { return '<button type="button" role="tab" aria-selected="' + (S.tab === t[0]) + '" data-run-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>'; }
-    function bodyHtml() { return S.tab === 'teams' ? teamsHtml() : S.tab === 'scores' ? scoresHtml() : S.tab === 'grid' ? gridHtml() : standingsHtml(); }
+    function tabsHtml() { return '<div class="segmented run__tabs" role="tablist">' + [['teams', 'Teams'], ['draw', 'Draw'], ['scores', 'Scores'], ['grid', 'Grid'], ['standings', 'Standings']].map(function (t) { return '<button type="button" role="tab" aria-selected="' + (S.tab === t[0]) + '" data-run-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>'; }
+    function bodyHtml() { return S.tab === 'teams' ? teamsHtml() : S.tab === 'draw' ? drawSheetHtml() : S.tab === 'scores' ? scoresHtml() : S.tab === 'grid' ? gridHtml() : standingsHtml(); }
     function switchTab(name) {
       if (name === S.tab) return;
       S.tab = name;
@@ -4149,7 +4149,7 @@
       var body = view.querySelector('#run-body'); if (!body) { draw(); return; }
       body.style.opacity = '0';
       var show = function () { if (root !== view) return; body.innerHTML = bodyHtml(); body.style.opacity = '1'; };
-      setTimeout(function () { if (name === 'standings' || name === 'grid') load().then(show, show); else show(); }, 140);
+      setTimeout(function () { if (name === 'standings' || name === 'grid' || name === 'draw') load().then(show, show); else show(); }, 140);
     }
     function teamsHtml() {
       return '<p class="muted">After the card draw, pick each team from the entered teams. Names always come from the entry list, so nothing is typed here by mistake.</p>' + [['A', 'Green A'], ['B', 'Green B'], ['', 'Green not set']].map(function (gp) {
@@ -4195,6 +4195,21 @@
       var inRound = gs.length, certN = gs.filter(function (g) { return g.certified_at; }).length, c0 = runChecks();
       var head = '<div class="run__bar"><span>' + certN + ' of ' + inRound + ' certified in game ' + S.round + '</span><button class="btn btn--ghost btn--sm" type="button" data-round-cert>Certify all complete games</button></div>' + (c0.bad.length ? '<div class="run__checks is-bad"><b>' + c0.bad.length + ' problem' + (c0.bad.length === 1 ? '' : 's') + ' to fix</b><ul>' + c0.bad.slice(0, 3).map(function (x) { return li('run__x-bad', x); }).join('') + '</ul></div>' : '');
       return head + '<p class="muted">Enter scores as games finish. You can change the rink or the teams, add or remove a game if the draw changes.</p>' + chips + cards + '<h2 class="run__h">Add a game</h2><form class="run__addgame" data-game-form><input class="run__rinkin" type="number" inputmode="numeric" min="1" max="30" name="rink" placeholder="Rink" required><select name="a" required aria-label="Team A"><option value="">Team A…</option>' + teamOpts(0) + '</select><select name="b" required aria-label="Team B"><option value="">Team B…</option>' + teamOpts(0) + '</select><button class="btn btn--ghost" type="submit">Add</button></form>';
+    }
+    function drawSheetHtml() {
+      var rounds = []; S.games.forEach(function (g) { if (rounds.indexOf(g.round) < 0) rounds.push(g.round); }); rounds.sort(function (a, b) { return a - b; });
+      var tm = function (n) { var t = S.teams.filter(function (x) { return x.team_no === n; })[0]; return '<b>#' + n + '</b> ' + (t && t.name ? esc(t.name) : '<span class="muted">name not set</span>'); };
+      var gOf = function (g) { var t = S.teams.filter(function (x) { return x.team_no === g.team_a; })[0]; return (t && t.green) || ''; };
+      if (!rounds.length) return '<p class="muted">No games yet. Open <b>Scores</b>, choose a game and use <b>Add a game</b>: a rink and two teams for each match. Once you add them, the rink sheet appears here for the director to read.</p>';
+      return '<p class="muted">Who plays on which rink, game by game. Read-only: change the draw in Scores.</p>' + rounds.map(function (r) {
+        var gs = S.games.filter(function (g) { return g.round === r; }).sort(function (a, b) { return a.rink - b.rink; });
+        var groups = ['A', 'B', ''].filter(function (k) { return gs.some(function (g) { return gOf(g) === k; }); });
+        return '<h2 class="run__h">Game ' + r + '</h2>' + groups.map(function (k) {
+          return (groups.length > 1 || k ? '<h3 class="run__sub">' + (k ? 'Green ' + k : 'Green not set') + '</h3>' : '') + '<ul class="run__sheet">' + gs.filter(function (g) { return gOf(g) === k; }).map(function (g) {
+            var done = g.score_a != null && g.score_b != null;
+            return '<li><span class="run__rk">Rink ' + g.rink + '</span><span class="run__tm">' + tm(g.team_a) + '</span><span class="run__vs">vs</span><span class="run__tm">' + tm(g.team_b) + '</span>' + (done ? '<span class="run__res">' + g.score_a + '–' + g.score_b + '</span>' : '') + '</li>'; }).join('') + '</ul>';
+        }).join('');
+      }).join('') + '<div class="actions"><button class="btn btn--ghost" type="button" data-draw-print>Print or save as PDF</button></div>';
     }
     function gridHtml() {
       var rounds = []; S.games.forEach(function (g) { if (rounds.indexOf(g.round) < 0) rounds.push(g.round); }); rounds.sort(function (x, y) { return x - y; });
@@ -4300,6 +4315,7 @@
       if (root !== view) return;
       var gc = ev.target.closest('[data-goto]'); if (gc) { S.round = +gc.getAttribute('data-goto'); S.tab = 'scores'; draw(); window.scrollTo(0, 0); return; }
       var b = ev.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-draw-print')) { window.print(); return; }
       if (b.hasAttribute('data-run-tab')) { switchTab(b.getAttribute('data-run-tab')); return; }
       if (b.hasAttribute('data-run-refresh')) { load().then(function () { if (root === view) { draw(); toast('Refreshed'); } }, function (e) { toast('Could not refresh', e.message); }); return; }
       if (b.hasAttribute('data-cert')) {
