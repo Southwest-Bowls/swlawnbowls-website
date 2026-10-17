@@ -2411,11 +2411,11 @@ a.tcard, a.pcard { -webkit-touch-callout: none; }
 .signin__legal { margin-top: -6px; } .signin__legal .linkbtn { color: var(--heading); }
 
 /* ===== Smaller type everywhere (Standard is now the old "Large minus one"); other sizes step up from it ===== */
-html { font-size: 90%; }
-html[data-text="large"]  { font-size: 100%; }
-html[data-text="xlarge"] { font-size: 112.5%; }
-html[data-text="xxlarge"] { font-size: 130%; }
-:root { --fs-xs: .8125rem; --fs-sm: .9rem; --fs-md: 1rem; --fs-lg: 1.12rem; --fs-xl: 1.28rem; }
+html { font-size: 85%; }   /* Oct 16: smaller again, closer to WhatsApp and other phone apps */
+html[data-text="large"]  { font-size: 94.5%; }
+html[data-text="xlarge"] { font-size: 106%; }
+html[data-text="xxlarge"] { font-size: 122%; }
+:root { --fs-xs: .86rem; --fs-sm: .94rem; --fs-md: 1rem; --fs-lg: 1.14rem; --fs-xl: 1.3rem; }
 input, select, textarea { font-size: max(16px, 1em); }   /* iPhone zooms the page for smaller fields */
 h1 { font-size: clamp(1.45rem, 6vw, 1.75rem); } .ehero__title { font-size: clamp(1.35rem, 6vw, 1.7rem); } .pcard__title { font-size: 1.25rem; }
 .chead__t { font-size: 1.6rem; } .phero__name { font-size: 1.45rem; } .dtitle h1 { font-size: 1.3rem; } .section__title { font-size: 1.15rem; }
