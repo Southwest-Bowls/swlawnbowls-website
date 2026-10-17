@@ -233,7 +233,7 @@
       "summary": "Active inland club with regular bowls, coaching, and social play.",
       "details": "Located at 451 East Arrow Highway in Pomona, the club offers regular bowling, coaching for new players, and social events throughout the year.",
       "image": "/photos/clubs/pomona.jpg",
-      "imageNeedsReview": true
+      "imageNeedsReview": false
     },
     {
       "id": "redlands",

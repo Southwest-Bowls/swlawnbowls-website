@@ -2881,16 +2881,25 @@
   // My results: every published place where the name on this phone appears (exact full-name match,
   // split on commas, "&", "/" and "and"). Matching is local; nothing is sent anywhere. Names are
   // never corrected, so a spelling variant in a result will not match until the Division fixes it.
-  function splitNames(str) { return String(str || '').split(/\s*(?:,|&|\/|\band\b)\s*/i).map(fold).map(function (x) { return x.trim(); }).filter(Boolean); }
+  function splitNames(str) {
+    var parts = String(str || '').split(/\s*(?:,|&|\/|\band\b)\s*/i).map(fold).map(function (x) { return x.trim(); }).filter(Boolean);
+    // "Joanne & Wilf Steckler": the first names share the surname written once at the end
+    var last = parts.length > 1 ? parts[parts.length - 1].split(/\s+/) : [];
+    if (last.length > 1 && parts.slice(0, -1).every(function (x) { return x.indexOf(' ') < 0; })) {
+      var sur = last[last.length - 1];
+      parts = parts.map(function (x, i) { return i < parts.length - 1 ? x + ' ' + sur : x; });
+    }
+    return parts;
+  }
   function myResults(list, name) {
-    var me = fold(name).trim(); if (!me) return [];
+    var me = fold(name).trim(); if (!me || me.indexOf(' ') < 0) return [];   // a first name alone would match every "Joanne" in the results
     var out = [];
     list.forEach(function (r) {
       (r.t.divisions || []).forEach(function (dv) {
         divisionPlaces(dv).forEach(function (g) {
           g.places.forEach(function (pl) {
             if (splitNames(pl.names).indexOf(me) < 0) return;
-            var partners = String(pl.names).split(/\s*(?:,|&|\/|\band\b)\s*/i).filter(function (n) { return fold(n).trim() !== me; });
+            var partners = String(pl.names).split(/\s*(?:,|&|\/|\band\b)\s*/i).filter(function (n) { var f = fold(n).trim(); return f !== me && me.indexOf(f + ' ') !== 0; });
             out.push({ r: r, rank: pl.rank, rankLabel: pl.rankLabel || '', slug: (r.t.divisions || []).length > 1 ? divSlug(dv) : '', divLabel: dv.label || '', div: [dv.label, g.label].filter(Boolean).join(' · '), partners: partners });
           });
         });
@@ -3193,7 +3202,7 @@
       var tourns = new Set(mine.map(function (m) { return m.r.id; })).size;
       var pod = mine.filter(function (m) { return +m.rank >= 1 && +m.rank <= 3; }).length, wins = mine.filter(function (m) { return +m.rank === 1; }).length;
       var photo = store('memberPhoto:self');
-      var awards = []; list.forEach(function (r) { (r.t.awards || []).forEach(function (a) { if (p.name && splitNames(a.names).indexOf(fold(p.name).trim()) >= 0) awards.push({ r: r, a: a }); }); });
+      var awards = []; list.forEach(function (r) { (r.t.awards || []).forEach(function (a) { if (p.name && fold(p.name).trim().indexOf(' ') >= 0 && splitNames(a.names).indexOf(fold(p.name).trim()) >= 0) awards.push({ r: r, a: a }); }); });
       var honours = (p.honours || []).slice().sort(function (a, b) { return String(b.year) > String(a.year) ? 1 : -1; });
       // Partners played with most
       var pc = {}; mine.forEach(function (m) { m.partners.forEach(function (n) { n = n.trim(); if (n) pc[n] = (pc[n] || 0) + 1; }); });
@@ -3214,7 +3223,7 @@
         (partners.length ? '<section class="block"><h2>Played most with</h2><p>' + partners.map(esc).join(' · ') + '</p></section>' : '') +
         '<section class="block"><h2>Results' + (mine.length ? ' (' + mine.length + ')' : '') + '</h2>' +
           (mine.length ? '<ul class="list list--plain">' + mine.map(myResultRow).join('') + '</ul>'
-            : '<p class="muted">' + (p.name ? 'No published results under “' + esc(p.name) + '”. Results match the full name exactly as the Division published it.' : 'Add your name with Edit to see your published results.') + '</p>') + '</section>' +
+            : '<p class="muted">' + (p.name ? (String(p.name).trim().indexOf(' ') < 0 ? 'To see your published results, add your first and last name with Edit, exactly as the Division publishes it.' : 'No published results under “' + esc(p.name) + '”. Results match the full name exactly as the Division published it.') : 'Add your name with Edit to see your published results.') + '</p>') + '</section>' +
         '<p class="footnote">Everything on this page is kept on this phone only. Results come from the Division’s published results and are matched by name.</p>';
       rollIn(view);
       var inp = view.querySelector('#pro-photo');
@@ -3995,14 +4004,13 @@
       el.setAttribute('data-scene', sc.k);
       el.innerHTML = '<div class="sc__top">' + bars() + '<button class="wiz__skip" type="button" data-w-skip>Skip</button></div><div class="sc__stage" data-w-next-tap>' + mock(sc.k) + '</div>' +
         '<div class="sc__text"><h1 class="sc__h" tabindex="-1">' + esc(sc.h) + '</h1><p class="sc__s">' + esc(sc.s) + '</p></div><div class="wiz__foot"><button class="btn btn--wide btn--dark" type="button" data-w-next>Next</button></div>';
-      if (!reduce && !goingBack) timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); } }, 5200);
+      // No auto-advance: people move on with Next when they are ready (Anne's feedback)
     }
     function drawFact() {
       el.className = 'welcome welcome--scene welcome--fact'; el.setAttribute('data-scene', 'fact');
       var f = facts[Math.floor(Date.now() / 86400000) % facts.length];
       el.innerHTML = '<div class="sc__top">' + bars() + '<button class="wiz__skip" type="button" data-w-skip>Skip</button></div><div class="sc__stage"><div class="fact"><span class="fact__orb" aria-hidden="true">' + icon('bowl') + '</span><b class="fact__k">Did you know?</b><p class="fact__t">' + esc(f) + '</p></div></div>' +
         '<div class="sc__text"><h1 class="sc__h" tabindex="-1">A little lawn bowls</h1><p class="sc__s">Now let’s make the app yours.</p></div><div class="wiz__foot"><button class="btn btn--wide btn--dark" type="button" data-w-next>Continue</button></div>';
-      if (!reduce && !goingBack) timer = setTimeout(function () { if (document.body.contains(el)) { i++; draw(); } }, 7000);
     }
     function drawWiz(step) {
       el.className = 'welcome welcome--wiz'; el.removeAttribute('data-scene');
