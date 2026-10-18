@@ -990,14 +990,6 @@
       '<a class="hsearch" id="hq" href="/app/search" aria-label="Search tournaments, clubs or players">' + icon('search') + '<span>Search tournaments, clubs, players</span></a>' +
       '';
 
-    // Division card (same as the one on More): who we are and the season at a glance
-    (function () {
-      var played = d.events.filter(function (x) { return eventPhase(x, today) === 'past' && x.e.status !== 'cancelled' && x.e.status !== 'postponed'; }).length;
-      var ahead = d.events.filter(function (x) { var p = eventPhase(x, today); return (p === 'upcoming' || p === 'now') && x.e.status !== 'postponed'; }).length;
-      html += '<section class="hub hub--home" aria-label="Southwest Bowls Division"><span class="logo-plate hub__logo"><img src="/assets/app/swd-logo.png" alt="" width="64" height="75"></span>' +
-        '<div class="hub__text"><span class="hub__name">Southwest Bowls Division</span><span class="hub__sub">Lawn bowls across Southern California</span></div>' +
-        '<div class="hub__stats">' + metric('home-clubs', (d.clubs || []).length, 'Clubs', 'in the Division') + metric('home-ahead', ahead, 'Tournaments', 'coming up') + metric('home-played', played, 'Tournaments', 'played this season') + '</div></section>';
-    })();
 
     // Urgent: a change to a saved event
     var myAlerts = mineNext.filter(isCritical);
@@ -1065,22 +1057,16 @@
         }).join('') + '</ul></section>';
     })();
 
-    // 4. Upcoming events: a row of cards you swipe sideways
-    var more = live.filter(function (x) { return !shownIds[x.id]; }).slice(0, 8);
-    var icats = interestCats(); if (icats.length) more = more.filter(function (x) { return icats.indexOf(x.cat || 'Open') >= 0; }).concat(more.filter(function (x) { return icats.indexOf(x.cat || 'Open') < 0; }));
-    var champFirst = focusTopics && showT('results') && !showT('tournaments');
-    if (champFirst && showT('results')) html += '<div id="home-champ"></div>';
-    if (more.length && showT('tournaments')) {
-      var totalMore = live.filter(function (x) { return !shownIds[x.id]; }).length;
-      html += '<section class="hsec" aria-labelledby="h-up"><div class="section__head section__head--count"><div class="hcount"><h2 class="section__title" id="h-up">Coming up</h2><span class="hcount__n">' + totalMore + ' tournament' + (totalMore === 1 ? '' : 's') + '</span></div></div>' +
-        '<div id="home-up">' + upHtml(more, 'list', d, today) + '</div><a class="btn btn--ghost btn--wide hmore" href="/app/events">See all tournaments' + icon('chev', 'i--sm') + '</a></section>';
-    }
-
-    if (!focusTopics) html += '<a class="newcard" href="/app/page/learnmore"><span class="newcard__ic" aria-hidden="true">' + icon('bowl') + '</span><span class="newcard__t"><b>New to bowls?</b><small>Learn to bowl: the game, equipment and finding a club</small></span><span class="newcard__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a>';
-    if (!champFirst && showT('results')) html += '<div id="home-champ"></div>';
     html += '<div class="tagline"><span class="art-plate"><img src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls — A Sport for Life!" width="341" height="160" decoding="async" loading="lazy"></span></div>';
     html += '<div id="home-partners"></div>';
 
+    (function () {   // the four shortcuts sit right under the search bar
+      var i = html.indexOf('<nav class="shortcuts"'), j = i < 0 ? -1 : html.indexOf('</nav>', i);
+      if (i < 0 || j < 0) return;
+      var sc = html.slice(i, j + 6); html = html.slice(0, i) + html.slice(j + 6);
+      var k = html.indexOf('</a>', html.indexOf('id="hq"'));
+      if (k >= 0) html = html.slice(0, k + 4) + sc + html.slice(k + 4);
+    })();
     view.innerHTML = html;
     var hv = view;
     hv.querySelectorAll('[data-toggle-all]').forEach(function (b) { b.addEventListener('click', function () { var v = Object.assign({}, interests() || {}); v.all = !v.all; store('interests', v); haptic(); render(); }); });
@@ -1094,10 +1080,6 @@
     var sb = view.querySelector('[data-story]');
     if (sb) sb.addEventListener('click', function () { storyDialog(d.story); });
     rollIn(view);
-    loadResults().then(function (list) {
-      var el = hv.querySelector('#home-champ'); if (!el) return;
-      el.innerHTML = champRow(list);
-    }).catch(function () {});
   }
   // Typing on Home moves to the full search screen, keeping the caret.
   var searchFocus = false;
