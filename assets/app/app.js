@@ -1422,8 +1422,8 @@
       var hostClub = (all[2].clubs || []).filter(function (c) { return (x.clubIds || []).indexOf(c.id) >= 0; })[0];
       var hostPhoto = hostClub && hostClub.image && /^\/photos\//.test(hostClub.image) && !hostClub.imageNeedsReview ? hostClub.image : '';
       var method = entryMethod(e);
-      var hubEnter = hubOn() && phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && st.kind !== 'postponed';
-      var entryOpen = phase !== 'past' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && st.kind !== 'postponed' && method !== 'none';
+      var hubEnter = hubOn() && phase !== 'past' && phase !== 'now' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && st.kind !== 'postponed' && st.kind !== 'today';
+      var entryOpen = phase !== 'past' && phase !== 'now' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && st.kind !== 'postponed' && st.kind !== 'today' && method !== 'none';
       var primaryBar = hubEnter ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/enter">Enter this tournament (preview)</a>' : entryOpen ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">' + (method === 'online' ? 'Enter online' : method === 'paypal' ? 'Enter and pay' : 'How to enter') + '</a>'
         : phase !== 'past' && method === 'none' && flyer ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/doc/flyer">See the flyer</a>'
         : '';
@@ -1632,7 +1632,9 @@
     var steps = [];
     function step(title, body) { steps.push('<li class="step"><span class="step__n" aria-hidden="true"></span><div class="step__body"><b>' + esc(title) + '</b>' + body + '</div></li>'); }
     var open = !(st && st.kind === 'closed');
-    if (method === 'none') {
+    if (st && st.kind === 'today') {
+      h += '<section class="block" style="margin-top:8px"><h2>Entries</h2><p>This tournament is under way, so entries are closed. The flyer and conditions of play are below.</p></section>';
+    } else if (method === 'none') {
       h += '<section class="block" style="margin-top:8px"><h2>How to enter</h2><p>Entry details haven’t been published yet. Check back, or see the flyer if there is one.</p></section>';
     } else {
       step('Check the details', '<p>' + (flyer ? 'Read the flyer and conditions of play below, then ' : '') + 'make sure your team and the dates suit you.</p>');
