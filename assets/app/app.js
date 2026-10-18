@@ -1656,10 +1656,10 @@
     }
     h += docsBlock(e, flyer, cops);
     if (c.name || c.email || c.phone) {
-      h += '<section class="block"><h2>Contact</h2><ul class="rows">' +
+      h += '<section class="block"><h2>Contact</h2><p class="muted">Questions about this tournament go to the tournament contact below. Tapping the email opens your own email app.</p><ul class="rows">' +
         (c.name ? '<li><div class="row">' + icon('people') + '<span class="row__main"><span class="row__title"><b>' + esc(c.name) + '</b></span><span class="row__meta">Tournament contact</span></span></div></li>' : '') +
-        (c.phone ? linkRow(tel(c.phone), 'phone', c.phone) : '') +
-        (c.email ? linkRow('mailto:' + c.email, 'mail', c.email) : '') +
+        (c.phone ? linkRow(tel(c.phone), 'phone', 'Call ' + c.phone) : '') +
+        (c.email ? linkRow('mailto:' + c.email + '?subject=' + encodeURIComponent('Question about ' + (e.title || 'the tournament')), 'mail', 'Email ' + (c.name || 'the organizer'), c.email) : '') +
         '</ul></section>';
     }
     return h;
