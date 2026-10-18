@@ -1,6 +1,52 @@
 {
   "tournaments": [
     {
+      "id": "womens-vet-novice-pairs-2026",
+      "title": "2026 SWD Women's Vet/Novice Pairs",
+      "meta": "October 17 · Long Beach LBC",
+      "navLabel": "Women's Vet/Novice Pairs",
+      "eventUrl": "/event?id=womens-vet-novice-pairs-2026",
+      "divisions": [
+        {
+          "label": "A Green",
+          "columns": 2,
+          "places": [
+            {
+              "rank": 1,
+              "names": "Inger Benson & Linda Purkiss",
+              "photo": "/photos/womens-vet-novice-pairs-2026/a-1th-benson-purkiss.jpg"
+            },
+            {
+              "rank": 2,
+              "names": "Joanne Hedgespeth & Kelley Lacey",
+              "photo": "/photos/womens-vet-novice-pairs-2026/a-2th-hedgespeth-lacey.jpg"
+            },
+            {
+              "rank": 3,
+              "names": "Giulia Gallo & Vicki Wong",
+              "photo": "/photos/womens-vet-novice-pairs-2026/a-3th-gallo-wong.jpg"
+            }
+          ]
+        },
+        {
+          "label": "B Green",
+          "columns": 2,
+          "places": [
+            {
+              "rank": 1,
+              "names": "Manya Urane & Lauren Pennington",
+              "photo": "/photos/womens-vet-novice-pairs-2026/b-1th-urane-pennington.jpg"
+            },
+            {
+              "rank": 2,
+              "names": "Alex de la Garza & Karen Cagle",
+              "photo": "/photos/womens-vet-novice-pairs-2026/b-2th-delagarza-cagle.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "bill-hiscock-mixed-triples-2026",
       "title": "2026 Bill Hiscock Mixed Triples",
       "meta": "October 11 · Coronado LBC",
