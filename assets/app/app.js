@@ -1026,10 +1026,10 @@
     // Live pulse: what is on right now, or a countdown to the next event with a nudge for closing entries
     if (showT('tournaments')) (function () {
       var pc = '';
-      if (underway.length) {
-        var ue = underway[0], ls = ue.e.liveScoring || {}, hasDraw = (ls.sheets && ls.sheets.length) || ls.pubUrl;
-        pc = '<a class="pulse pulse--live" href="/app/events/' + encodeURIComponent(ue.id) + (hasDraw ? '?tab=draw' : '') + '"><span class="pulse__dot" aria-hidden="true"></span><span class="pulse__t"><small>Happening now</small><b>' + esc(ue.short) + '</b><span>' + esc(ue.clubLabel) + (underway.length > 1 ? ' · +' + (underway.length - 1) + ' more' : '') + '</span></span>' + (hasDraw ? '<span class="pulse__go">Draw' + icon('chev', 'i--sm') + '</span>' : '') + '</a>';
-      }
+      underway.slice(0, 3).forEach(function (ue) {
+        var ls = ue.e.liveScoring || {}, hasDraw = (ls.sheets && ls.sheets.length) || ls.pubUrl;
+        pc += '<a class="pulse pulse--live" href="/app/events/' + encodeURIComponent(ue.id) + (hasDraw ? '?tab=draw' : '') + '"><span class="pulse__dot" aria-hidden="true"></span><span class="pulse__t"><small>Happening now</small><b>' + esc(ue.short) + '</b><span>' + esc(ue.clubLabel) + '</span></span>' + (hasDraw ? '<span class="pulse__go">Draw' + icon('chev', 'i--sm') + '</span>' : '') + '</a>';
+      });
       var urg = live.map(function (x) { return { x: x, st: entryStatus(x, today) }; }).filter(function (o) { return o.st && o.st.kind === 'open' && o.st.left <= 3; }).sort(function (a, b) { return a.st.left - b.st.left; })[0];
       if (urg) pc += '<a class="pulse__nudge' + (urg.st.urgent ? ' pulse__nudge--hot' : '') + '" href="/app/events/' + encodeURIComponent(urg.x.id) + '">' + icon('hourglass', 'i--sm') + '<span><b>' + (urg.st.left === 0 ? 'Entries close today' : urg.st.left === 1 ? 'Entries close tomorrow' : 'Entries close in ' + urg.st.left + ' days') + '</b> · ' + esc(urg.x.short) + '</span></a>';
       html += pc ? '<div class="pulsewrap">' + pc + '</div>' : '';
