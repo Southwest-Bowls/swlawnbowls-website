@@ -1217,7 +1217,7 @@
       if (root !== view) return;
       var events = all[0];
       var hasPast = events.some(function (x) { return eventPhase(x, today) === 'past'; });
-      var show = params.get('show') || 'upcoming';
+      var show = params.get('show') || 'calendar';   // Events always opens on the Calendar first
       if (show === 'saved' && !SAVE_ON) show = 'upcoming';
       if (show === 'past' && !hasPast) show = 'upcoming';
       var months = {}, clubs = {};
