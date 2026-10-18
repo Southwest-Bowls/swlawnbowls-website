@@ -1144,14 +1144,11 @@
           (list.length ? '<ul class="list list--cards">' + list.map(function (x) { return eventRow(x, today); }).join('') + '</ul>' : state('empty', special === 'weekend' ? 'Nothing this weekend' : 'No entries open', 'Check the calendar for what is coming up.', '<a class="btn btn--ghost" href="/app/events?show=calendar">Open the calendar</a>'));
       }
       function drawStart(out) {
-        var upc = all[0].filter(function (x) { return eventPhase(x, today) !== 'past'; }).slice(0, 5), rc = recents();
+        var rc = recents();
         var chips = [['weekend', 'This weekend'], ['open', 'Entries open'], ["women's", "Women's"], ["men's", "Men's"], ['mixed', 'Mixed'], ['pairs', 'Pairs'], ['triples', 'Triples'], ['singles', 'Singles']];
-        out.innerHTML = '<div class="schips" role="group" aria-label="Quick searches">' + chips.map(function (c) { return '<button type="button" class="cchip" data-sq="' + esc(c[0]) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>' +
-          (rc.length ? '<section class="ssec"><div class="section__head"><h2 class="section__title">Recent</h2><button class="section__more" type="button" data-clear-recent>Clear</button></div><div class="schips">' + rc.map(function (q) { return '<button type="button" class="cchip cchip--recent" data-sq="' + esc(q) + '">' + icon('clock', 'i--sm') + esc(q) + '</button>'; }).join('') + '</div></section>' : '') +
-          (upc.length ? '<section class="ssec"><div class="section__head"><h2 class="section__title">Coming up</h2><a class="section__more" href="/app/events">See all' + icon('chev', 'i--sm') + '</a></div><ul class="hscroll">' + upc.map(function (x) { return '<li>' + photoCard(x, clubsAll, today) + '</li>'; }).join('') + '</ul></section>' : '') +
-          champRow(all[2]).replace('class="hsec"', 'class="ssec"').replace('Latest champions', 'Latest results') +
-          '<section class="ssec"><div class="section__head"><h2 class="section__title">Clubs</h2><a class="section__more" href="/app/more/clubs">See all' + icon('chev', 'i--sm') + '</a></div><ul class="cstrip">' + clubsAll.filter(function (c) { return clubPhotoOf(c); }).slice(0, 14).map(function (c) {
-            return '<li><a class="cstrip__i" href="/app/more/clubs/' + encodeURIComponent(c.id || slugify(c.name)) + '"><span class="cstrip__ph" style="--ph:url(\'' + esc(clubPhotoOf(c)) + '\')"></span><span>' + esc(c.name) + '</span></a></li>'; }).join('') + '</ul></section>';
+        out.innerHTML = '<p class="muted ssearch__hint">Type a tournament, a club, or a player. Results appear as you type.</p>' +
+          '<div class="schips" role="group" aria-label="Quick searches">' + chips.map(function (c) { return '<button type="button" class="cchip" data-sq="' + esc(c[0]) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>' +
+          (rc.length ? '<section class="ssec"><div class="section__head"><h2 class="section__title">Recent searches</h2><button class="section__more" type="button" data-clear-recent>Clear</button></div><div class="schips">' + rc.map(function (r) { return '<button type="button" class="cchip" data-sq="' + esc(r) + '">' + icon('search', 'i--sm') + ' ' + esc(r) + '</button>'; }).join('') + '</div></section>' : '');
         blurUp(out);
       }
       function group(key, title, items, row, kind) {
@@ -1186,7 +1183,8 @@
           group('results', 'Results', rs, function (r) { return menuRow('/app/results/' + encodeURIComponent(r.id), 'trophy', shortTitle(r.t.title), r.t.meta || ''); });
       }
       var tmr;
-      input.addEventListener('input', function () { expand = ''; special = ''; clearTimeout(tmr); tmr = setTimeout(apply, 120); });
+      var rmr;
+      input.addEventListener('input', function () { expand = ''; special = ''; clearTimeout(tmr); tmr = setTimeout(apply, 120); clearTimeout(rmr); rmr = setTimeout(function () { var v = input.value.trim(); if (v.length >= 3 && document.querySelector('#s-out .sgroup')) remember(v); }, 1800); });
       view.querySelector('form').addEventListener('submit', function (ev) { ev.preventDefault(); remember(input.value); apply(); input.blur(); });
       view.addEventListener('click', function (ev) {
         // Back arrow with a search or chip showing: step back to the Search start first, only then leave Search

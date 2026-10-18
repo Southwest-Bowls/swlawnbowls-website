@@ -2713,3 +2713,7 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 .calmenu > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .calmenu > summary::-webkit-details-marker { display: none; }
 .calmenu__list { display: grid; gap: var(--s2, .5rem); margin-top: var(--s2, .5rem); }
+
+/* Search: empty state */
+.ssearch__hint { margin: 4px 0 10px; }
+button.section__more { background: none; border: 0; padding: 4px 0 4px 10px; font: inherit; color: var(--brand-red, #c62828); cursor: pointer; }
