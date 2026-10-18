@@ -1456,7 +1456,7 @@
         });
         segReveal(view);
         var panel = document.getElementById('panel');
-        var abar = document.getElementById('abar'); if (abar) abar.hidden = name === 'entry';
+        var abar = document.getElementById('abar'); if (abar) abar.hidden = name !== 'overview';   // the red button belongs on the Overview only
         panel.setAttribute('aria-labelledby', 'tab-' + name);
         panel.innerHTML = name === 'entry' ? entryPanel(x, flyer, cops)
           : name === 'entries' ? entriesPanel(e) : name === 'draw' ? drawPanel(e)
