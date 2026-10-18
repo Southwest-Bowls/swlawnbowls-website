@@ -1108,6 +1108,24 @@
       var EV = all[0].map(function (x) { return { x: x, t: fold([x.e.title, x.e.subtitle, x.club, x.clubLabel, x.e.format, x.e.date, x.cat].join(' ')) }; });
       var CL = (all[1].clubs || []).map(function (c) { return { c: c, t: fold([c.name, c.city, c.summary].join(' ')) }; });
       var RS = all[2].map(function (r) { return { r: r, t: fold([r.t.title, r.t.meta, r.names].join(' ')) }; });
+      [EV, CL, RS].forEach(function (L) { L.forEach(function (o) { o.k = o.t.split(/\s+/).filter(Boolean); }); });
+      // Forgiving matching: a word matches the start of any word, or comes within one or two typos of it
+      function lev(a, b) {
+        var m = a.length, n = b.length; if (!m) return n; if (!n) return m; var prev = [], cur = [], i, j;
+        for (j = 0; j <= n; j++) prev[j] = j;
+        for (i = 1; i <= m; i++) { cur[0] = i; for (j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1)); prev = cur.slice(); }
+        return prev[n];
+      }
+      var ALIAS = { ladies: 'womens', lady: 'womens', woman: 'womens', women: 'womens', womens: 'womens', female: 'womens', gents: 'mens', gentlemen: 'mens', man: 'mens', men: 'mens', male: 'mens',
+        triple: 'triples', pair: 'pairs', four: 'fours', single: 'singles', rink: 'rinks', winners: 'champions', winner: 'champions', champion: 'champions', lawn: 'bowls', bowling: 'bowls', club: 'lbc', tournament: 'tournament' };
+      function termHit(w, k) {
+        for (var i = 0; i < k.length; i++) {
+          var t = k[i];
+          if (t.indexOf(w) === 0) return true;
+          if (w.length >= 4) { var tol = w.length >= 8 ? 2 : 1; if (lev(t.slice(0, w.length), w) <= tol || (t.length >= 4 && lev(t, w) <= tol)) return true; }
+        }
+        return false;
+      }
       var expand = params.get('all') || '';
       var input = document.getElementById('sq');
       var clubsAll = all[1].clubs || [], special = ['weekend', 'open'].indexOf(params.get('s')) >= 0 ? params.get('s') : '';
@@ -1128,7 +1146,7 @@
       function drawStart(out) {
         var rc = recents();
         var chips = [['weekend', 'This weekend'], ['open', 'Entries open'], ["women's", "Women's"], ["men's", "Men's"], ['mixed', 'Mixed'], ['pairs', 'Pairs'], ['triples', 'Triples'], ['singles', 'Singles']];
-        out.innerHTML = '<p class="muted ssearch__hint">Type a tournament, a club, or a player. Results appear as you type.</p>' +
+        out.innerHTML = '<p class="muted ssearch__hint">Type a tournament, a club, or a player. Results appear as you type, and a small typo is fine.</p>' +
           '<div class="schips" role="group" aria-label="Quick searches">' + chips.map(function (c) { return '<button type="button" class="cchip" data-sq="' + esc(c[0]) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>' +
           (rc.length ? '<section class="ssec"><div class="section__head"><h2 class="section__title">Recent searches</h2><button class="section__more" type="button" data-clear-recent>Clear</button></div><div class="schips">' + rc.map(function (r) { return '<button type="button" class="cchip" data-sq="' + esc(r) + '">' + icon('search', 'i--sm') + ' ' + esc(r) + '</button>'; }).join('') + '</div></section>' : '');
         blurUp(out);
@@ -1146,9 +1164,12 @@
         var out = document.getElementById('s-out');
         var u = new URLSearchParams(); if (raw) u.set('q', raw); if (raw && expand) u.set('all', expand);
         history.replaceState(history.state, '', '/app/search' + (u.toString() ? '?' + u : ''));
+        if (!special && /^(this )?weekend$/.test(q)) { special = 'weekend'; }
+        else if (!special && /^(entries open|open entries|enter|entries|enter now)$/.test(q)) { special = 'open'; }
         if (special) { drawSpecial(out); return; }
         if (!terms.length) { drawStart(out); return; }
-        var hit = function (o) { return terms.every(function (w) { return o.t.indexOf(w) >= 0; }); };
+        terms = terms.map(function (w) { return ALIAS[w] || w; });
+        var hit = function (o) { return terms.every(function (w) { return termHit(w, o.k); }); };
         var ev = EV.filter(hit).map(function (o) { return o.x; });
         var up = ev.filter(function (x) { return eventPhase(x, today) !== 'past'; });
         var past = ev.filter(function (x) { return eventPhase(x, today) === 'past'; }).reverse();
