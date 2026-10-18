@@ -15,7 +15,7 @@
 
    To force every phone to drop its saved copies, bump VERSION.
    ============================================================ */
-const VERSION = 'swd-v138';
+const VERSION = 'swd-v139';
 const NETWORK_TIMEOUT_MS = 4000;
 const PAGES = VERSION + '-pages';
 const MEDIA = VERSION + '-media';

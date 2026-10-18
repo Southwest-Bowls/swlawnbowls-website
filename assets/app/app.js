@@ -1602,7 +1602,7 @@
     var docs = [];
     function tile(kind0, ic, label, kind) { return '<a class="dtile" href="/app/events/' + encodeURIComponent(e.id) + '/doc/' + kind0 + '"><span class="dtile__ic" aria-hidden="true">' + icon(ic) + '</span><b>' + label + '</b><small>' + kind + '</small></a>'; }
     if (flyer) docs.push(tile('flyer', 'doc', 'Flyer', /\.(jpe?g|png|webp)$/i.test(flyer) ? 'Image' : 'Document'));
-    if (cops) docs.push(tile('conditions', 'trophy', 'Conditions', 'Document'));
+    if (cops) docs.push(tile('conditions', 'trophy', 'Conditions of Play', 'Document'));
     return docs.length ? '<div class="dtiles">' + docs.join('') + '</div>' : '';
   }
   // The real entry process, as published. Email or postal entry stays
@@ -1635,11 +1635,11 @@
     function step(title, body) { steps.push('<li class="step"><span class="step__n" aria-hidden="true"></span><div class="step__body"><b>' + esc(title) + '</b>' + body + '</div></li>'); }
     var open = !(st && st.kind === 'closed');
     if (st && st.kind === 'today') {
-      h += '<section class="block" style="margin-top:8px"><h2>Entries</h2><p>This tournament is under way, so entries are closed. The flyer and conditions of play are below.</p></section>';
+      h += '<section class="block" style="margin-top:8px"><h2>Entries</h2><p>This tournament is under way, so entries are closed. The flyer and Conditions of Play are below.</p></section>';
     } else if (method === 'none') {
       h += '<section class="block" style="margin-top:8px"><h2>How to enter</h2><p>Entry details haven’t been published yet. Check back, or see the flyer if there is one.</p></section>';
     } else {
-      step('Check the details', '<p>' + (flyer ? 'Read the flyer and conditions of play below, then ' : '') + 'make sure your team and the dates suit you.</p>');
+      step('Check the details', '<p>' + (flyer ? 'Read the flyer and Conditions of Play below, then ' : '') + 'make sure your team and the dates suit you.</p>');
       if (method === 'online') step('Fill in the official entry form', '<p>The organizer collects entries on their own form.</p><a class="btn btn--wide" href="' + esc(e.registrationUrl) + '" target="_blank" rel="noopener">' + esc(e.registrationLabel || 'Open the entry form') + icon('ext') + '</a>');
       if (method === 'instructions') step('Follow the organizer’s instructions', '<p>' + esc(e.registrationInstructions) + '</p>');
       if (method === 'paypal') step('Enter and pay on the Division website', '<p>Name your team and pay the entry fee by PayPal on the event’s page. It opens in your browser.</p><a class="btn btn--wide" href="/event?id=' + encodeURIComponent(x.id) + '" target="_blank" rel="noopener">' + icon('ext') + 'Enter and pay</a>');
@@ -1665,14 +1665,14 @@
   }
   // Flyer / conditions of play shown inside the app, with a back button and an "open in browser" fallback
   function docScreen(params, id, kind) {
-    setTitle(kind === 'conditions' ? 'Conditions of play' : 'Flyer');
+    setTitle(kind === 'conditions' ? 'Conditions of Play' : 'Flyer');
     var root = view;
     return loadEvents().then(function (events) {
       if (root !== view) return;
       var x = events.filter(function (y) { return y.id === id; })[0];
       var d = x && x.e[kind === 'conditions' ? 'cops' : 'flyer'], url = safeUrl(d && (d.localPath || d.externalUrl));
       if (!x || !url) { view.innerHTML = backLink('/app/events/' + encodeURIComponent(id), 'Event') + state('empty', 'Document not found', 'It may have been removed.', '<a class="btn" href="/app/events/' + encodeURIComponent(id) + '">Back to the event</a>'); return; }
-      var label = kind === 'conditions' ? 'Conditions of play' : 'Flyer';
+      var label = kind === 'conditions' ? 'Conditions of Play' : 'Flyer';
       var isImg = /\.(jpe?g|png|webp|gif)$/i.test(url), isPdf = /\.pdf($|\?)/i.test(url) || /export\?format=pdf/i.test(url), isDocx = /\.docx?$/i.test(url), gdoc = /docs\.google\.com\/document/.test(url) && !/export/.test(url);
       var src = gdoc && !/embedded=true/.test(url) ? url + (url.indexOf('?') < 0 ? '?' : '&') + 'embedded=true' : url;
       var body = isImg ? '<div class="docview__img"><img src="' + esc(url) + '" alt="' + esc(label + ' for ' + x.short) + '"></div>'
