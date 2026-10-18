@@ -371,6 +371,8 @@
     if (!x.dates) return 'unknown';
     if (x.e && x.e.status === 'postponed') return 'upcoming';   // no new date yet: stays on the list, never "Completed"
     if (x.dates.end < today) return 'past';
+    if (x.dates.start <= today && RESULT_EVENTS[x.id]) return 'past';   // results are out: no longer live
+    if (x.dates.end === today && today === todayISO() && new Date().getHours() >= 19) return 'past';   // evening of the last day
     if (x.dates.start <= today) return 'now';
     return 'upcoming';
   }
@@ -1422,10 +1424,10 @@
       var hostClub = (all[2].clubs || []).filter(function (c) { return (x.clubIds || []).indexOf(c.id) >= 0; })[0];
       var hostPhoto = hostClub && hostClub.image && /^\/photos\//.test(hostClub.image) && !hostClub.imageNeedsReview ? hostClub.image : '';
       var method = entryMethod(e);
-      var hubEnter = hubOn() && phase !== 'past' && phase !== 'now' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && st.kind !== 'postponed' && st.kind !== 'today';
-      var entryOpen = phase !== 'past' && phase !== 'now' && st && st.kind !== 'closed' && st.kind !== 'cancelled' && st.kind !== 'postponed' && st.kind !== 'today' && method !== 'none';
-      var primaryBar = hubEnter ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/enter">Enter this tournament (preview)</a>' : entryOpen ? '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">' + (method === 'online' ? 'Enter online' : method === 'paypal' ? 'Enter and pay' : 'How to enter') + '</a>'
-        : phase !== 'past' && method === 'none' && flyer ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/doc/flyer">See the flyer</a>'
+      var entriesOpen = phase !== 'past' && phase !== 'now' && st && (st.kind === 'open' || st.kind === 'openish');
+      var primaryBar = entriesOpen && (hubOn() || method !== 'none')
+          ? (hubOn() ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/enter">Enter this tournament</a>' : '<a class="btn btn--wide" href="?tab=entry" data-goto-tab="entry">Enter this tournament</a>')
+        : phase !== 'past' && phase !== 'now' && method === 'none' && flyer ? '<a class="btn btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '/doc/flyer">See the flyer</a>'
         : '';
       var onNow = isSaved(x.id);
       var html = (hostPhoto ? '<div class="escene__bg" aria-hidden="true" style="--ph:url(\'' + esc(hostPhoto) + '\')"></div>' : '') + backLink('/app/events', 'Events') +
@@ -1560,7 +1562,7 @@
 
     // Actions: one primary, the rest quiet
     var acts = [];
-    if (x.dates && phase !== 'past') acts.push('<a class="btn btn--ghost" href="' + icsHref(x) + '" download="' + esc(x.id) + '.ics" data-ics>' + icon('cal') + 'Add to calendar</a>');
+    if (x.dates && phase !== 'past') acts.push(calMenu(x));
     h += '<div class="actions">' + acts.join('') + '</div>';
 
     if (e.schedule && e.schedule.length) {
@@ -1772,19 +1774,29 @@
 
   // .ics for "Add to calendar" — an all-day event in the user's calendar
   // app. It is a one-time copy: later venue or date changes don't follow.
-  function icsHref(x) {
-    var e = x.e, d = x.dates, T = Logic.icsText;
-    var doc = Logic.icsDocument(['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Southwest Bowls//App//EN', 'BEGIN:VEVENT',
-      'UID:' + x.id + '@swlawnbowls.org',
-      'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, ''),
-      'DTSTART;VALUE=DATE:' + d.start.replace(/-/g, ''),
-      'DTEND;VALUE=DATE:' + addDays(d.end, 1).replace(/-/g, ''),
-      'SUMMARY:' + T(e.title),
-      'LOCATION:' + T([e.club && e.club.name, e.club && e.club.address].filter(Boolean).join(', ')),
-      'DESCRIPTION:' + T([e.time, e.format && cap(e.format), e.fee && 'Entry ' + e.fee, e.deadline, Logic.canonicalUrl('/app/events/' + x.id)].filter(Boolean).join('\n')),
-      'URL:' + Logic.canonicalUrl('/app/events/' + x.id),
-      'END:VEVENT', 'END:VCALENDAR']);
-    return 'data:text/calendar;charset=utf-8,' + encodeURIComponent(doc);
+  function icsHref(x) { return icsUrl(x, false); }
+  function calParts(x) {
+    var e = x.e, d = x.dates;
+    return {
+      title: e.title || x.short || 'Tournament', start: d.start, end: d.end,
+      loc: [e.club && e.club.name, e.club && e.club.address].filter(Boolean).join(', '),
+      desc: [e.time, e.format && cap(e.format), e.fee && 'Entry ' + e.fee, e.deadline, Logic.canonicalUrl('/app/events/' + x.id)].filter(Boolean).join('\n')
+    };
+  }
+  // A hosted .ics (works in the phone's own browser) or a webcal link (opens the Calendar app on iPhone)
+  function icsUrl(x, webcal) {
+    var c = calParts(x), q = 'id=' + encodeURIComponent(x.id) + '&t=' + encodeURIComponent(c.title) + '&s=' + c.start + '&e=' + c.end + '&l=' + encodeURIComponent(c.loc) + '&d=' + encodeURIComponent(c.desc) + '&u=' + encodeURIComponent(Logic.canonicalUrl('/app/events/' + x.id));
+    return (webcal ? 'webcal://' + location.host : location.origin) + '/api/ics?' + q;
+  }
+  function googleCalUrl(x) {
+    var c = calParts(x);
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(c.title) + '&dates=' + c.start.replace(/-/g, '') + '/' + addDays(c.end, 1).replace(/-/g, '') + '&details=' + encodeURIComponent(c.desc) + '&location=' + encodeURIComponent(c.loc);
+  }
+  function calMenu(x, wide) {
+    return '<details class="calmenu' + (wide ? ' calmenu--wide' : '') + '"><summary class="btn btn--ghost' + (wide ? ' btn--wide' : '') + '">' + icon('cal') + 'Add to calendar</summary>' +
+      '<div class="calmenu__list"><a class="btn btn--ghost" href="' + googleCalUrl(x) + '" target="_blank" rel="noopener">Google Calendar</a>' +
+      '<a class="btn btn--ghost" href="' + icsUrl(x, true) + '">Apple Calendar (iPhone)</a>' +
+      '<a class="btn btn--ghost" href="' + icsUrl(x, false) + '" target="_blank" rel="noopener">Other calendars (file)</a></div></details>';
   }
 
   /* ---------------------------------------------------------------
@@ -3114,7 +3126,7 @@
           '<h2 class="rcpt__sub">Team</h2><ul class="rcpt__team">' + en.players.map(function (p) { return '<li><b>' + esc(p.role) + '</b> ' + esc(p.name) + (p.club ? ' <span class="muted">· ' + esc(p.club) + '</span>' : '') + '</li>'; }).join('') + '</ul>' +
           (en.method !== 'online' ? '<p class="rcpt__note">' + (en.method === 'check' ? 'Mail your check to: ' + esc((e.contact && e.contact.mailTo) || 'the tournament organizer') + '. ' : 'Bring cash to the green. ') + 'Your place is held. You will show as paid once the organizer receives it.</p>' : '') +
           '<p class="rcpt__foot">Keep this page for your records: take a screenshot or use Share. A confirmation would also be emailed to ' + esc(en.email) + '.</p></article>' +
-        '<div class="actions"><a class="btn btn--wide" href="/app">Back to the app</a>' + (x && x.dates ? '<a class="btn btn--ghost btn--wide" href="' + icsHref(x) + '" download="' + esc(x.id) + '.ics">' + icon('cal') + 'Add to my calendar</a>' : '') + (x ? '<a class="btn btn--ghost btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '">View the tournament</a>' : '') + shareBtn(en.title + ' receipt ' + en.id, '/app/my') + '</div>';
+        '<div class="actions"><a class="btn btn--wide" href="/app">Back to the app</a>' + (x && x.dates ? calMenu(x, true) : '') + (x ? '<a class="btn btn--ghost btn--wide" href="/app/events/' + encodeURIComponent(x.id) + '">View the tournament</a>' : '') + shareBtn(en.title + ' receipt ' + en.id, '/app/my') + '</div>';
       window.scrollTo(0, 0);
     });
   }
@@ -3739,7 +3751,6 @@
     if (sh) { share(sh.getAttribute('data-share-title'), sh.getAttribute('data-share')); return; }
     var fo = ev.target.closest('[data-follow]');
     if (fo) { var fid = fo.getAttribute('data-follow'); setFollowing(fid, !isFollowing(fid), fo.getAttribute('data-name') || ''); return; }
-    if (ev.target.closest('[data-ics]')) toast('Calendar file saved', 'It’s a one-time copy: it won’t change if the venue or date changes.');
     // Appearance and text size
     var th = ev.target.closest('[data-theme-choice]');
     if (th) { store('theme', th.getAttribute('data-theme-choice')); applyTheme(); return; }

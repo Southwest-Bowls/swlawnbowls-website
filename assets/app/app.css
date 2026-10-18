@@ -2707,3 +2707,9 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 .run__dz { color: #c62828; margin-top: var(--s5, 2rem); border-top: 2px dashed #e8b4b4; padding-top: var(--s3); }
 .btn.run__dangerline { color: #c62828; border-color: #e8b4b4; }
 .btn.run__danger:disabled { opacity: .55; }
+
+/* Add to calendar menu */
+.calmenu { display: block; }
+.calmenu > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.calmenu > summary::-webkit-details-marker { display: none; }
+.calmenu__list { display: grid; gap: var(--s2, .5rem); margin-top: var(--s2, .5rem); }
