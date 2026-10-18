@@ -896,7 +896,7 @@
     ];
   }
   function setupCard() {
-    if (store('setupDone')) return '';
+    if (store('setupDone') || !memberSession()) return '';   // the progress card is for signed-in members; guests just see the sign-in card
     var st = setupSteps(), n = st.filter(function (x) { return x.done; }).length, pct = Math.round(n / st.length * 100);
     if (n === st.length) {
       store('setupDone', true);
