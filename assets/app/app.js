@@ -3846,7 +3846,7 @@
       '<button class="auth__alt" type="button" data-auth="email" aria-disabled="' + (store('termsAccepted') ? 'false' : 'true') + '">' + icon('mail') + 'Email</button></div>' +
       '<p class="auth__login">Already have an account? <button type="button" class="linkbtn" data-auth="email" aria-disabled="' + (store('termsAccepted') ? 'false' : 'true') + '">Log in here</button></p>' +
       '<button class="auth__guest" type="button" data-auth="guest">Continue as a guest</button>' +
-      '<p class="auth__fine">Your email is only used to sign you in.</p><img class="auth__tag" src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls: A Sport for Life!" width="150" height="70" loading="lazy"></div></section>';
+      '<p class="auth__fine"><b>No password to remember.</b> We email you a code each time you sign in. Your email is only used to sign you in.</p><img class="auth__tag" src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls: A Sport for Life!" width="150" height="70" loading="lazy"></div></section>';
   }
   function haptic(kind) {
     try {
