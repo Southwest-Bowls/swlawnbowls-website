@@ -31,6 +31,36 @@
       ]
     },
     {
+      "id": "mens-so-california-triples-2026",
+      "title": "2026 SWD Men's So. California Triples",
+      "meta": "October 17\u201318 \u00b7 Newport Harbor LBC",
+      "navLabel": "Men's So Cal Triples",
+      "eventUrl": "/event?id=mens-so-california-triples-2026",
+      "divisions": [
+        {
+          "label": null,
+          "columns": 2,
+          "places": [
+            {
+              "rank": 1,
+              "names": "Michael Siddall, Chris Trenschel, Bill Brault",
+              "photo": "/photos/mens-so-california-triples-2026/1th-siddall-trenschel-brault.jpg"
+            },
+            {
+              "rank": 2,
+              "names": "Grant Shear, Barry Hayes, Robert Busciglio",
+              "photo": "/photos/mens-so-california-triples-2026/2th-shear-hayes-busciglio.jpg"
+            },
+            {
+              "rank": 3,
+              "names": "Charlie Herbert, Rooz Ehdaie, Sadri Jazayeri",
+              "photo": "/photos/mens-so-california-triples-2026/3th-herbert-ehdaie-jazayeri.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "womens-vet-novice-pairs-2026",
       "title": "2026 SWD Women's Vet/Novice Pairs",
       "meta": "October 17 · Long Beach LBC",
