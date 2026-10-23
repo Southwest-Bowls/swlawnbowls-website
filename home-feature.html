@@ -1920,9 +1920,12 @@
         _date: resultDate(t)
       }));
 
-      const all = [...customItems, ...resultItems]
-        .sort((a, b) => b._date - a._date)
-        .slice(0, 8);
+      // Home shows only the last two weeks. If nothing is that recent
+      // (off-season), fall back to the three newest so the box is never empty.
+      const sorted = [...customItems, ...resultItems].sort((a, b) => b._date - a._date);
+      const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+      const recent = sorted.filter(i => i._date.getTime() >= cutoff).slice(0, 8);
+      const all = recent.length ? recent : sorted.slice(0, 3);
 
       el.innerHTML = all.map(renderCard).join("");
     } catch (e) {
