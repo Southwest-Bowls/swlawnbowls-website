@@ -1,6 +1,36 @@
 {
   "tournaments": [
     {
+      "id": "womens-ca-bears-2026",
+      "title": "2026 SWD Women's CA Bears",
+      "meta": "October 18 \u00b7 Laguna Woods LBC",
+      "navLabel": "Women's CA Bears",
+      "eventUrl": "/event?id=womens-ca-bears-2026",
+      "divisions": [
+        {
+          "label": null,
+          "columns": 2,
+          "places": [
+            {
+              "rank": 1,
+              "names": "Joanne Hedgespeth, Heather Stewart, Mary Thompson, Kelley Lacey",
+              "photo": "/photos/womens-ca-bears-2026/1th-hedgespeth-stewart-thompson-lacey.jpg"
+            },
+            {
+              "rank": 2,
+              "names": "Melanie Vizenor, Joan Robbins, Suzie Houston, Mary Spease",
+              "photo": "/photos/womens-ca-bears-2026/2th-vizenor-robbins-houston-spease.jpg"
+            },
+            {
+              "rank": 3,
+              "names": "Anne Nunes, Giulia Gallo, Eva Lee, Lee Ang",
+              "photo": "/photos/womens-ca-bears-2026/3th-nunes-gallo-lee-ang.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "womens-vet-novice-pairs-2026",
       "title": "2026 SWD Women's Vet/Novice Pairs",
       "meta": "October 17 · Long Beach LBC",

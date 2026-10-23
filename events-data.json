@@ -1047,7 +1047,7 @@
         "height": 400
       },
       "liveScoring": {
-        "pubUrl": "",
+        "pubUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQUp-ITqBXL7y13W80FfrRAoiFSkbkm20_RoWsnhJXaLy9TPYS7FQPX54bZuy04kIYi1BX3ezcmDAIN/pubhtml?widget=true&headers=false",
         "height": 1800,
         "width": "100%"
       }
@@ -2799,7 +2799,7 @@
         "height": 400
       },
       "liveScoring": {
-        "pubUrl": "",
+        "pubUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRAlatm7mPD4qeVVgqHENjcs79m50fyIdhMaQulQD5aEXEpN5KH5NrY-6BUYyYA9A_YQmaCyzfZm5i8/pubhtml?widget=true&headers=false",
         "height": 400,
         "width": "100%"
       }
@@ -2950,6 +2950,67 @@
       },
       "entries": {
         "pubUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZChmJ8STi5IZT-x9OGD3n2btgIk_AEt7Kj-kIln0EtiNmuMlaEXCFCHesRF0zYm04jqPlu89_1wHm/pubhtml?widget=true&headers=false",
+        "height": 400
+      },
+      "liveScoring": {
+        "pubUrl": "",
+        "height": 400,
+        "width": "100%"
+      }
+    },
+    {
+      "id": "sun-city-mixed-match-triples-2026",
+      "title": "2026 Sun City Mixed/Match Triples",
+      "subtitle": "Sun City Lawn Bowls Club · Mixed/Match Triples",
+      "date": "Saturday, November 14, 2026",
+      "time": "8:30 AM check-in · 9:00 AM start",
+      "schedule": [
+        "8:30 AM — Check-in",
+        "9:00 AM — Bowl",
+        "Bring your lunch"
+      ],
+      "format": "triples",
+      "formatDetails": "Mixed/Match Triples · Three 12-end games",
+      "club": {
+        "name": "Sun City Lawn Bowls Club",
+        "address": "26850 Sun City Blvd, Menifee, CA 92586",
+        "phone": "",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=26850+Sun+City+Blvd+Menifee+CA+92586"
+      },
+      "fee": "$45 per team",
+      "deadline": "Entries due Monday, November 9, 2026",
+      "rules": [
+        "Three 12-end games",
+        "Scoring: 3 points for a win, 1 for a tie, plus points",
+        "Maximum 20 teams",
+        "Entry fee $45 per team — make checks payable to “SunCityLawnBowl”",
+        "Mail entries to: Sun City Lawn Bowls Club, P.O. Box 411, Sun City, CA 92586",
+        "Questions and entries: suncitylawnbowls22@gmail.com",
+        "If there is an uneven number of entries at the deadline, the last team’s entry will be declined and the entry fee refunded",
+        "Bring your own lunch"
+      ],
+      "noviceDefinition": "",
+      "livestreamNotice": "",
+      "contact": {
+        "name": "Sun City Lawn Bowls Club",
+        "phone": "",
+        "email": "suncitylawnbowls22@gmail.com",
+        "mailTo": "Sun City Lawn Bowls Club, P.O. Box 411, Sun City, CA 92586 (checks payable to “SunCityLawnBowl”)"
+      },
+      "flyer": {
+        "externalUrl": "",
+        "localPath": "/pdfs/sun-city-mixed-match-triples-2026/flyer.pdf",
+        "type": "pdf"
+      },
+      "cops": {
+        "externalUrl": "",
+        "localPath": ""
+      },
+      "paypal": {
+        "system": "none"
+      },
+      "entries": {
+        "pubUrl": "",
         "height": 400
       },
       "liveScoring": {
