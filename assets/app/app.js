@@ -616,42 +616,78 @@
     y += Math.floor(m / 12); m = ((m % 12) + 12) % 12;
     return y + '-' + String(m + 1).padStart(2, '0');
   }
-  function calendarHtml(list, ym, selDay, today) {
+  function addDays(iso, n) { var d = dateFromISO(iso); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  // Calendar: Month (grid with dots, like the Apple Calendar), Week (a week's agenda) or Day.
+  function calendarHtml(list, ym, selDay, today, cv) {
+    cv = cv === 'week' || cv === 'day' ? cv : 'month';
     var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1;
     var first = ym + '-01', lead = dateFromISO(first).getUTCDay();
     var n = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
     function on(iso) { return list.filter(function (x) { return x.dates && x.dates.start <= iso && iso <= x.dates.end; }); }
-    var anyThisMonth = false, firstDay = '', nextDay = '';
-    for (var d0 = 1; d0 <= n; d0++) {
-      var iso0 = ym + '-' + String(d0).padStart(2, '0');
-      if (on(iso0).length) { anyThisMonth = true; if (!firstDay) firstDay = iso0; if (!nextDay && iso0 >= today) nextDay = iso0; }
+    function catOf(ev) { var kinds = {}; ev.forEach(function (e0) { kinds[catClass(e0)] = 1; }); return Object.keys(kinds).length === 1 ? Object.keys(kinds)[0] : (ev.length ? 'cat--o' : ''); }
+    function cardsFor(evs) {
+      return '<ol class="tl">' + evs.map(function (x) {
+        var e = x.e, phase = eventPhase(x, today), ph = eventPhoto(x, CLUBS_LIST), st = entryStatus(x, today);
+        return '<li class="tl__item' + (phase === 'past' ? ' tl__item--done' : '') + '"><span class="tl__node" aria-hidden="true">' + (phase === 'past' ? icon('check') : '') + '</span>' +
+          '<a class="tcard ' + catClass(x) + ' tcard--lead' + '" href="/app/events/' + encodeURIComponent(x.id) + '">' +
+          '<span class="tcard__who"><span class="tcard__av"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '></span><span class="tcard__wt"><b>' + esc(x.clubLabel || 'Southwest Bowls') + '</b><small>' + esc(x.cat || 'Open') + (e.format ? ' · ' + esc(cap(e.format)) : '') + '</small></span></span>' +
+          (e.time ? '<span class="tcard__time">' + esc(e.time) + '</span>' : '') +
+          '<span class="tcard__title">' + esc(x.short) + '</span>' + (st ? '<span class="tcard__st">' + icon(st.icon) + esc(st.label) + '</span>' : '') + '</a></li>';
+      }).join('') + '</ol>';
     }
-    var showDay = selDay && selDay.slice(0, 7) === ym ? selDay : (nextDay || firstDay);
-    var strip = '';
-    for (var d = 1; d <= n; d++) {
-      var iso = ym + '-' + String(d).padStart(2, '0'), ev = on(iso);
-      var kinds = {}; ev.forEach(function (e0) { kinds[catClass(e0)] = 1; });
-      var kc = Object.keys(kinds).length === 1 ? Object.keys(kinds)[0] : (ev.length ? 'cat--o' : '');
-      strip += '<button type="button" class="wday ' + kc + (iso === showDay ? ' wday--sel' : '') + (iso === today ? ' wday--today' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === showDay) + '" aria-label="' +
+    function dayBtn(iso, cls, sel) {
+      var ev = on(iso);
+      return '<button type="button" class="' + cls + ' ' + catOf(ev) + (iso === sel ? ' ' + cls + '--sel' : '') + (iso === today ? ' ' + cls + '--today' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === sel) + '" aria-label="' +
         esc(fmt(iso, { weekday: 'long', month: 'long', day: 'numeric' }) + (ev.length ? ', ' + ev.length + (ev.length === 1 ? ' event' : ' events') : ', no events')) + '">' +
-        '<span class="wday__l" aria-hidden="true">' + esc(fmt(iso, { weekday: 'narrow' })) + '</span><b class="wday__n" aria-hidden="true">' + d + '</b><i class="wday__dot' + (ev.length ? ' wday__dot--on' : '') + '" aria-hidden="true"></i></button>';
+        '<span class="wday__l" aria-hidden="true">' + esc(fmt(iso, { weekday: 'narrow' })) + '</span><b class="wday__n" aria-hidden="true">' + +iso.slice(8) + '</b><i class="wday__dot' + (ev.length ? ' wday__dot--on' : '') + '" aria-hidden="true"></i></button>';
     }
-    var dayEv = showDay ? on(showDay) : [];
-    var html = '<div class="cal"><div class="cal__head"><h2 class="cal__title" aria-live="polite">' + esc(fmt(first, { month: 'long', year: 'numeric' })) + '</h2>' +
-      '<button class="circbtn" type="button" data-cal-nav="-1" aria-label="Previous month">' + icon('back') + '</button>' +
-      '<button class="circbtn" type="button" data-cal-nav="1" aria-label="Next month">' + icon('chev') + '</button></div>' +
-      '<div class="wstrip" role="group" aria-label="Days of the month">' + strip + '</div>';
-    var tl = dayEv.map(function (x, i) {
-      var e = x.e, phase = eventPhase(x, today), ph = eventPhoto(x, CLUBS_LIST), st = entryStatus(x, today);
-      return '<li class="tl__item' + (phase === 'past' ? ' tl__item--done' : '') + '"><span class="tl__node" aria-hidden="true">' + (phase === 'past' ? icon('check') : '') + '</span>' +
-        '<a class="tcard ' + catClass(x) + ' tcard--lead' + '" href="/app/events/' + encodeURIComponent(x.id) + '">' +
-        '<span class="tcard__who"><span class="tcard__av"' + (ph ? ' style="--ph:url(\'' + esc(ph) + '\')"' : '') + '></span><span class="tcard__wt"><b>' + esc(x.clubLabel || 'Southwest Bowls') + '</b><small>' + esc(x.cat || 'Open') + (e.format ? ' · ' + esc(cap(e.format)) : '') + '</small></span></span>' +
-        (e.time ? '<span class="tcard__time">' + esc(e.time) + '</span>' : '') +
-        '<span class="tcard__title">' + esc(x.short) + '</span>' + (st ? '<span class="tcard__st">' + icon(st.icon) + esc(st.label) + '</span>' : '') + '</a></li>';
-    }).join('');
-    html += '<div id="cal-day-list" tabindex="-1">' + (!anyThisMonth ? state('empty', 'No events this month', 'Use the arrows to look at another month.')
-      : (dayEv.length ? '<ol class="tl">' + tl + '</ol>' : '<p class="muted tl__none">Nothing scheduled this day. Days with a colored dot have events.</p>')) + '</div></div>';
-    return html;
+    var anchor = selDay && selDay.slice(0, 7) === ym ? selDay : (today.slice(0, 7) === ym ? today : first);
+    var title, prevL, nextL, body;
+    if (cv === 'month') {
+      var anyThisMonth = false, firstDay = '', nextDay = '';
+      for (var d0 = 1; d0 <= n; d0++) {
+        var iso0 = ym + '-' + String(d0).padStart(2, '0');
+        if (on(iso0).length) { anyThisMonth = true; if (!firstDay) firstDay = iso0; if (!nextDay && iso0 >= today) nextDay = iso0; }
+      }
+      var showDay = selDay && selDay.slice(0, 7) === ym ? selDay : (nextDay || firstDay);
+      title = fmt(first, { month: 'long', year: 'numeric' }); prevL = 'Previous month'; nextL = 'Next month';
+      var cells = '';
+      ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(function (l) { cells += '<span class="mgrid__dow" aria-hidden="true">' + l + '</span>'; });
+      for (var b0 = 0; b0 < lead; b0++) cells += '<span></span>';
+      for (var d = 1; d <= n; d++) {
+        var iso = ym + '-' + String(d).padStart(2, '0'), ev = on(iso);
+        cells += '<button type="button" class="mday ' + catOf(ev) + (iso === showDay ? ' mday--sel' : '') + (iso === today ? ' mday--today' : '') + '" data-cal-day="' + iso + '" aria-pressed="' + (iso === showDay) + '" aria-label="' +
+          esc(fmt(iso, { weekday: 'long', month: 'long', day: 'numeric' }) + (ev.length ? ', ' + ev.length + (ev.length === 1 ? ' event' : ' events') : ', no events')) + '">' +
+          '<b>' + d + '</b><i class="wday__dot' + (ev.length ? ' wday__dot--on' : '') + '" aria-hidden="true"></i></button>';
+      }
+      var dayEv = showDay ? on(showDay) : [];
+      body = '<div class="mgrid" role="group" aria-label="Days of the month">' + cells + '</div>' +
+        '<div id="cal-day-list" tabindex="-1">' + (!anyThisMonth ? state('empty', 'No events this month', 'Use the arrows to look at another month.')
+        : (dayEv.length ? '<p class="cal__daylabel">' + esc(fmt(showDay, { weekday: 'long', month: 'long', day: 'numeric' })) + '</p>' + cardsFor(dayEv) : '<p class="muted tl__none">Nothing scheduled this day. Days with a colored dot have events.</p>')) + '</div>';
+    } else if (cv === 'week') {
+      var ws = addDays(anchor, -dateFromISO(anchor).getUTCDay()), we = addDays(ws, 6);
+      title = fmt(ws, { month: 'short', day: 'numeric' }) + ' – ' + (ws.slice(0, 7) === we.slice(0, 7) ? fmt(we, { day: 'numeric' }) : fmt(we, { month: 'short', day: 'numeric' })) + ', ' + we.slice(0, 4);
+      prevL = 'Previous week'; nextL = 'Next week';
+      var strip = '', agenda = '', any = false;
+      for (var k = 0; k < 7; k++) {
+        var di = addDays(ws, k), dv = on(di);
+        strip += dayBtn(di, 'wday', anchor);
+        if (dv.length) { any = true; agenda += '<h3 class="cal__daylabel">' + esc(fmt(di, { weekday: 'long', month: 'long', day: 'numeric' })) + (di === today ? ' · Today' : '') + '</h3>' + cardsFor(dv); }
+      }
+      body = '<div class="wstrip wstrip--week" role="group" aria-label="Days of the week">' + strip + '</div><div id="cal-day-list" tabindex="-1">' +
+        (any ? agenda : '<p class="muted tl__none">Nothing scheduled this week.</p>') + '</div>';
+    } else {
+      title = fmt(anchor, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); prevL = 'Previous day'; nextL = 'Next day';
+      var dv1 = on(anchor);
+      body = '<div id="cal-day-list" tabindex="-1">' + (dv1.length ? cardsFor(dv1) : '<p class="muted tl__none">Nothing scheduled this day.</p>') + '</div>';
+    }
+    var views = [['month', 'Month'], ['week', 'Week'], ['day', 'Day']];
+    return '<div class="cal"><div class="cal__head"><h2 class="cal__title" aria-live="polite">' + esc(title) + '</h2>' +
+      '<button class="cal__today" type="button" data-cal-today>Today</button>' +
+      '<button class="circbtn" type="button" data-cal-nav="-1" aria-label="' + prevL + '">' + icon('back') + '</button>' +
+      '<button class="circbtn" type="button" data-cal-nav="1" aria-label="' + nextL + '">' + icon('chev') + '</button></div>' +
+      '<div class="segmented cal__views" role="group" aria-label="Calendar view">' + views.map(function (v) { return '<button type="button" data-cal-view="' + v[0] + '" aria-pressed="' + (v[0] === cv) + '">' + v[1] + '</button>'; }).join('') + '</div>' +
+      body + '</div>';
   }
   // One event as a coloured card (same look as the calendar timeline)
   function eventRow(x, today) {
@@ -1259,7 +1295,7 @@
       var f = { q: params.get('q') || '', month: params.get('month') || '', cat: params.has('cat') ? params.get('cat') : (interestCats().length === 1 && CATS.indexOf(interestCats()[0]) >= 0 ? interestCats()[0] : ''), club: clubParam };
       function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>'; }
       var segs = [['calendar', 'Calendar'], ['upcoming', 'Upcoming']].concat(SAVE_ON ? [['saved', 'Saved']] : []).concat(hasPast ? [['past', 'Completed']] : []);
-      var calMonth = (f.month || today.slice(0, 7)), calDay = (/^\d{4}-\d{2}-\d{2}$/.test(params.get('day') || '') && params.get('day').slice(0, 7) === (f.month || today.slice(0, 7))) ? params.get('day') : '', evLimit = 10, evLastKey = '';
+      var calMonth = (f.month || today.slice(0, 7)), calDay = (/^\d{4}-\d{2}-\d{2}$/.test(params.get('day') || '') && params.get('day').slice(0, 7) === (f.month || today.slice(0, 7))) ? params.get('day') : '', calView = (['week', 'day'].indexOf(params.get('cv')) >= 0 ? params.get('cv') : 'month'), evLimit = 10, evLastKey = '';
       var nSet = f.club ? 1 : 0;
       view.innerHTML = ((params.get('show') === 'saved' && history.state && /^\/app\/(my|more\/membership)\b/.test(String(history.state.from || '').split('?')[0])) ? backLink('/app/events', 'Events') : '') + pageHead('Events', '') +
         '<div class="segmented" role="group" aria-label="Which events">' + segs.map(function (k) {
@@ -1305,12 +1341,13 @@
         var out = document.getElementById('ev-results');
         var mb = view.querySelector('.monthbar'); if (mb) mb.classList.toggle('monthbar--cal', show === 'calendar');
         if (show === 'calendar') {
-          out.innerHTML = calendarHtml(list, calMonth, calDay, today);
+          out.innerHTML = calendarHtml(list, calMonth, calDay, today, calView);
           var wsel = out.querySelector('.wday--sel'); if (wsel && wsel.parentNode) wsel.parentNode.scrollLeft = Math.max(0, wsel.offsetLeft - 140);
           var cu = new URLSearchParams(); cu.set('show', 'calendar');
           if (q) cu.set('q', qRaw); if (cat) cu.set('cat', cat); if (club) cu.set('club', club);
           if (calMonth !== today.slice(0, 7)) cu.set('month', calMonth);
           if (calDay) cu.set('day', calDay);
+          if (calView !== 'month') cu.set('cv', calView);
           history.replaceState(history.state, '', '/app/events?' + cu.toString());
           return;
         }
@@ -1358,7 +1395,16 @@
         var ec = ev.target.closest('[data-ecat]');
         if (ec) { document.getElementById('f-cat').value = ec.getAttribute('data-ecat'); apply(); return; }
         var cn = ev.target.closest('[data-cal-nav]');
-        if (cn) { var dirN = cn.getAttribute('data-cal-nav'); calMonth = addMonths(calMonth, +dirN); calDay = ''; apply(); var nb = view.querySelector('[data-cal-nav="' + dirN + '"]'); if (nb) nb.focus({ preventScroll: true }); return; }
+        if (cn) {
+          var dirN = cn.getAttribute('data-cal-nav');
+          if (calView === 'month') { calMonth = addMonths(calMonth, +dirN); calDay = ''; }
+          else { var anc = calDay || (today.slice(0, 7) === calMonth ? today : calMonth + '-01'); calDay = addDays(anc, +dirN * (calView === 'week' ? 7 : 1)); calMonth = calDay.slice(0, 7); }
+          apply(); var nb = view.querySelector('[data-cal-nav="' + dirN + '"]'); if (nb) nb.focus({ preventScroll: true }); return;
+        }
+        var ct = ev.target.closest('[data-cal-today]');
+        if (ct) { calMonth = today.slice(0, 7); calDay = calView === 'month' ? '' : today; apply(); return; }
+        var cvw = ev.target.closest('[data-cal-view]');
+        if (cvw) { calView = cvw.getAttribute('data-cal-view'); if (calView !== 'month' && !calDay) calDay = today.slice(0, 7) === calMonth ? today : calMonth + '-01'; apply(); return; }
         var cd = ev.target.closest('[data-cal-day]');
         if (cd) { calDay = cd.getAttribute('data-cal-day'); apply(); var dl = document.getElementById('cal-day-list'); if (dl) dl.focus({ preventScroll: true }); return; }
         var b = ev.target.closest('[data-show]');

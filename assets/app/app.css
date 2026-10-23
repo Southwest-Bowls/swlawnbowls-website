@@ -2717,3 +2717,19 @@ html[data-motion="on"] .is-rolling .roll__col { transition-duration: 900ms !impo
 /* Search: empty state */
 .ssearch__hint { margin: 4px 0 10px; }
 button.section__more { background: none; border: 0; padding: 4px 0 4px 10px; font: inherit; color: var(--brand-red, #c62828); cursor: pointer; }
+
+/* Calendar views: Month grid / Week / Day (Apple Calendar style) */
+.cal__head { flex-wrap: wrap; }
+.cal__title { min-width: 0; }
+.cal__today { flex: none; border: 0; background: var(--subtle); color: var(--heading); font: inherit; font-weight: 600; font-size: var(--fs-sm, .9rem); padding: 0 14px; height: 40px; border-radius: 999px; }
+.cal__views { margin: 0 0 var(--s3); }
+.cal__daylabel { margin: var(--s4) 0 var(--s2); font-weight: 650; color: var(--heading); font-size: 1rem; }
+.mgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px 4px; margin-bottom: var(--s2); }
+.mgrid__dow { text-align: center; font-size: var(--fs-xs); font-weight: 650; color: var(--text-2); padding-bottom: 2px; }
+.mday { border: 0; border-radius: 16px; background: var(--surface); color: var(--heading); font: inherit; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-shadow: 0 1px 2px rgba(35,17,32,.06); }
+.mday b { font-family: var(--font-display); font-size: 1.05rem; }
+.mday--today b { text-decoration: underline; text-underline-offset: 3px; }
+.mday--sel { background: var(--selected); color: var(--selected-ink); }
+.mday--sel .wday__dot--on { background: var(--cat-solid, #fff); }
+.wstrip--week { margin-bottom: 0; padding-bottom: 4px; }
+@media (min-width: 480px) { .wstrip--week { justify-content: center; } }
