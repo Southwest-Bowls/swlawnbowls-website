@@ -17,12 +17,12 @@
   var f=document.createElement('footer');f.id='swd-site-footer';
   f.innerHTML=    '<div class="in">' +
     '<div><h3>Southwest Bowls Division</h3><p>Lawn bowling across Southern California, from Cambria to San Diego. A division of Bowls USA.</p></div>' +
-    '<div><h3>Explore</h3><ul><li><a href="/">Home</a></li><li><a href="/2026-season-agenda">2026 season agenda</a></li><li><a href="/welcome">New to the sport</a></li><li><a href="/contact-us">Contact us</a></li></ul></div>' +
+    '<div><h3>Explore</h3><ul><li><a href="https://www.swlawnbowls.org/">Home</a></li><li><a href="https://www.swlawnbowls.org/2026-season-agenda">2026 season agenda</a></li><li><a href="https://www.swlawnbowls.org/welcome">New to the sport</a></li><li><a href="https://www.swlawnbowls.org/contact-us">Contact us</a></li></ul></div>' +
     '<div><h3>The app</h3><ul><li><a href="https://swlawnbowls-website.vercel.app/app">SW Bowls app</a></li><li><a href="https://swlawnbowls-website.vercel.app/privacy">App privacy policy</a></li><li><a href="https://swlawnbowls-website.vercel.app/delete-account">Delete your account</a></li></ul></div>' +
     '<div><h3>Follow</h3><ul><li><a href="https://www.facebook.com/profile.php?id=61574126130618" rel="noopener">Facebook</a></li><li><a href="https://www.youtube.com/@SouthwestLawnBowls" rel="noopener">YouTube</a></li></ul></div>' +
     '</div>' +
     '<div class="legal"><span>&copy; ' + yr + ' Southwest Bowls Division</span>' +
-    '<span><a href="/privacy-policy">Privacy Policy</a> &middot; <a href="/disclaimer">Disclaimer</a> &middot; <a href="/disclaimer-1">Copyright</a></span></div>';
+    '<span><a href="https://www.swlawnbowls.org/privacy-policy">Privacy Policy</a> &middot; <a href="https://www.swlawnbowls.org/disclaimer">Disclaimer</a> &middot; <a href="https://www.swlawnbowls.org/disclaimer-1">Copyright</a></span></div>';
   document.body.appendChild(f);
   f.querySelectorAll('a').forEach(function(a){a.target='_top'});
   function send(){parent.postMessage({type:'swd-footer-height',height:f.offsetHeight},'*')}
