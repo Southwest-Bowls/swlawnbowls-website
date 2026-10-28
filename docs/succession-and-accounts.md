@@ -22,8 +22,7 @@ Started 2026-09-10.
       already failed a deploy on this project once.
 - [ ] Upgrade SWBOWLS to Pro, then invite `gallogiulia` as an Owner
 - [ ] Turn off Data Preferences → "Improve models with my data" on the team
-- [ ] Repo transferred to the GitHub organisation
-- [ ] `GITHUB_REPO_OWNER` set in Vercel, publishing token reissued from the org
+- [x] Repo transferred to the GitHub organisation (now `Southwest-Bowls/swlawnbowls-website`)
 - [ ] Vercel project moved to the division team — **after the shirt campaign
       closes 2026-09-12**, never renaming the project
 - [x] Sheets and Forms — **already division-owned.** Verified 2026-09-10: the
@@ -80,51 +79,41 @@ down and releases the hardcoded hostname.
 | Domain `swlawnbowls.org` | registrar / Squarespace | to confirm | **To confirm** |
 | Entry & scoring sheets | Google Sheets | `sw.bowls@gmail.com` | Yes |
 | The four member forms | Google Forms | `sw.bowls@gmail.com` | Yes |
-| Publisher login accounts | Vercel env var `USERS` | project above | follows Vercel |
-| GitHub token the publisher commits with | Vercel env var `GITHUB_PAT` | personal token | **No** |
 | Division PayPal | PayPal | division | assumed yes |
 
 ## Order of work
 
 Sequence matters. Each step is safe on its own; done out of order they break
-the publisher or the live site.
+the live site.
 
 1. **Create the division identities.** A Google account for the division, a
    GitHub organisation, a Vercel team. Add the current webmaster as an admin.
    Nothing moves yet, so nothing can break.
 
-2. **Transfer the GitHub repository to the organisation.** Then set
-   `GITHUB_REPO_OWNER` in Vercel to the new organisation. The code reads that
-   variable (see `api/results/commit.js`), so no code change is needed.
-   GitHub redirects the old path for a while, which hides mistakes — set the
-   variable anyway rather than relying on the redirect.
+2. **Transfer the GitHub repository to the organisation.** Vercel follows
+   the transfer; reconnect the project's Git link if a deploy stops.
 
-3. **Reissue the publishing token.** `GITHUB_PAT` is currently a personal
-   token; it dies with the personal account. Issue one from the organisation
-   and replace the Vercel variable.
-
-4. **Move the Vercel project to the division team.** Do this in a quiet week.
+3. **Move the Vercel project to the division team.** Do this in a quiet week.
    `swd-google-calendar.vercel.app` is hardcoded in 186 places, 83 of them
    inside Squarespace pages that cannot be edited programmatically, so the
    project name must survive the move. Confirm the hostname still resolves
    before considering it done, and never rename the project.
 
-5. **Google — done, with one caveat.** The sheets and forms already sit in
+4. **Google — done, with one caveat.** The sheets and forms already sit in
    `sw.bowls@gmail.com`. That is a shared Gmail rather than Workspace on our
    own domain, so access is still a shared password rather than named people.
    It is not urgent, but Workspace on swlawnbowls.org would make Google match
    the model we are moving GitHub and Vercel to.
 
-6. **Confirm the domain registrar** for swlawnbowls.org is division-owned, and
+5. **Confirm the domain registrar** for swlawnbowls.org is division-owned, and
    that at least two people can reach it.
 
 ## What a successor should need
 
 The target is a webmaster who needs **a browser and a password** — nothing else.
-`/results-publisher-mobile` already meets that bar for results: it signs in,
-loads the current data, takes photos and commits to the site with no local
-tooling. Extending the same approach to tournaments and news is what makes the
-job handoverable. VS Code and an AI assistant stay the faster path for whoever
+The results publisher that used to do this was removed on 2026-10-28 (unused,
+and its login could write any file to the live site). A replacement must only
+be able to change the data files it is for. VS Code and an AI assistant stay the faster path for whoever
 wants them, but they must never be the *only* path.
 
 ## Environment variables
@@ -132,11 +121,5 @@ wants them, but they must never be the *only* path.
 Set in the Vercel project. Moving accounts means recreating these, so keep the
 list current.
 
-    GITHUB_REPO_OWNER   GitHub owner (defaults to gallogiulia)
-    GITHUB_REPO_NAME    repository  (defaults to swlawnbowls-website)
-    GITHUB_BRANCH       branch      (defaults to main)
-    GITHUB_PAT          token the publisher commits with
-    SESSION_SECRET      signs publisher login sessions
-    USERS               publisher logins
     GCAL_API_KEY        Google Calendar feed
-    PAYPAL_*            entry payments
+    HUB_PAYPAL_*        entry payments (sandbox; the entries backend is not deployed yet)

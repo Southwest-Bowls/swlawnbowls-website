@@ -85,7 +85,6 @@ set in the Vercel project settings and never in code:
 | `GCAL_CACHE_MINUTES` | How long the calendar feed is cached |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Google access for entry-capacity checks and the calendar link sync |
 | `TOURNAMENTS_INDEX_CSV_URL` | The published tournaments index sheet |
-| `SESSION_SECRET`, `USERS` | Sign-in for the publisher tools |
 | `CRON_SECRET` | Protecting the calendar link-sync job |
 
 Who holds which account (Vercel, GitHub, Google, the domain) is recorded in

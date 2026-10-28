@@ -49,7 +49,7 @@ drift apart.
 
 For a **tournament award** (Player of the Tournament and similar), add an `awards` array to that tournament in `results-data.json`:
 `"awards": [{ "title": "Bowler of the Tournament · Women", "names": "Full Name", "photo": "/photos/…", "note": "optional" }]`.
-The app shows it above the divisions and on that player's profile. Names are matched exactly as written. The results publishers do not edit `awards`, so check they keep it when you save.
+The app shows it above the divisions and on that player's profile. Names are matched exactly as written.
 
 ### Adding an information page
 1. Write `content/<id>.json` per `docs/page-content-schema.md`.
@@ -96,7 +96,7 @@ Houston), carry it across as written and flag it rather than guessing.
 **A change to one data file can break another page.** Several pages read
 `results-data.json`. When the Southwest Open moved from a flat `places` list to
 `flights`, it silently broke the home feature panel, the news panel, both
-Nationals pages and both results publishers. Before changing the *shape* of a
+Nationals pages and the results publishers (since removed). Before changing the *shape* of a
 data file, grep for everything that reads it:
 
     grep -rln "results-data.json" --include='*.html' --include='*.js' .
