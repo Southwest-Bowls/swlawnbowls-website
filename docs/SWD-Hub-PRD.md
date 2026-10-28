@@ -139,7 +139,7 @@ Adapted from the Base44 entities (Member, Club, Division, AuditLog carry over; P
 - ✅ Unauthenticated hit on any admin route → sign-in, then redirect back
 - ✅ Server rejects (403) any mutation outside the caller's role/event scope, verified by test
 
-### F2 — Event publisher (finishes `event-publisher.html`, see §9)
+### F2 — Event publisher (finishes `event-publisher.html`, see §9; that page was removed on 2026-10-28)
 *As an admin, I create and publish an event without editing JSON or committing to git.*
 - ✅ Form covers every field the current `events-data.json` supports (schedule lines, rules list, eligibility, flyer/CoPs upload, contact)
 - ✅ Draft preview renders the exact public event page before publishing
@@ -262,7 +262,7 @@ Route: `/td/{event_id}` — tabs **Check-in · Rinks · Scores · Results**. Pho
 
 ## 9. Admin / publisher flow
 
-Finishes the never-adopted `event-publisher.html` with the two things it lacked: **auth and workflow**.
+Finishes the never-adopted `event-publisher.html` with the two things it lacked: **auth and workflow**. (The page itself was removed on 2026-10-28; nothing used it.)
 
 - `/admin` dashboard: events by status, entry revenue this season, pending refund requests, recent audit entries.
 - **Event editor** (create/edit): sections mirroring the current JSON — Basics, Schedule (repeatable time+text rows), Format & eligibility (structured, not free text), Fees & deadline, Rules (repeatable), Files (flyer/CoPs upload to Supabase Storage — replaces Squarespace CDN links), Contact, TD assignment.
