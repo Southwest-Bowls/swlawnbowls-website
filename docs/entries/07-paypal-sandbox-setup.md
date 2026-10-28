@@ -33,7 +33,7 @@ Giulia or Anne add the values in the Vercel dashboard (project settings, Environ
 Real money only after: all sandbox paths pass, Anne has done a full dry run, the refund-by-hand step has been practised, the Apple review question is answered, and Giulia says go. Live credentials are then created in PayPal's **Live** tab and added to Vercel Production only.
 
 ## Why the variables are named HUB_PAYPAL_*
-The older website entry code (`api/_lib/paypal.js`, `api/webhook.js`) reads `PAYPAL_CLIENT_ID` and friends. The entry system uses its own `HUB_PAYPAL_*` names so the two can never overwrite each other, and the existing buttons keep working untouched.
+The older website entry code (`api/_lib/paypal.js`, `api/webhook.js`) read `PAYPAL_CLIENT_ID` and friends. That code was removed on 2026-10-28 and nothing reads the `PAYPAL_*` names any more. The entry system keeps its own `HUB_PAYPAL_*` names so it can never pick up a stale value left behind in Vercel.
 
 ## One-time setup, no secrets in chat
 Run in Terminal, in the website repo folder: `bash scripts/set-paypal-sandbox.sh`. It asks you to paste the sandbox Client ID and Secret (the Secret is hidden), saves them to Vercel for Preview and Development only, and prints nothing sensitive. Then `scripts/paypal-sandbox-smoke.mjs` proves the keys work against fake money.

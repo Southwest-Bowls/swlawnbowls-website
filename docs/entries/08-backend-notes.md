@@ -70,7 +70,7 @@ It refuses to run unless `HUB_PAYPAL_ENV=sandbox`, prints the sandbox approval U
 - No live PayPal. No deploy, no commit.
 - Withdrawal rule text is TBD. The withdrawal request flow and TD console are not part of this backend.
 - Rate limiting is per function instance only.
-- Old code (`api/_lib/paypal.js`, `api/webhook.js`, `assets/app/*`) untouched.
+- Old code in `assets/app/*` untouched. The old `api/_lib/paypal.js` and `api/webhook.js` were removed on 2026-10-28; the entry backend never depended on them.
 
 ## Steps Giulia must do later
 1. Create a Supabase project (or confirm the existing one) and run `docs/entries/02-schema.sql` yourself in the SQL editor. Review it first.
