@@ -5,6 +5,7 @@ The earlier "SWD Hub" project is retired. These documents are the current plan f
 
 | File | What it covers |
 |---|---|
+| 00-decisions-2026-10.md | **Latest decisions (Oct 27-28 2026). Wins over the files below where they differ.** |
 | 01-entry-flow.md | States, screens and edge cases for entering |
 | 02-schema.sql | Draft database design (NOT applied) |
 | 03-payments.md | PayPal design, check and cash, refunds by hand |
