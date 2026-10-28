@@ -141,7 +141,7 @@ function hasManualNonCollectionUrl(text) {
 
 // Load events-data.json from the deployed site so the cron can inject
 // per-tournament deadlines into GCal event descriptions. GG maintains
-// this file via the Event Publisher; every published entry has a
+// this file by editing it directly; every published entry has a
 // `deadline` field (e.g. "Entry deadline: Friday, April 11, 2026").
 async function fetchEventsData() {
   const base = process.env.VERCEL_URL
