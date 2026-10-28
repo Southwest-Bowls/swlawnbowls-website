@@ -73,7 +73,7 @@ down and releases the hardcoded hostname.
 
 | What | Lives in | Owned by | Division-owned? |
 |---|---|---|---|
-| Website code & history | GitHub `gallogiulia/swlawnbowls-website` | personal | **No** |
+| Website code & history | GitHub `Southwest-Bowls/swlawnbowls-website` | GitHub organisation `Southwest-Bowls` | Yes |
 | Hosting & deploys | Vercel `giulia-gallos-projects` | personal | **No** |
 | Public hostname | `swlawnbowls-website.vercel.app` (old: `swd-google-calendar.vercel.app`, keep it) | Vercel project above | **No** |
 | Domain `swlawnbowls.org` | registrar / Squarespace | to confirm | **To confirm** |
