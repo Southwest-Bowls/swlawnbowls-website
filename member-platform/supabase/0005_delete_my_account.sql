@@ -3,7 +3,9 @@
 -- Required by Apple 5.1.1(v) and Google Play. The app calls rpc('delete_my_account') with the signed-in
 -- user's token (assets/app/app.js, data-del-go).
 --
--- STATUS: written 2026-10-16, NOT YET APPLIED. Do not run until STEP 1 has been checked (below).
+-- STATUS: APPLIED to the live project (azbluidsfrjtoeeesqwa) on 2026-10-28, pasted by hand into the Supabase SQL Editor
+-- by Giulia (so it is not in Supabase's own migration history). The SQL below is exactly what was run.
+-- STEP 1 is done (no other table points at auth.users; see the 2026-10-28 audit). STEP 3 (end-to-end test) is NOT done yet.
 --
 -- What it does, in one transaction, for the CALLER only (auth.uid()):
 --   1. deletes the caller's contact-change requests (private.contact_change_requests.requested_by = uid)
@@ -11,9 +13,10 @@
 --      The roster row itself (private.members and friends) is kept: it is the Division's record, not the account.
 --   3. deletes the sign-in account (auth.users), so the email can sign up again.
 -- Published tournament results are never touched (they are not stored in these tables).
+-- Not deleted on purpose: private.audit_events rows (actor 'member:<uid>'); they hold no email or contact detail.
 -- ============================================================================
 
--- STEP 1 (read-only, run first, send the output back): find anything else that points at a signed-in user.
+-- STEP 1 (done 2026-10-28; kept for reference):  find anything else that points at a signed-in user.
 --   SELECT table_schema, table_name, column_name
 --     FROM information_schema.columns
 --    WHERE column_name IN ('auth_subject', 'requested_by', 'user_id', 'created_by', 'auth_user_id')
