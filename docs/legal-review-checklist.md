@@ -39,7 +39,7 @@ Started 2026-10-28. This is a list of questions to take to a lawyer, **not legal
 
 ## 6. Scores and results
 - [ ] Records of scores: the paper card is the official record and a mismatch is flagged to the tournament director. Is this wording right in the terms and the rules?
-- [ ] Photos of score cards (optional, taken by the director): they carry names and signatures. Where may they be kept, who may see them, and for how long?
+- [ ] Photos of score cards (decided 2026-10-28: optional, taken by the tournament director only, stored privately, **deleted 90 days after the tournament**). They carry names and signatures. Is 90 days right, who may see them, and does the policy need to say so? Does a dispute or complaint that is still open need to hold the photo longer?
 - [ ] Publishing results and photos of winners: do we need permission from the people pictured, especially juniors?
 
 ## 7. Photos, video, music and logos
