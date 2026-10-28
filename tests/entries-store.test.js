@@ -56,7 +56,7 @@ test('event date parsing', () => {
 test('events-data.json loads; open only when upcoming, not cancelled, fee known', () => {
   const now = new Date('2026-10-15T12:00:00Z');
   const evs = loadEvents({ now });
-  assert.equal(evs.length, 51);
+  assert.equal(evs.length, 52);
   const by = Object.fromEntries(evs.map((e) => [e.id, e]));
   assert.equal(by['vet-novice-mix-match-triples-2026'].open, false); // April, past
   const g = by['groves-mixed-triples-2026'];
