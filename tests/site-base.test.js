@@ -53,6 +53,7 @@ test('alerts: the settings section only shows in the store app for signed-in mem
 test('alerts: turning off keeps the token until the server confirms; sign out removes the phone first', () => {
   assert.match(src, /function pushTurnOff\(\)[\s\S]*?memberRpc\('unregister_device'[\s\S]*?\.then\(function \(\) \{\s*\n\s*store\('pushToken', null\)/);
   assert.match(src, /function signOut\(\) \{[\s\S]*?unregister_device[\s\S]*?finishSignOut/);
+});
 
 test('reviewer sign-in: a password screen exists only behind ?review=1 and uses the password grant', () => {
   assert.match(src, /params\.get\('review'\) === '1'/);
