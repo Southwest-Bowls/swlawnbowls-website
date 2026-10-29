@@ -1,0 +1,20 @@
+# After events or results change on main, tell the site which phones to alert.
+# Needs repository secrets NOTIFY_URL (https://swlawnbowls-website.vercel.app/api/push/notify) and NOTIFY_SECRET.
+# Until NOTIFY_LIVE=true is set in Vercel, the site only counts who would be alerted (a dry run).
+name: Send alerts
+on:
+  push:
+    branches: [main]
+    paths: [events-data.json, results-data.json]
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/notify-changes.mjs
+        env:
+          NOTIFY_URL: ${{ secrets.NOTIFY_URL }}
+          NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
