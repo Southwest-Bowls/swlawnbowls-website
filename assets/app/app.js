@@ -2958,7 +2958,8 @@
         '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
         '<input id="s-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="' + esc(email) + '" required></span></label>' +
         '<p class="mform__err" id="s-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Send me a code</button></div></form>' +
-        '<p class="signin__foot">No account needed to browse. <a class="textlink" href="/app">Continue as a guest</a></p>' + memberHelpHtml(false));
+        '<p class="signin__foot">No account needed to browse. <a class="textlink" href="/app">Continue as a guest</a></p>' + memberHelpHtml(false) +
+        '<p class="signin__foot"><a class="textlink" href="/app/signin?review=1">App store review sign-in</a></p>');
       var f = view.querySelector('#s-form');
       f.addEventListener('submit', function (ev) {
         ev.preventDefault();
@@ -3015,6 +3016,32 @@
         }, function () { if (!live()) return; busy = false; f.querySelector('button').disabled = false; inp.value = ''; paint(); out.textContent = 'That code didn’t work. Check it or ask for a new one.'; });
       });
     }
+    // App Store / Google Play reviewers cannot read our members' email, so they get one demo account with a password
+    // (set up by hand in Supabase; see member-platform/supabase/0012_reviewer_demo.sql). Real members have no password.
+    function reviewerStep(msg) {
+      shell(1, '<h1 class="signin__h">App Review sign-in</h1><p class="signin__sub">For app store reviewers, using the demo account in the review notes. Members sign in with an email code.</p>' +
+        (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
+        '<form class="mform" id="r-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
+        '<input id="r-email" type="email" autocomplete="username" inputmode="email" required></span></label>' +
+        '<label class="mfield mfield--icon mfield--pill"><span>Password</span><span class="mfield__box">' + icon('lock') +
+        '<input id="r-pass" type="password" autocomplete="current-password" required></span></label>' +
+        '<p class="mform__err" id="r-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Sign in</button></div></form>' +
+        '<p class="signin__foot"><a class="textlink" href="/app/signin?step=email">Back to email code sign-in</a></p>');
+      var rf = view.querySelector('#r-form');
+      rf.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var em = rf.querySelector('#r-email').value.trim(), pw = rf.querySelector('#r-pass').value, out = rf.querySelector('#r-err');
+        if (!em || !pw) { out.textContent = 'Enter the email and password from the review notes.'; return; }
+        rf.querySelector('button').disabled = true; out.textContent = '';
+        memberFetch('/auth/v1/token?grant_type=password', { email: em, password: pw }).then(function (j) {
+          if (!live()) return;
+          setMemberSession({ access: j.access_token, refresh: j.refresh_token, expires: Date.now() + (j.expires_in || 3600) * 1000 });
+          store('memberPreview', true); toast('Signed in');
+          go('/app/my', true);
+        }, function () { if (!live()) return; rf.querySelector('button').disabled = false; out.textContent = 'That email or password didn’t work.'; });
+      });
+    }
+    if (params.get('review') === '1') { reviewerStep(); return Promise.resolve(); }
     if (params.get('demo') === 'code') { email = 'you@example.com'; codeStep(); return Promise.resolve(); }
     function landingStep() {
       clearInterval(timer);
