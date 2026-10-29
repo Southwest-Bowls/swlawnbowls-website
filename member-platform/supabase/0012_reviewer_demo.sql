@@ -33,6 +33,7 @@ BEGIN
 END $$;
 
 -- To remove the demo member again (then delete the user under Authentication > Users):
+-- DELETE FROM private.contact_change_requests WHERE member_id IN (SELECT id FROM private.members WHERE approved_by = 'REVIEWER');
 -- DELETE FROM private.account_member_links WHERE member_id IN (SELECT id FROM private.members WHERE approved_by = 'REVIEWER');
 -- DELETE FROM private.membership_records WHERE member_id IN (SELECT id FROM private.members WHERE approved_by = 'REVIEWER');
 -- DELETE FROM private.member_clubs WHERE member_id IN (SELECT id FROM private.members WHERE approved_by = 'REVIEWER');
