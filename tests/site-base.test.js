@@ -77,3 +77,7 @@ test('a failed alert-subscription update is remembered and retried', () => {
 test('a late token refresh is dropped if the session was cleared or replaced', () => {
   assert.match(src, /ep !== sessionEpoch \|\| !now \|\| now\.refresh !== s\.refresh/);
 });
+
+test('token refreshes are shared so two callers cannot reject each other', () => {
+  assert.match(src, /if \(refreshing && refreshing\.ep === ep\) return refreshing\.p;/);
+});

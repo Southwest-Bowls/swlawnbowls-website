@@ -2822,17 +2822,23 @@
     });
   }
   var sessionEpoch = 0;   // bumped at sign-out so a slow token refresh cannot bring the session back
+  var refreshing = null;  // one refresh at a time: callers that arrive while it runs share its answer
   function freshToken() {
     var s = memberSession(), ep = sessionEpoch;
     if (!s) return Promise.resolve(null);
     if (s.expires - Date.now() > 60000) return Promise.resolve(s.access);
-    return memberFetch('/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh }).then(function (j) {
+    if (refreshing && refreshing.ep === ep) return refreshing.p;
+    var p = memberFetch('/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh }).then(function (j) {
       // Signed out (or signed in as someone else) while this was in flight: drop the result
       var now = memberSession();
       if (ep !== sessionEpoch || !now || now.refresh !== s.refresh) return null;
       setMemberSession({ access: j.access_token, refresh: j.refresh_token, expires: Date.now() + (j.expires_in || 3600) * 1000 });
       return j.access_token;
-    }, function () { setMemberSession(null); return null; });
+    }, function () { if (ep === sessionEpoch) setMemberSession(null); return null; });
+    var cur = { ep: ep, p: p };
+    refreshing = cur;
+    p.then(function () { if (refreshing === cur) refreshing = null; });
+    return p;
   }
   function memberRpc(fn, args) {
     return freshToken().then(function (t) {
