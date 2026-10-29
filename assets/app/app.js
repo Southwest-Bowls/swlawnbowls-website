@@ -280,8 +280,22 @@
         showNetbar();
       }
       return r.json();
-    }).catch(function (e) { delete cache[url]; throw e; });
+    }).then(function (d) { return saveCopy(url, d); }, function (e) { return savedCopy(url, e); })
+      .catch(function (e) { delete cache[url]; throw e; });
     return cache[url];
+  }
+  // Store app only: the web view has no service worker, so keep the last good copy of each data file
+  // on the phone and use it (labelled with its date) when there is no signal.
+  function saveCopy(url, d) {
+    if (SITE) { try { localStorage.setItem('swd:copy:' + url, JSON.stringify({ t: Date.now(), d: d })); } catch (e) {} }
+    return d;
+  }
+  function savedCopy(url, err) {
+    if (!SITE || (err && /^HTTP /.test(err.message))) throw err;   // only a failed connection falls back, never a real 404/500
+    var c = null; try { c = JSON.parse(localStorage.getItem('swd:copy:' + url)); } catch (e) {}
+    if (!c || !c.d) throw err;
+    stale[url] = new Date(c.t); showNetbar();
+    return c.d;
   }
   function showNetbar() {
     var dates = Object.keys(stale).map(function (k) { return stale[k]; }).filter(Boolean);

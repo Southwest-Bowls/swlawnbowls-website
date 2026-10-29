@@ -31,3 +31,8 @@ test('CORS: the data files and live-scoring endpoint can be read by the store ap
   assert.ok(has('/(.*)\\.json'));
   assert.ok(has('/api/live-scoring'));
 });
+
+test('store app: last good copy of each data file is kept and used only when the connection fails', () => {
+  assert.match(src, /function saveCopy\(url, d\)/);
+  assert.match(src, /\^HTTP \/\.test\(err\.message\)/);
+});
