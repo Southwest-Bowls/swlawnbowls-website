@@ -62,7 +62,7 @@ test('reviewer sign-in: a password screen exists only behind ?review=1 and uses 
 });
 
 test('alerts: saved events are sent to the server when they change, and a slow token refresh cannot undo a sign-out', () => {
-  assert.match(src, /function syncDeviceEvents\(\)/);
+  assert.match(src, /function syncDeviceEvents\(onlyIfPending\)/);
   assert.match(src, /store\('saved', s\);\s*\n\s*syncDeviceEvents\(\);/);
   assert.match(src, /store\('pushToken', t\.value\); syncDeviceEvents\(\);/);
   assert.match(src, /if \(ep !== sessionEpoch\) return null;/);
