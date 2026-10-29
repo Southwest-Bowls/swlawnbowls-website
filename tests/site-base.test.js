@@ -19,3 +19,15 @@ test('sign-in return address and calendar links use the site origin, not locatio
 test('the setting is empty by default (the website behaves exactly as before)', () => {
   assert.match(src, /var SITE = String\(window\.SWD_SITE_BASE \|\| ''\)/);
 });
+
+test('store app: no service worker, and the address-fixing code only runs when the site base is set', () => {
+  assert.match(src, /'serviceWorker' in navigator && !SITE/);
+  assert.match(src, /if \(SITE\) \{\s*\n\s*var BUNDLED/);
+});
+
+test('CORS: the data files and live-scoring endpoint can be read by the store app', () => {
+  const v = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '..', 'vercel.json'), 'utf8'));
+  const has = (source) => (v.headers.find((h) => h.source === source) || { headers: [] }).headers.some((h) => h.key === 'Access-Control-Allow-Origin' && h.value === '*');
+  assert.ok(has('/(.*)\\.json'));
+  assert.ok(has('/api/live-scoring'));
+});

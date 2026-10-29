@@ -548,6 +548,24 @@
           "value": "object-src 'none'; base-uri 'self'; form-action 'self' https:"
         }
       ]
+    },
+    {
+      "source": "/(.*)\\.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/api/live-scoring",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
     }
   ]
 }

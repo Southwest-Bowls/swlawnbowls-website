@@ -4728,7 +4728,37 @@
   setTimeout(welcome, 600);
 
   // Offline helper (network-first: new versions always win when online)
-  if ('serviceWorker' in navigator) {
+  // (Not inside the store app: it bundles its own copy of these screens and its web view has no service worker.)
+  if ('serviceWorker' in navigator && !SITE) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+  }
+
+  /* ---------------------------------------------------------------
+     Store app only (SITE is set): the screens are bundled inside the app, but photos, flyers and
+     website pages still live on the website. Point those addresses at the website, and open website
+     pages in the phone's browser. Nothing here runs on the website itself.
+     --------------------------------------------------------------- */
+  if (SITE) {
+    var BUNDLED = /^\/(app(\/|$|\?|#)|assets\/(app|icons)\/)/;
+    var toSite = function (u) { return u && u.charAt(0) === '/' && u.charAt(1) !== '/' && !BUNDLED.test(u) ? SITE + u : u; };
+    var fixStyle = function (v) { return v.replace(/url\((['"]?)(\/(?!\/)[^'")]*)\1\)/g, function (m, q, u) { return 'url(' + q + toSite(u) + q + ')'; }); };
+    var fixEl = function (el) {
+      if (el.nodeType !== 1) return;
+      var list = [el].concat([].slice.call(el.querySelectorAll('img[src], source[src], a[href], [style*="url("]')));
+      list.forEach(function (n) {
+        var t = n.tagName;
+        if (t === 'IMG' || t === 'SOURCE') { var s0 = n.getAttribute('src') || '', s1 = toSite(s0); if (s1 !== s0) n.setAttribute('src', s1); }
+        if (t === 'A') {
+          var h0 = n.getAttribute('href') || '', h1 = toSite(h0);
+          if (h1 !== h0) { n.setAttribute('href', h1); n.setAttribute('target', '_blank'); n.setAttribute('rel', 'noopener'); }
+        }
+        var st = n.getAttribute && n.getAttribute('style');
+        if (st && st.indexOf('url(') >= 0) { var st1 = fixStyle(st); if (st1 !== st) n.setAttribute('style', st1); }
+      });
+    };
+    new MutationObserver(function (muts) {
+      muts.forEach(function (m) { if (m.type === 'childList') m.addedNodes.forEach(fixEl); else fixEl(m.target); });
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'href', 'style'] });
+    fixEl(document.body);
   }
 })();
