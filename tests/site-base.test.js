@@ -43,3 +43,41 @@ test('store app: iframes (flyer PDFs) are re-pointed, and "Clear offline copies"
   assert.match(src, /function clearCopies\(\)/);
   assert.match(src, /clearCopies\(\); toast\('Offline copies cleared'\)/);
 });
+
+test('alerts: the settings section only shows in the store app for signed-in members, and uses the two device functions', () => {
+  assert.match(src, /function pushSection\(\) \{\s*\n\s*if \(!pushPlugin\(\) \|\| !memberSession\(\)\) return '';/);
+  assert.match(src, /memberRpc\('register_device'/);
+  assert.match(src, /memberRpc\('unregister_device'/);
+});
+
+test('alerts: turning off keeps the token until the server confirms; sign out removes the phone first', () => {
+  assert.match(src, /function pushTurnOff\(\)[\s\S]*?memberRpc\('unregister_device'[\s\S]*?\.then\(function \(\) \{\s*\n\s*store\('pushToken', null\)/);
+  assert.match(src, /function signOut\(\) \{[\s\S]*?unregister_device[\s\S]*?finishSignOut/);
+});
+
+test('reviewer sign-in: a password screen exists only behind ?review=1 and uses the password grant', () => {
+  assert.match(src, /params\.get\('review'\) === '1'/);
+  assert.match(src, /\/auth\/v1\/token\?grant_type=password/);
+  assert.match(src, /href="\/app\/signin\?review=1"/);
+});
+
+test('alerts: saved events are sent to the server when they change, and a slow token refresh cannot undo a sign-out', () => {
+  assert.match(src, /function syncDeviceEvents\(onlyIfPending\)/);
+  assert.match(src, /store\('saved', s\);\s*\n\s*syncDeviceEvents\(\);/);
+  assert.match(src, /store\('pushToken', t\.value\); syncDeviceEvents\(\);/);
+  assert.match(src, /function finishSignOut\(\) \{\s*\n\s*sessionEpoch\+\+;/);
+});
+
+test('a failed alert-subscription update is remembered and retried', () => {
+  assert.match(src, /store\('pushSyncPending', true\)/);
+  assert.match(src, /window\.addEventListener\('online', function \(\) \{\s*\n\s*syncDeviceEvents\(true\);/);
+  assert.match(src, /syncDeviceEvents\(true\);\s*\n\s*render\(\);\s*\n\s*setTimeout\(welcome/);
+});
+
+test('a late token refresh is dropped if the session was cleared or replaced', () => {
+  assert.match(src, /ep !== sessionEpoch \|\| !now \|\| now\.refresh !== s\.refresh/);
+});
+
+test('token refreshes are shared so two callers cannot reject each other', () => {
+  assert.match(src, /if \(refreshing && refreshing\.ep === ep\) return refreshing\.p;/);
+});

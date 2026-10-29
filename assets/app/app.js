@@ -310,6 +310,7 @@
       '. Entries, draws and scores may have changed.';
   }
   window.addEventListener('online', function () {
+    syncDeviceEvents(true);
     // Only redraw when something was served from the offline copy or the screen shows the error state,
     // and never over a half-typed form or an open sheet
     var needs = Object.keys(stale).length > 0 || !!view.querySelector('[data-retry]');
@@ -512,12 +513,13 @@
   }
 
   // One place changes saved state, so Home, Events and event details
-  // always agree. Saving is a bookmark: it never registers anyone or
-  // turns on reminders.
+  // always agree. Saving is a bookmark: it never registers anyone. If the member
+  // has turned on Tournament alerts, the saved list is also what alerts are about.
   function setSaved(id, on, title) {
     var s = saved().filter(function (x) { return x !== id; });
     if (on) s.push(id);
     store('saved', s);
+    syncDeviceEvents();
     document.querySelectorAll('[data-save="' + id + '"]').forEach(function (b) {
       b.setAttribute('data-on', on);
       var span = b.querySelector('span');
@@ -2662,6 +2664,59 @@
     });
   }
 
+  // Tournament alerts (store app only, signed-in members). The phone's push token is saved with register_device()
+  // (member-platform/supabase/0013_devices.sql) and removed again with unregister_device() or when the account is deleted.
+  function pushPlugin() {
+    var C = window.Capacitor;
+    return SITE && C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.PushNotifications ? C.Plugins.PushNotifications : null;
+  }
+  // Alerts are about the events the member saved. Tell the server which ones, whenever that list changes.
+  // If it cannot reach the server (offline), the change is remembered and sent again on reconnect or the next app start.
+  function syncDeviceEvents(onlyIfPending) {
+    var tok = store('pushToken');
+    if (!tok || !memberSession() || !pushPlugin()) return;
+    if (onlyIfPending && !store('pushSyncPending')) return;
+    store('pushSyncPending', true);
+    var list = saved();
+    memberRpc('set_device_events', { p_token: tok, p_events: list }).then(function () {
+      if (JSON.stringify(list) === JSON.stringify(saved())) store('pushSyncPending', null);
+      else syncDeviceEvents();
+    }, function () {});
+  }
+  function pushSection() {
+    if (!pushPlugin() || !memberSession()) return '';
+    var on = !!store('pushToken');
+    return '<section class="settings" aria-labelledby="h-push"><h2 id="h-push">Tournament alerts</h2>' +
+      '<p>Get a notice on this phone when something changes for a tournament, such as a new start time or results. You can turn this off at any time.</p>' +
+      '<div class="actions"><button class="btn' + (on ? ' btn--ghost' : '') + '" type="button" ' + (on ? 'data-push-off' : 'data-push-on') + '>' + (on ? 'Turn off alerts' : 'Turn on alerts') + '</button></div>' +
+      '<p class="footnote" id="push-msg" role="status">' + (on ? 'Alerts are on for this phone.' : '') + '</p></section>';
+  }
+  function pushSay(t) { var m = document.getElementById('push-msg'); if (m) m.textContent = t; }
+  function pushTurnOn() {
+    var P = pushPlugin(); if (!P) return;
+    pushSay('One moment…');
+    P.requestPermissions().then(function (r) {
+      if (!r || r.receive !== 'granted') { pushSay('Alerts are off. You can allow them for this app in your phone’s settings.'); return null; }
+      if (P.removeAllListeners) P.removeAllListeners();
+      P.addListener('registration', function (t) {
+        memberRpc('register_device', { p_token: t.value, p_platform: window.Capacitor.getPlatform() }).then(function () {
+          store('pushToken', t.value); syncDeviceEvents(); render();
+        }, function () { pushSay('We couldn’t turn alerts on just now. Try again in a minute.'); });
+      });
+      P.addListener('registrationError', function () { pushSay('We couldn’t turn alerts on just now. Try again in a minute.'); });
+      return P.register();
+    }, function () { pushSay('We couldn’t turn alerts on just now. Try again in a minute.'); });
+  }
+  function pushTurnOff() {
+    var tok = store('pushToken'), P = pushPlugin();
+    pushSay('One moment…');
+    memberRpc('unregister_device', { p_token: tok || '' }).then(function () {
+      store('pushToken', null); store('pushSyncPending', null);
+      if (P && P.unregister) { try { P.unregister(); } catch (e) {} }
+      render();
+    }, function () { pushSay('We couldn’t turn alerts off just now (no connection?). Try again in a minute.'); });
+  }
+
   function settings() {
     setTitle('App settings');
     var root = view;
@@ -2671,6 +2726,7 @@
       '<section class="settings" aria-labelledby="h-appear"><h2 id="h-appear">Appearance</h2>' + themeChoices() + '</section>' +
       '<section class="settings" aria-labelledby="h-text"><h2 id="h-text">Text size</h2>' + textChoices() + '</section>' +
       '<section class="settings" aria-labelledby="h-motion"><h2 id="h-motion">Animation</h2>' + motionChoices() + '</section>' +
+      pushSection() +
       '<section class="settings" aria-labelledby="h-off"><h2 id="h-off">Offline copies</h2><p>Pages you open are kept so they work without a signal. Clearing them frees space; they come back as you browse.</p>' +
       '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-cache>Clear offline copies</button></div></section>' +
       '<section class="settings" aria-labelledby="h-fc"><h2 id="h-fc">Followed clubs</h2><div id="fc-list"></div></section>' +
@@ -2699,7 +2755,7 @@
       view.addEventListener('follow-change', draw);
     }).catch(function () {});
     view.addEventListener('click', function (ev) {
-      if (ev.target.closest('[data-clear-saved]')) { store('saved', []); toast('Saved events cleared'); render(); }
+      if (ev.target.closest('[data-clear-saved]')) { store('saved', []); syncDeviceEvents(); toast('Saved events cleared'); render(); }
       if (ev.target.closest('[data-del-start]')) {
         var db = document.getElementById('del-box');
         db.innerHTML = '<p role="alert"><b>Are you sure?</b> ' + (memberSession() ? 'Your account will be deleted.' : 'Your data on this phone will be cleared.') + '</p><div class="actions"><button class="btn btn--danger" type="button" data-del-go>Yes, delete</button><button class="btn btn--ghost" type="button" data-del-cancel>Keep my data</button></div>';
@@ -2721,6 +2777,8 @@
         });
         return;
       }
+      if (ev.target.closest('[data-push-on]')) { pushTurnOn(); return; }
+      if (ev.target.closest('[data-push-off]')) { pushTurnOff(); return; }
       if (ev.target.closest('[data-clear-cache]')) {
         (window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve())
           .then(function () { clearCopies(); toast('Offline copies cleared'); });
@@ -2763,14 +2821,24 @@
       });
     });
   }
+  var sessionEpoch = 0;   // bumped at sign-out so a slow token refresh cannot bring the session back
+  var refreshing = null;  // one refresh at a time: callers that arrive while it runs share its answer
   function freshToken() {
-    var s = memberSession();
+    var s = memberSession(), ep = sessionEpoch;
     if (!s) return Promise.resolve(null);
     if (s.expires - Date.now() > 60000) return Promise.resolve(s.access);
-    return memberFetch('/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh }).then(function (j) {
+    if (refreshing && refreshing.ep === ep) return refreshing.p;
+    var p = memberFetch('/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh }).then(function (j) {
+      // Signed out (or signed in as someone else) while this was in flight: drop the result
+      var now = memberSession();
+      if (ep !== sessionEpoch || !now || now.refresh !== s.refresh) return null;
       setMemberSession({ access: j.access_token, refresh: j.refresh_token, expires: Date.now() + (j.expires_in || 3600) * 1000 });
       return j.access_token;
-    }, function () { setMemberSession(null); return null; });
+    }, function () { if (ep === sessionEpoch) setMemberSession(null); return null; });
+    var cur = { ep: ep, p: p };
+    refreshing = cur;
+    p.then(function () { if (refreshing === cur) refreshing = null; });
+    return p;
   }
   function memberRpc(fn, args) {
     return freshToken().then(function (t) {
@@ -2915,7 +2983,8 @@
         '<form class="mform" id="s-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
         '<input id="s-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="' + esc(email) + '" required></span></label>' +
         '<p class="mform__err" id="s-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Send me a code</button></div></form>' +
-        '<p class="signin__foot">No account needed to browse. <a class="textlink" href="/app">Continue as a guest</a></p>' + memberHelpHtml(false));
+        '<p class="signin__foot">No account needed to browse. <a class="textlink" href="/app">Continue as a guest</a></p>' + memberHelpHtml(false) +
+        '<p class="signin__foot"><a class="textlink" href="/app/signin?review=1">App store review sign-in</a></p>');
       var f = view.querySelector('#s-form');
       f.addEventListener('submit', function (ev) {
         ev.preventDefault();
@@ -2972,6 +3041,32 @@
         }, function () { if (!live()) return; busy = false; f.querySelector('button').disabled = false; inp.value = ''; paint(); out.textContent = 'That code didn’t work. Check it or ask for a new one.'; });
       });
     }
+    // App Store / Google Play reviewers cannot read our members' email, so they get one demo account with a password
+    // (set up by hand in Supabase; see member-platform/supabase/0012_reviewer_demo.sql). Real members have no password.
+    function reviewerStep(msg) {
+      shell(1, '<h1 class="signin__h">App Review sign-in</h1><p class="signin__sub">For app store reviewers, using the demo account in the review notes. Members sign in with an email code.</p>' +
+        (msg ? '<div class="note" role="alert">' + esc(msg) + '</div>' : '') +
+        '<form class="mform" id="r-form" novalidate><label class="mfield mfield--icon mfield--pill"><span>Email</span><span class="mfield__box">' + icon('mail') +
+        '<input id="r-email" type="email" autocomplete="username" inputmode="email" required></span></label>' +
+        '<label class="mfield mfield--icon mfield--pill"><span>Password</span><span class="mfield__box">' + icon('lock') +
+        '<input id="r-pass" type="password" autocomplete="current-password" required></span></label>' +
+        '<p class="mform__err" id="r-err" role="alert"></p><div class="actions"><button class="btn btn--wide" type="submit">Sign in</button></div></form>' +
+        '<p class="signin__foot"><a class="textlink" href="/app/signin?step=email">Back to email code sign-in</a></p>');
+      var rf = view.querySelector('#r-form');
+      rf.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var em = rf.querySelector('#r-email').value.trim(), pw = rf.querySelector('#r-pass').value, out = rf.querySelector('#r-err');
+        if (!em || !pw) { out.textContent = 'Enter the email and password from the review notes.'; return; }
+        rf.querySelector('button').disabled = true; out.textContent = '';
+        memberFetch('/auth/v1/token?grant_type=password', { email: em, password: pw }).then(function (j) {
+          if (!live()) return;
+          setMemberSession({ access: j.access_token, refresh: j.refresh_token, expires: Date.now() + (j.expires_in || 3600) * 1000 });
+          store('memberPreview', true); toast('Signed in');
+          go('/app/my', true);
+        }, function () { if (!live()) return; rf.querySelector('button').disabled = false; out.textContent = 'That email or password didn’t work.'; });
+      });
+    }
+    if (params.get('review') === '1') { reviewerStep(); return Promise.resolve(); }
     if (params.get('demo') === 'code') { email = 'you@example.com'; codeStep(); return Promise.resolve(); }
     function landingStep() {
       clearInterval(timer);
@@ -3488,6 +3583,13 @@
       });
     }
     function signOut() {
+      // Remove this phone from the member's alerts first, while they are still signed in (give up after 3 seconds)
+      var tok = store('pushToken');
+      var gone = tok && memberSession() ? memberRpc('unregister_device', { p_token: tok }).catch(function () {}) : Promise.resolve();
+      Promise.race([gone, new Promise(function (r) { setTimeout(r, 3000); })]).then(finishSignOut);
+    }
+    function finishSignOut() {
+      sessionEpoch++;
       var s = memberSession();
       if (s) memberFetch('/auth/v1/logout', {}, s.access).catch(function () {});
       setMemberSession(null);
@@ -4742,6 +4844,7 @@
     q.delete('hub'); q.delete('practice'); history.replaceState(history.state, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   })();
   if (!history.state) history.replaceState({ depth: 0 }, '');
+  syncDeviceEvents(true);
   render();
   setTimeout(welcome, 600);
 
