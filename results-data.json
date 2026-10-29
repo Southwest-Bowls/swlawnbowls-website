@@ -1,6 +1,61 @@
 {
   "tournaments": [
     {
+      "id": "waterbury-2026",
+      "title": "2026 SWD Waterbury",
+      "meta": "October 25 · Laguna Woods LBC",
+      "navLabel": "Waterbury",
+      "eventUrl": "/event?id=waterbury-2026",
+      "divisions": [
+        {
+          "label": null,
+          "columns": 2,
+          "places": [
+            {
+              "rank": 1,
+              "names": "Santa Monica Lawn Bowling Club",
+              "photo": "/photos/waterbury-2026/1th-santa-monica.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "groves-mixed-triples-2026",
+      "title": "2026 Groves Mixed Triples Classic",
+      "meta": "October 24 · The Groves LBC",
+      "navLabel": "Groves Mixed Triples",
+      "eventUrl": "/event?id=groves-mixed-triples-2026",
+      "divisions": [
+        {
+          "label": null,
+          "columns": 2,
+          "places": [
+            {
+              "rank": 1,
+              "names": "Gary Belk, Curt Mueller, Jane Blair",
+              "photo": "/photos/groves-mixed-triples-2026/1th-belk-mueller-blair.jpg"
+            },
+            {
+              "rank": 2,
+              "names": "Sadri Jazayeri, Giulia Gallo, Steve Uribe",
+              "photo": "/photos/groves-mixed-triples-2026/2th-jazayeri-gallo-uribe.jpg"
+            },
+            {
+              "rank": 3,
+              "names": "Evan Katz, Steve Marsh, Mary Spease",
+              "photo": "/photos/groves-mixed-triples-2026/3th-katz-marsh-spease.jpg"
+            },
+            {
+              "rank": 4,
+              "names": "Janice Walter, Phil Dunn, Rita Greenberg",
+              "photo": "/photos/groves-mixed-triples-2026/4th-walter-dunn-greenberg.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "womens-ca-bears-2026",
       "title": "2026 SWD Women's CA Bears",
       "meta": "October 18 \u00b7 Laguna Woods LBC",
