@@ -290,6 +290,10 @@
     if (SITE) { try { localStorage.setItem('swd:copy:' + url, JSON.stringify({ t: Date.now(), d: d })); } catch (e) {} }
     return d;
   }
+  function clearCopies() {
+    try { Object.keys(localStorage).filter(function (k) { return k.indexOf('swd:copy:') === 0; }).forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
+    stale = {};
+  }
   function savedCopy(url, err) {
     if (!SITE || (err && /^HTTP /.test(err.message))) throw err;   // only a failed connection falls back, never a real 404/500
     var c = null; try { c = JSON.parse(localStorage.getItem('swd:copy:' + url)); } catch (e) {}
@@ -2719,7 +2723,7 @@
       }
       if (ev.target.closest('[data-clear-cache]')) {
         (window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve())
-          .then(function () { toast('Offline copies cleared'); });
+          .then(function () { clearCopies(); toast('Offline copies cleared'); });
       }
     });
     return Promise.resolve();
@@ -4758,10 +4762,10 @@
     var fixStyle = function (v) { return v.replace(/url\((['"]?)(\/(?!\/)[^'")]*)\1\)/g, function (m, q, u) { return 'url(' + q + toSite(u) + q + ')'; }); };
     var fixEl = function (el) {
       if (el.nodeType !== 1) return;
-      var list = [el].concat([].slice.call(el.querySelectorAll('img[src], source[src], a[href], [style*="url("]')));
+      var list = [el].concat([].slice.call(el.querySelectorAll('img[src], source[src], iframe[src], a[href], [style*="url("]')));
       list.forEach(function (n) {
         var t = n.tagName;
-        if (t === 'IMG' || t === 'SOURCE') { var s0 = n.getAttribute('src') || '', s1 = toSite(s0); if (s1 !== s0) n.setAttribute('src', s1); }
+        if (t === 'IMG' || t === 'SOURCE' || t === 'IFRAME') { var s0 = n.getAttribute('src') || '', s1 = toSite(s0); if (s1 !== s0) n.setAttribute('src', s1); }
         if (t === 'A') {
           var h0 = n.getAttribute('href') || '', h1 = toSite(h0);
           if (h1 !== h0) { n.setAttribute('href', h1); n.setAttribute('target', '_blank'); n.setAttribute('rel', 'noopener'); }

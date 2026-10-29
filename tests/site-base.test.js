@@ -36,3 +36,10 @@ test('store app: last good copy of each data file is kept and used only when the
   assert.match(src, /function saveCopy\(url, d\)/);
   assert.match(src, /\^HTTP \/\.test\(err\.message\)/);
 });
+
+test('store app: iframes (flyer PDFs) are re-pointed, and "Clear offline copies" also removes the saved data copies', () => {
+  assert.match(src, /iframe\[src\]/);
+  assert.match(src, /t === 'IFRAME'/);
+  assert.match(src, /function clearCopies\(\)/);
+  assert.match(src, /clearCopies\(\); toast\('Offline copies cleared'\)/);
+});
