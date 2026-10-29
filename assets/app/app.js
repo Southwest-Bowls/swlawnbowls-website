@@ -2694,11 +2694,12 @@
   }
   function pushTurnOff() {
     var tok = store('pushToken'), P = pushPlugin();
-    memberRpc('unregister_device', { p_token: tok || '' }).then(function () {}, function () {}).then(function () {
-      store('pushToken', null); try { localStorage.removeItem('swd:pushToken'); } catch (e) {}
+    pushSay('One moment…');
+    memberRpc('unregister_device', { p_token: tok || '' }).then(function () {
+      store('pushToken', null);
       if (P && P.unregister) { try { P.unregister(); } catch (e) {} }
       render();
-    });
+    }, function () { pushSay('We couldn’t turn alerts off just now (no connection?). Try again in a minute.'); });
   }
 
   function settings() {
@@ -3530,6 +3531,12 @@
       });
     }
     function signOut() {
+      // Remove this phone from the member's alerts first, while they are still signed in (give up after 3 seconds)
+      var tok = store('pushToken');
+      var gone = tok && memberSession() ? memberRpc('unregister_device', { p_token: tok }).catch(function () {}) : Promise.resolve();
+      Promise.race([gone, new Promise(function (r) { setTimeout(r, 3000); })]).then(finishSignOut);
+    }
+    function finishSignOut() {
       var s = memberSession();
       if (s) memberFetch('/auth/v1/logout', {}, s.access).catch(function () {});
       setMemberSession(null);

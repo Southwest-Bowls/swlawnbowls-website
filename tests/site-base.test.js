@@ -49,3 +49,8 @@ test('alerts: the settings section only shows in the store app for signed-in mem
   assert.match(src, /memberRpc\('register_device'/);
   assert.match(src, /memberRpc\('unregister_device'/);
 });
+
+test('alerts: turning off keeps the token until the server confirms; sign out removes the phone first', () => {
+  assert.match(src, /function pushTurnOff\(\)[\s\S]*?memberRpc\('unregister_device'[\s\S]*?\.then\(function \(\) \{\s*\n\s*store\('pushToken', null\)/);
+  assert.match(src, /function signOut\(\) \{[\s\S]*?unregister_device[\s\S]*?finishSignOut/);
+});
