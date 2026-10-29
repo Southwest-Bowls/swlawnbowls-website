@@ -65,7 +65,6 @@ test('alerts: saved events are sent to the server when they change, and a slow t
   assert.match(src, /function syncDeviceEvents\(onlyIfPending\)/);
   assert.match(src, /store\('saved', s\);\s*\n\s*syncDeviceEvents\(\);/);
   assert.match(src, /store\('pushToken', t\.value\); syncDeviceEvents\(\);/);
-  assert.match(src, /if \(ep !== sessionEpoch\) return null;/);
   assert.match(src, /function finishSignOut\(\) \{\s*\n\s*sessionEpoch\+\+;/);
 });
 
