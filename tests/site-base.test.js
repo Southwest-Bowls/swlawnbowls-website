@@ -43,3 +43,9 @@ test('store app: iframes (flyer PDFs) are re-pointed, and "Clear offline copies"
   assert.match(src, /function clearCopies\(\)/);
   assert.match(src, /clearCopies\(\); toast\('Offline copies cleared'\)/);
 });
+
+test('alerts: the settings section only shows in the store app for signed-in members, and uses the two device functions', () => {
+  assert.match(src, /function pushSection\(\) \{\s*\n\s*if \(!pushPlugin\(\) \|\| !memberSession\(\)\) return '';/);
+  assert.match(src, /memberRpc\('register_device'/);
+  assert.match(src, /memberRpc\('unregister_device'/);
+});

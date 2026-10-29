@@ -2662,6 +2662,45 @@
     });
   }
 
+  // Tournament alerts (store app only, signed-in members). The phone's push token is saved with register_device()
+  // (member-platform/supabase/0013_devices.sql) and removed again with unregister_device() or when the account is deleted.
+  function pushPlugin() {
+    var C = window.Capacitor;
+    return SITE && C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.PushNotifications ? C.Plugins.PushNotifications : null;
+  }
+  function pushSection() {
+    if (!pushPlugin() || !memberSession()) return '';
+    var on = !!store('pushToken');
+    return '<section class="settings" aria-labelledby="h-push"><h2 id="h-push">Tournament alerts</h2>' +
+      '<p>Get a notice on this phone when something changes for a tournament, such as a new start time or results. You can turn this off at any time.</p>' +
+      '<div class="actions"><button class="btn' + (on ? ' btn--ghost' : '') + '" type="button" ' + (on ? 'data-push-off' : 'data-push-on') + '>' + (on ? 'Turn off alerts' : 'Turn on alerts') + '</button></div>' +
+      '<p class="footnote" id="push-msg" role="status">' + (on ? 'Alerts are on for this phone.' : '') + '</p></section>';
+  }
+  function pushSay(t) { var m = document.getElementById('push-msg'); if (m) m.textContent = t; }
+  function pushTurnOn() {
+    var P = pushPlugin(); if (!P) return;
+    pushSay('One moment…');
+    P.requestPermissions().then(function (r) {
+      if (!r || r.receive !== 'granted') { pushSay('Alerts are off. You can allow them for this app in your phone’s settings.'); return null; }
+      if (P.removeAllListeners) P.removeAllListeners();
+      P.addListener('registration', function (t) {
+        memberRpc('register_device', { p_token: t.value, p_platform: window.Capacitor.getPlatform() }).then(function () {
+          store('pushToken', t.value); render();
+        }, function () { pushSay('We couldn’t turn alerts on just now. Try again in a minute.'); });
+      });
+      P.addListener('registrationError', function () { pushSay('We couldn’t turn alerts on just now. Try again in a minute.'); });
+      return P.register();
+    }, function () { pushSay('We couldn’t turn alerts on just now. Try again in a minute.'); });
+  }
+  function pushTurnOff() {
+    var tok = store('pushToken'), P = pushPlugin();
+    memberRpc('unregister_device', { p_token: tok || '' }).then(function () {}, function () {}).then(function () {
+      store('pushToken', null); try { localStorage.removeItem('swd:pushToken'); } catch (e) {}
+      if (P && P.unregister) { try { P.unregister(); } catch (e) {} }
+      render();
+    });
+  }
+
   function settings() {
     setTitle('App settings');
     var root = view;
@@ -2671,6 +2710,7 @@
       '<section class="settings" aria-labelledby="h-appear"><h2 id="h-appear">Appearance</h2>' + themeChoices() + '</section>' +
       '<section class="settings" aria-labelledby="h-text"><h2 id="h-text">Text size</h2>' + textChoices() + '</section>' +
       '<section class="settings" aria-labelledby="h-motion"><h2 id="h-motion">Animation</h2>' + motionChoices() + '</section>' +
+      pushSection() +
       '<section class="settings" aria-labelledby="h-off"><h2 id="h-off">Offline copies</h2><p>Pages you open are kept so they work without a signal. Clearing them frees space; they come back as you browse.</p>' +
       '<div class="actions"><button class="btn btn--ghost" type="button" data-clear-cache>Clear offline copies</button></div></section>' +
       '<section class="settings" aria-labelledby="h-fc"><h2 id="h-fc">Followed clubs</h2><div id="fc-list"></div></section>' +
@@ -2721,6 +2761,8 @@
         });
         return;
       }
+      if (ev.target.closest('[data-push-on]')) { pushTurnOn(); return; }
+      if (ev.target.closest('[data-push-off]')) { pushTurnOff(); return; }
       if (ev.target.closest('[data-clear-cache]')) {
         (window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve())
           .then(function () { clearCopies(); toast('Offline copies cleared'); });
