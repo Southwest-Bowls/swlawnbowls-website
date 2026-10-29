@@ -310,6 +310,7 @@
       '. Entries, draws and scores may have changed.';
   }
   window.addEventListener('online', function () {
+    syncDeviceEvents(true);
     // Only redraw when something was served from the offline copy or the screen shows the error state,
     // and never over a half-typed form or an open sheet
     var needs = Object.keys(stale).length > 0 || !!view.querySelector('[data-retry]');
@@ -2670,10 +2671,17 @@
     return SITE && C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.PushNotifications ? C.Plugins.PushNotifications : null;
   }
   // Alerts are about the events the member saved. Tell the server which ones, whenever that list changes.
-  function syncDeviceEvents() {
+  // If it cannot reach the server (offline), the change is remembered and sent again on reconnect or the next app start.
+  function syncDeviceEvents(onlyIfPending) {
     var tok = store('pushToken');
     if (!tok || !memberSession() || !pushPlugin()) return;
-    memberRpc('set_device_events', { p_token: tok, p_events: saved() }).catch(function () {});
+    if (onlyIfPending && !store('pushSyncPending')) return;
+    store('pushSyncPending', true);
+    var list = saved();
+    memberRpc('set_device_events', { p_token: tok, p_events: list }).then(function () {
+      if (JSON.stringify(list) === JSON.stringify(saved())) store('pushSyncPending', null);
+      else syncDeviceEvents();
+    }, function () {});
   }
   function pushSection() {
     if (!pushPlugin() || !memberSession()) return '';
@@ -2703,7 +2711,7 @@
     var tok = store('pushToken'), P = pushPlugin();
     pushSay('One moment…');
     memberRpc('unregister_device', { p_token: tok || '' }).then(function () {
-      store('pushToken', null);
+      store('pushToken', null); store('pushSyncPending', null);
       if (P && P.unregister) { try { P.unregister(); } catch (e) {} }
       render();
     }, function () { pushSay('We couldn’t turn alerts off just now (no connection?). Try again in a minute.'); });
@@ -4828,6 +4836,7 @@
     q.delete('hub'); q.delete('practice'); history.replaceState(history.state, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   })();
   if (!history.state) history.replaceState({ depth: 0 }, '');
+  syncDeviceEvents(true);
   render();
   setTimeout(welcome, 600);
 

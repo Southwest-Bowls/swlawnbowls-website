@@ -68,3 +68,9 @@ test('alerts: saved events are sent to the server when they change, and a slow t
   assert.match(src, /if \(ep !== sessionEpoch\) return null;/);
   assert.match(src, /function finishSignOut\(\) \{\s*\n\s*sessionEpoch\+\+;/);
 });
+
+test('a failed alert-subscription update is remembered and retried', () => {
+  assert.match(src, /store\('pushSyncPending', true\)/);
+  assert.match(src, /window\.addEventListener\('online', function \(\) \{\s*\n\s*syncDeviceEvents\(true\);/);
+  assert.match(src, /syncDeviceEvents\(true\);\s*\n\s*render\(\);\s*\n\s*setTimeout\(welcome/);
+});
