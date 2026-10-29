@@ -43,3 +43,9 @@ test('store app: iframes (flyer PDFs) are re-pointed, and "Clear offline copies"
   assert.match(src, /function clearCopies\(\)/);
   assert.match(src, /clearCopies\(\); toast\('Offline copies cleared'\)/);
 });
+
+test('reviewer sign-in: a password screen exists only behind ?review=1 and uses the password grant', () => {
+  assert.match(src, /params\.get\('review'\) === '1'/);
+  assert.match(src, /\/auth\/v1\/token\?grant_type=password/);
+  assert.match(src, /href="\/app\/signin\?review=1"/);
+});
