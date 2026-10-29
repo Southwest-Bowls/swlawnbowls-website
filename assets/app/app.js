@@ -2827,7 +2827,9 @@
     if (!s) return Promise.resolve(null);
     if (s.expires - Date.now() > 60000) return Promise.resolve(s.access);
     return memberFetch('/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh }).then(function (j) {
-      if (ep !== sessionEpoch) return null;
+      // Signed out (or signed in as someone else) while this was in flight: drop the result
+      var now = memberSession();
+      if (ep !== sessionEpoch || !now || now.refresh !== s.refresh) return null;
       setMemberSession({ access: j.access_token, refresh: j.refresh_token, expires: Date.now() + (j.expires_in || 3600) * 1000 });
       return j.access_token;
     }, function () { setMemberSession(null); return null; });

@@ -74,3 +74,7 @@ test('a failed alert-subscription update is remembered and retried', () => {
   assert.match(src, /window\.addEventListener\('online', function \(\) \{\s*\n\s*syncDeviceEvents\(true\);/);
   assert.match(src, /syncDeviceEvents\(true\);\s*\n\s*render\(\);\s*\n\s*setTimeout\(welcome/);
 });
+
+test('a late token refresh is dropped if the session was cleared or replaced', () => {
+  assert.match(src, /ep !== sessionEpoch \|\| !now \|\| now\.refresh !== s\.refresh/);
+});
