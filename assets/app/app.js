@@ -512,12 +512,13 @@
   }
 
   // One place changes saved state, so Home, Events and event details
-  // always agree. Saving is a bookmark: it never registers anyone or
-  // turns on reminders.
+  // always agree. Saving is a bookmark: it never registers anyone. If the member
+  // has turned on Tournament alerts, the saved list is also what alerts are about.
   function setSaved(id, on, title) {
     var s = saved().filter(function (x) { return x !== id; });
     if (on) s.push(id);
     store('saved', s);
+    syncDeviceEvents();
     document.querySelectorAll('[data-save="' + id + '"]').forEach(function (b) {
       b.setAttribute('data-on', on);
       var span = b.querySelector('span');
@@ -2668,6 +2669,12 @@
     var C = window.Capacitor;
     return SITE && C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.PushNotifications ? C.Plugins.PushNotifications : null;
   }
+  // Alerts are about the events the member saved. Tell the server which ones, whenever that list changes.
+  function syncDeviceEvents() {
+    var tok = store('pushToken');
+    if (!tok || !memberSession() || !pushPlugin()) return;
+    memberRpc('set_device_events', { p_token: tok, p_events: saved() }).catch(function () {});
+  }
   function pushSection() {
     if (!pushPlugin() || !memberSession()) return '';
     var on = !!store('pushToken');
@@ -2685,7 +2692,7 @@
       if (P.removeAllListeners) P.removeAllListeners();
       P.addListener('registration', function (t) {
         memberRpc('register_device', { p_token: t.value, p_platform: window.Capacitor.getPlatform() }).then(function () {
-          store('pushToken', t.value); render();
+          store('pushToken', t.value); syncDeviceEvents(); render();
         }, function () { pushSay('We couldn’t turn alerts on just now. Try again in a minute.'); });
       });
       P.addListener('registrationError', function () { pushSay('We couldn’t turn alerts on just now. Try again in a minute.'); });
@@ -2740,7 +2747,7 @@
       view.addEventListener('follow-change', draw);
     }).catch(function () {});
     view.addEventListener('click', function (ev) {
-      if (ev.target.closest('[data-clear-saved]')) { store('saved', []); toast('Saved events cleared'); render(); }
+      if (ev.target.closest('[data-clear-saved]')) { store('saved', []); syncDeviceEvents(); toast('Saved events cleared'); render(); }
       if (ev.target.closest('[data-del-start]')) {
         var db = document.getElementById('del-box');
         db.innerHTML = '<p role="alert"><b>Are you sure?</b> ' + (memberSession() ? 'Your account will be deleted.' : 'Your data on this phone will be cleared.') + '</p><div class="actions"><button class="btn btn--danger" type="button" data-del-go>Yes, delete</button><button class="btn btn--ghost" type="button" data-del-cancel>Keep my data</button></div>';
@@ -2806,11 +2813,13 @@
       });
     });
   }
+  var sessionEpoch = 0;   // bumped at sign-out so a slow token refresh cannot bring the session back
   function freshToken() {
-    var s = memberSession();
+    var s = memberSession(), ep = sessionEpoch;
     if (!s) return Promise.resolve(null);
     if (s.expires - Date.now() > 60000) return Promise.resolve(s.access);
     return memberFetch('/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh }).then(function (j) {
+      if (ep !== sessionEpoch) return null;
       setMemberSession({ access: j.access_token, refresh: j.refresh_token, expires: Date.now() + (j.expires_in || 3600) * 1000 });
       return j.access_token;
     }, function () { setMemberSession(null); return null; });
@@ -3564,6 +3573,7 @@
       Promise.race([gone, new Promise(function (r) { setTimeout(r, 3000); })]).then(finishSignOut);
     }
     function finishSignOut() {
+      sessionEpoch++;
       var s = memberSession();
       if (s) memberFetch('/auth/v1/logout', {}, s.access).catch(function () {});
       setMemberSession(null);

@@ -60,3 +60,11 @@ test('reviewer sign-in: a password screen exists only behind ?review=1 and uses 
   assert.match(src, /\/auth\/v1\/token\?grant_type=password/);
   assert.match(src, /href="\/app\/signin\?review=1"/);
 });
+
+test('alerts: saved events are sent to the server when they change, and a slow token refresh cannot undo a sign-out', () => {
+  assert.match(src, /function syncDeviceEvents\(\)/);
+  assert.match(src, /store\('saved', s\);\s*\n\s*syncDeviceEvents\(\);/);
+  assert.match(src, /store\('pushToken', t\.value\); syncDeviceEvents\(\);/);
+  assert.match(src, /if \(ep !== sessionEpoch\) return null;/);
+  assert.match(src, /function finishSignOut\(\) \{\s*\n\s*sessionEpoch\+\+;/);
+});
