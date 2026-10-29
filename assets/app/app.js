@@ -32,6 +32,13 @@
   'use strict';
 
   var TZ = 'America/Los_Angeles';
+  // Where the website's data files, /api/ endpoints and sign-in return address live.
+  // Empty on the website itself (everything is the same origin, so nothing changes).
+  // The store app, once it bundles these screens, sets window.SWD_SITE_BASE before this file
+  // runs (for example 'https://swlawnbowls-website.vercel.app'); see docs/NATIVE-PLAN.md in the app repo.
+  var SITE = String(window.SWD_SITE_BASE || '').replace(/\/+$/, '');
+  function siteUrl(path) { return /^\//.test(path) ? SITE + path : path; }
+  var SITE_ORIGIN = SITE || location.origin;
   var YT_KEY = 'AIzaSyC2ROynkUrYmW2IgIyQ0SJ0XxA6hStX0I8';   // same key the website uses
   var YT_UPLOADS = 'UUWaKJ7fKIfneziSig6qminQ';               // SW TV channel uploads
   var YT_CHANNEL_URL = 'https://www.youtube.com/@SouthwestLawnBowls';
@@ -265,7 +272,7 @@
   var stale = {};   // url -> Date the saved copy was made, when we are offline
   function getJSON(url) {
     if (cache[url]) return cache[url];
-    cache[url] = fetch(url, { cache: 'no-cache' }).then(function (r) {
+    cache[url] = fetch(siteUrl(url), { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       if (r.headers.get('x-swd-offline')) {
         var d = r.headers.get('date');
@@ -1803,7 +1810,7 @@
     return h + '</section>';
   }
   function loadGated(id) {
-    fetch('/api/live-scoring?id=' + encodeURIComponent(id), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+    fetch(siteUrl('/api/live-scoring?id=' + encodeURIComponent(id)), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
       var box = document.getElementById('gated'); if (!box) return;
       if (d && d.sheets && d.sheets.length) {
         box.innerHTML = d.sheets.map(function (s) { return embedCard(s.label || 'Draw', 'The draw from the tournament’s Google Sheet.', s.url, s.height, 'draw'); }).join('');
@@ -1833,7 +1840,7 @@
   // A hosted .ics (works in the phone's own browser) or a webcal link (opens the Calendar app on iPhone)
   function icsUrl(x, webcal) {
     var c = calParts(x), q = 'id=' + encodeURIComponent(x.id) + '&t=' + encodeURIComponent(c.title) + '&s=' + c.start + '&e=' + c.end + '&l=' + encodeURIComponent(c.loc) + '&d=' + encodeURIComponent(c.desc) + '&u=' + encodeURIComponent(Logic.canonicalUrl('/app/events/' + x.id));
-    return (webcal ? 'webcal://' + location.host : location.origin) + '/api/ics?' + q;
+    return (webcal ? 'webcal://' + (SITE ? SITE.replace(/^https?:\/\//, '') : location.host) : SITE_ORIGIN) + '/api/ics?' + q;
   }
   function googleCalUrl(x) {
     var c = calParts(x);
@@ -2900,7 +2907,7 @@
         store('afterSignIn', '/app/my');
         var next = function () { if (live()) codeStep(); };
         // Same answer whether or not the address exists: never reveal who is on the roster
-        memberFetch('/auth/v1/otp?redirect_to=' + encodeURIComponent(location.origin + '/app/my'), { email: email, create_user: SIGNUP_OPEN }).then(next, next);
+        memberFetch('/auth/v1/otp?redirect_to=' + encodeURIComponent(SITE_ORIGIN + '/app/my'), { email: email, create_user: SIGNUP_OPEN }).then(next, next);
       });
     }
     function codeStep(msg) {
@@ -3459,7 +3466,7 @@
           box.innerHTML = state('empty', 'Check your email', 'If ' + email + ' is set up for the app, a sign-in link is on its way. Open it on this phone. It works for 10 minutes.',
             '<button class="btn btn--ghost" type="button" data-again>Use a different email</button>') + memberHelpHtml(false);
         };
-        memberFetch('/auth/v1/otp?redirect_to=' + encodeURIComponent(location.origin + '/app/my'), { email: email, create_user: false }).then(done, done);
+        memberFetch('/auth/v1/otp?redirect_to=' + encodeURIComponent(SITE_ORIGIN + '/app/my'), { email: email, create_user: false }).then(done, done);
       });
     }
     function signOut() {
@@ -3930,7 +3937,7 @@
   })();
   // Photos: show a tiny blurred copy first, swap in the sharp one when it has loaded
   var LQIP = null;
-  fetch('/assets/app/lqip.json').then(function (r) { return r.json(); }).then(function (j) { LQIP = j; blurUp(view); }).catch(function () {});
+  fetch(siteUrl('/assets/app/lqip.json')).then(function (r) { return r.json(); }).then(function (j) { LQIP = j; blurUp(view); }).catch(function () {});
   function blurUp(root) {
     if (!LQIP || !root) return;
     root.querySelectorAll('[style*="--ph:url("]').forEach(function (el) {
