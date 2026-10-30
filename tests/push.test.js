@@ -54,17 +54,17 @@ const env = { SUPABASE_URL: 'https://x.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 
 const one = [{ eventId: 'a-2026', kind: 'changed', title: 'Tournament update', body: 'Alpha has a new date.' }];
 
 test('dry run (default): counts devices, sends nothing', async () => {
-  const { f, calls } = fakeFetch([{ token: 't1', event_id: 'a-2026' }, { token: 't2', event_id: 'a-2026' }]);
+  const { f, calls } = fakeFetch([{ token: 't1', event_id: 'a-2026', platform: 'android' }, { token: 't2', event_id: 'a-2026', platform: 'android' }]);
   const out = await notify(one, { env, fetch: f, accessToken: async () => { throw new Error('must not be called'); } });
   assert.equal(out.live, false); assert.equal(out.sent, 0); assert.equal(out.alerts[0].devices, 2);
-  assert.equal(calls.filter((c) => c.url.includes('fcm.googleapis.com')).length, 0);
+  assert.equal(calls.filter((c) => new URL(c.url).hostname === 'fcm.googleapis.com').length, 0);
 });
 
 test('live: sends one message per device to that event only, and forgets dead tokens', async () => {
-  const { f, calls } = fakeFetch([{ token: 't1', event_id: 'a-2026' }, { token: 'dead', event_id: 'a-2026' }, { token: 't9', event_id: 'other' }], (t) => (t === 'dead' ? 404 : 200));
+  const { f, calls } = fakeFetch([{ token: 't1', event_id: 'a-2026', platform: 'android' }, { token: 'dead', event_id: 'a-2026', platform: 'android' }, { token: 't9', event_id: 'other', platform: 'android' }, { token: 'apple', event_id: 'a-2026', platform: 'ios' }], (t) => (t === 'dead' ? 404 : 200));
   const out = await notify(one, { env: { ...env, NOTIFY_LIVE: 'true' }, fetch: f, accessToken: async () => 'bearer' });
   assert.equal(out.sent, 1); assert.equal(out.failed, 1); assert.equal(out.removed, 1);
-  const sends = calls.filter((c) => c.url.includes('fcm.googleapis.com'));
+  const sends = calls.filter((c) => new URL(c.url).hostname === 'fcm.googleapis.com');
   assert.equal(sends.length, 2);
   assert.equal(sends[0].body.message.data.url, '/app/events/a-2026');
   assert.deepEqual(calls.find((c) => c.url.endsWith('/forget_devices')).body, { p_tokens: ['dead'] });
@@ -74,4 +74,11 @@ test('nothing to send means no lookups at all', async () => {
   const { f, calls } = fakeFetch([]);
   const out = await notify([], { env, fetch: f, accessToken: async () => 'x' });
   assert.equal(out.alerts.length, 0); assert.equal(calls.length, 0);
+});
+
+test('iPhone tokens are never sent to Firebase or deleted (they are Apple tokens)', async () => {
+  const { f, calls } = fakeFetch([{ token: 'apple', event_id: 'a-2026', platform: 'ios' }, { token: 'a1', event_id: 'a-2026', platform: 'android' }]);
+  const out = await notify(one, { env: { ...env, NOTIFY_LIVE: 'true' }, fetch: f, accessToken: async () => 'bearer' });
+  assert.equal(out.sent, 1); assert.equal(out.skippedIos, 1);
+  assert.ok(!calls.some((c) => c.body && c.body.message && c.body.message.token === 'apple'));
 });

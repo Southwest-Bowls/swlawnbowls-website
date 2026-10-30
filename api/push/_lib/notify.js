@@ -26,12 +26,15 @@ export async function notify(list, deps) {
   const { env, fetch: f } = deps;
   const items = cleanNotifications(list);
   const live = env.NOTIFY_LIVE === 'true';
-  const summary = { live, alerts: [], sent: 0, failed: 0, removed: 0 };
+  const summary = { live, alerts: [], sent: 0, failed: 0, removed: 0, skippedIos: 0 };
   if (!items.length) return summary;
   const sb = `${env.SUPABASE_URL}/rest/v1/rpc`, hdr = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, 'content-type': 'application/json' };
   const r = await f(`${sb}/devices_for_events`, { method: 'POST', headers: hdr, body: JSON.stringify({ p_events: items.map((n) => n.eventId) }) });
   if (!r.ok) throw new Error('device lookup failed: HTTP ' + r.status);
-  const rows = await r.json();   // [{ token, event_id }]
+  const all = await r.json();   // [{ token, event_id, platform }]
+  // Android tokens are Firebase tokens. iPhone tokens from the app are Apple tokens, which Firebase rejects: skip them until iPhone push is set up.
+  const rows = all.filter((x) => x.platform === 'android');
+  summary.skippedIos = new Set(all.filter((x) => x.platform !== 'android').map((x) => x.token)).size;
   const dead = [];
   const project = env.FIREBASE_PROJECT_ID;
   const bearer = live ? await deps.accessToken() : null;

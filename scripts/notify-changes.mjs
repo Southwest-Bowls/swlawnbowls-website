@@ -4,7 +4,9 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { diffNotifications } from './diff-notifications.mjs';
 
-const prev = (f) => { try { return JSON.parse(execSync(`git show HEAD~1:${f}`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString()); } catch { return null; } };
+// Compare with where main was BEFORE this push (BEFORE_SHA from the workflow), so a push of several commits is not missed.
+const before = /^[0-9a-f]{40}$/.test(process.env.BEFORE_SHA || '') && !/^0+$/.test(process.env.BEFORE_SHA) ? process.env.BEFORE_SHA : 'HEAD~1';
+const prev = (f) => { try { return JSON.parse(execSync(`git show ${before}:${f}`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString()); } catch { return null; } };
 const cur = (f) => JSON.parse(readFileSync(f, 'utf8'));
 
 const oldE = prev('events-data.json'), oldR = prev('results-data.json');

@@ -6,15 +6,18 @@ on:
   push:
     branches: [main]
     paths: [events-data.json, results-data.json]
+permissions:
+  contents: read
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 2 }
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: node scripts/notify-changes.mjs
         env:
           NOTIFY_URL: ${{ secrets.NOTIFY_URL }}
           NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
+          BEFORE_SHA: ${{ github.event.before }}
