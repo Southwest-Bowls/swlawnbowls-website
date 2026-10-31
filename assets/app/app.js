@@ -2675,9 +2675,10 @@
   function syncDeviceEvents(onlyIfPending) {
     var tok = store('pushToken');
     if (!tok || !memberSession() || !pushPlugin()) return;
-    if (onlyIfPending && !store('pushSyncPending')) return;
+    // Phones that turned alerts on before 'all' existed have no pushSub marker yet: they are brought across here
+    if (onlyIfPending && !store('pushSyncPending') && store('pushSub') === 'all') return;
     store('pushSyncPending', true);
-    memberRpc('set_device_events', { p_token: tok, p_events: ['all'] }).then(function () { store('pushSyncPending', null); }, function () {});
+    memberRpc('set_device_events', { p_token: tok, p_events: ['all'] }).then(function () { store('pushSyncPending', null); store('pushSub', 'all'); }, function () {});
   }
   function pushSection() {
     if (!pushPlugin() || !memberSession()) return '';
@@ -2707,7 +2708,7 @@
     var tok = store('pushToken'), P = pushPlugin();
     pushSay('One moment…');
     memberRpc('unregister_device', { p_token: tok || '' }).then(function () {
-      store('pushToken', null); store('pushSyncPending', null);
+      store('pushToken', null); store('pushSyncPending', null); store('pushSub', null);
       if (P && P.unregister) { try { P.unregister(); } catch (e) {} }
       render();
     }, function () { pushSay('We couldn’t turn alerts off just now (no connection?). Try again in a minute.'); });

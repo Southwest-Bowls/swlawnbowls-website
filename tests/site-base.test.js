@@ -82,3 +82,8 @@ test('a late token refresh is dropped if the session was cleared or replaced', (
 test('token refreshes are shared so two callers cannot reject each other', () => {
   assert.match(src, /if \(refreshing && refreshing\.ep === ep\) return refreshing\.p;/);
 });
+
+test('alerts: phones that enabled alerts before the all-events change are migrated at app start', () => {
+  assert.match(src, /store\('pushSub'\) === 'all'\) return;/);
+  assert.match(src, /store\('pushSub', 'all'\)/);
+});
