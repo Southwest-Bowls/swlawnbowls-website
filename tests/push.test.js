@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { diffNotifications, eventChanges } from '../scripts/diff-notifications.mjs';
 import { notify, secretOk, cleanNotifications } from '../api/push/_lib/notify.js';
+import { keylessAccessToken, keylessConfig } from '../api/push/_lib/googleToken.js';
 
 const ev = (o) => ({ id: 'a-2026', title: '2026 Alpha Pairs', date: 'Saturday, May 2, 2026', time: '9:00 AM start', ...o });
 
@@ -88,4 +89,26 @@ test('0014 lookup returns phones subscribed to the event or to all', async () =>
   const sql = fs.readFileSync(new URL('../member-platform/supabase/0014_device_events.sql', import.meta.url), 'utf8');
   assert.match(sql, /'all' = ANY \(d\.event_ids\)/);
   assert.match(sql, /e\.event_id = ANY \(d\.event_ids\)/);
+});
+
+test('keyless sign-in: Vercel token is swapped at Google STS, then the service account token is requested', async () => {
+  const calls = [];
+  const f = async (url, opt) => {
+    calls.push({ url, auth: opt.headers.authorization, body: JSON.parse(opt.body) });
+    return { ok: true, status: 200, json: async () => (url.startsWith('https://sts.googleapis.com/') ? { access_token: 'fed' } : { accessToken: 'send-token' }) };
+  };
+  const env = { GCP_PROJECT_NUMBER: '123', GCP_WIF_POOL: 'vercel', GCP_WIF_PROVIDER: 'vercel', GCP_SERVICE_ACCOUNT_EMAIL: 'fcm@sw-bowls.iam.gserviceaccount.com' };
+  assert.equal(await keylessAccessToken('vercel-jwt', env, { fetch: f }), 'send-token');
+  assert.equal(calls[0].body.subjectToken, 'vercel-jwt');
+  assert.equal(calls[0].body.audience, '//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/vercel/providers/vercel');
+  assert.equal(calls[1].auth, 'Bearer fed');
+  assert.deepEqual(calls[1].body.scope, ['https://www.googleapis.com/auth/firebase.messaging']);
+  assert.equal(new URL(calls[1].url).hostname, 'iamcredentials.googleapis.com');
+});
+
+test('keyless sign-in: refuses to run without configuration or a Vercel token', async () => {
+  assert.equal(keylessConfig({}), null);
+  await assert.rejects(() => keylessAccessToken('x', {}, { fetch: async () => ({}) }), /not configured/);
+  const env = { GCP_PROJECT_NUMBER: '1', GCP_WIF_POOL: 'p', GCP_WIF_PROVIDER: 'q', GCP_SERVICE_ACCOUNT_EMAIL: 'a@b' };
+  await assert.rejects(() => keylessAccessToken('', env, { fetch: async () => ({}) }), /no Vercel identity token/);
 });
