@@ -21,18 +21,18 @@ gcloud iam workload-identity-pools providers create-oidc vercel \
   --issuer-uri="https://oidc.vercel.com/$TEAM" \
   --allowed-audiences="https://vercel.com/$TEAM" \
   --attribute-mapping="google.subject=assertion.sub" \
-  --attribute-condition="assertion.sub == 'owner:$TEAM:project:swd-google-calendar:environment:production'"
+  --attribute-condition="assertion.sub == 'owner:$TEAM:project:swd-tournament-hub.vercel.app:environment:production'"
 
 # 2. Let that Vercel project act as the Firebase service account (find its address first)
 gcloud iam service-accounts list --format='value(email)'
 SA=firebase-adminsdk-XXXXX@sw-bowls.iam.gserviceaccount.com   # CHANGE to the firebase-adminsdk address printed above
 gcloud iam service-accounts add-iam-policy-binding "$SA" \
   --role=roles/iam.workloadIdentityUser \
-  --member="principal://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/vercel/subject/owner:$TEAM:project:swd-google-calendar:environment:production"
+  --member="principal://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/vercel/subject/owner:$TEAM:project:swd-tournament-hub.vercel.app:environment:production"
 ```
 
 Then add these Vercel environment variables (plain "Config" values, none is secret):
 `GCP_PROJECT_NUMBER` (printed above), `GCP_WIF_POOL=vercel`, `GCP_WIF_PROVIDER=vercel`, `GCP_SERVICE_ACCOUNT_EMAIL` (the SA address).
-In the Vercel project, Settings > Security > "Secure backend access with OIDC federation" must be on, in Team mode.
+The public site and its /api are served by the Vercel project named `swd-tournament-hub.vercel.app` (see docs/succession-and-accounts.md), NOT `swd-google-calendar`; all environment variables go on that project. In that Vercel project, Settings > Security > "Secure backend access with OIDC federation" must be on, in Team mode.
 
 If the pool commands are refused by an organization policy, the message names the policy; tell the webmaster.

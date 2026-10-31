@@ -112,3 +112,8 @@ test('keyless sign-in: refuses to run without configuration or a Vercel token', 
   const env = { GCP_PROJECT_NUMBER: '1', GCP_WIF_POOL: 'p', GCP_WIF_PROVIDER: 'q', GCP_SERVICE_ACCOUNT_EMAIL: 'a@b' };
   await assert.rejects(() => keylessAccessToken('', env, { fetch: async () => ({}) }), /no Vercel identity token/);
 });
+
+test('diff: a result that points at an event with another id alerts under the event id', () => {
+  const out = diffNotifications([ev({ id: 'mens-mix-2026' })], [ev({ id: 'mens-mix-2026' })], [], [{ id: 'mens-vet-pairs-2026', title: '2026 Pairs', eventUrl: '/event?id=mens-mix-2026' }]);
+  assert.equal(out.length, 1); assert.equal(out[0].eventId, 'mens-mix-2026');
+});

@@ -29,9 +29,12 @@ export function diffNotifications(oldEvents, newEvents, oldResults, newResults) 
   }
   const seen = new Set((oldResults || []).map((r) => r.id));
   const titleOf = new Map((newEvents || []).map((e) => [e.id, nice(e)]));
+  // A result can have its own id while pointing at an event with a different one (eventUrl: /event?id=...).
+  const eventIdOf = (r) => { const m = /^\/event\?id=([a-z0-9-]{3,80})$/.exec(String(r.eventUrl || '')); return m ? m[1] : r.id; };
   for (const r of newResults || []) {
     if (seen.has(r.id)) continue;
-    list.push({ eventId: r.id, kind: 'results', title: 'Results are in', body: `${titleOf.get(r.id) || nice(r)}: results have been posted.` });
+    const eventId = eventIdOf(r);
+    list.push({ eventId, kind: 'results', title: 'Results are in', body: `${titleOf.get(eventId) || nice(r)}: results have been posted.` });
   }
   return list.slice(0, MAX);
 }
