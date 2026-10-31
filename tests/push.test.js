@@ -82,3 +82,10 @@ test('iPhone tokens are never sent to Firebase or deleted (they are Apple tokens
   assert.equal(out.sent, 1); assert.equal(out.skippedIos, 1);
   assert.ok(!calls.some((c) => c.body && c.body.message && c.body.message.token === 'apple'));
 });
+
+test('0014 lookup returns phones subscribed to the event or to all', async () => {
+  const fs = await import('node:fs');
+  const sql = fs.readFileSync(new URL('../member-platform/supabase/0014_device_events.sql', import.meta.url), 'utf8');
+  assert.match(sql, /'all' = ANY \(d\.event_ids\)/);
+  assert.match(sql, /e\.event_id = ANY \(d\.event_ids\)/);
+});
