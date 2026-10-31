@@ -519,7 +519,6 @@
     var s = saved().filter(function (x) { return x !== id; });
     if (on) s.push(id);
     store('saved', s);
-    syncDeviceEvents();
     document.querySelectorAll('[data-save="' + id + '"]').forEach(function (b) {
       b.setAttribute('data-on', on);
       var span = b.querySelector('span');
@@ -2670,18 +2669,16 @@
     var C = window.Capacitor;
     return SITE && C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.PushNotifications ? C.Plugins.PushNotifications : null;
   }
-  // Alerts are about the events the member saved. Tell the server which ones, whenever that list changes.
-  // If it cannot reach the server (offline), the change is remembered and sent again on reconnect or the next app start.
+  // Alerts are for every tournament: a new date or time, postponed, cancelled, or results posted. The server keeps
+  // 'all' as this phone's list. If it cannot reach the server (offline), the change is remembered and sent again
+  // on reconnect or the next app start.
   function syncDeviceEvents(onlyIfPending) {
     var tok = store('pushToken');
     if (!tok || !memberSession() || !pushPlugin()) return;
-    if (onlyIfPending && !store('pushSyncPending')) return;
+    // Phones that turned alerts on before 'all' existed have no pushSub marker yet: they are brought across here
+    if (onlyIfPending && !store('pushSyncPending') && store('pushSub') === 'all') return;
     store('pushSyncPending', true);
-    var list = saved();
-    memberRpc('set_device_events', { p_token: tok, p_events: list }).then(function () {
-      if (JSON.stringify(list) === JSON.stringify(saved())) store('pushSyncPending', null);
-      else syncDeviceEvents();
-    }, function () {});
+    memberRpc('set_device_events', { p_token: tok, p_events: ['all'] }).then(function () { store('pushSyncPending', null); store('pushSub', 'all'); }, function () {});
   }
   function pushSection() {
     if (!pushPlugin() || !memberSession()) return '';
@@ -2711,7 +2708,7 @@
     var tok = store('pushToken'), P = pushPlugin();
     pushSay('One moment…');
     memberRpc('unregister_device', { p_token: tok || '' }).then(function () {
-      store('pushToken', null); store('pushSyncPending', null);
+      store('pushToken', null); store('pushSyncPending', null); store('pushSub', null);
       if (P && P.unregister) { try { P.unregister(); } catch (e) {} }
       render();
     }, function () { pushSay('We couldn’t turn alerts off just now (no connection?). Try again in a minute.'); });
@@ -2755,7 +2752,7 @@
       view.addEventListener('follow-change', draw);
     }).catch(function () {});
     view.addEventListener('click', function (ev) {
-      if (ev.target.closest('[data-clear-saved]')) { store('saved', []); syncDeviceEvents(); toast('Saved events cleared'); render(); }
+      if (ev.target.closest('[data-clear-saved]')) { store('saved', []); toast('Saved events cleared'); render(); }
       if (ev.target.closest('[data-del-start]')) {
         var db = document.getElementById('del-box');
         db.innerHTML = '<p role="alert"><b>Are you sure?</b> ' + (memberSession() ? 'Your account will be deleted.' : 'Your data on this phone will be cleared.') + '</p><div class="actions"><button class="btn btn--danger" type="button" data-del-go>Yes, delete</button><button class="btn btn--ghost" type="button" data-del-cancel>Keep my data</button></div>';
