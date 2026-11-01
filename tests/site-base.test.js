@@ -72,7 +72,7 @@ test('alerts: every phone with alerts on is subscribed to all events, and a slow
 test('a failed alert-subscription update is remembered and retried', () => {
   assert.match(src, /store\('pushSyncPending', true\)/);
   assert.match(src, /window\.addEventListener\('online', function \(\) \{\s*\n\s*syncDeviceEvents\(true\);/);
-  assert.match(src, /syncDeviceEvents\(true\);\s*\n\s*render\(\);\s*\n\s*setTimeout\(welcome/);
+  assert.match(src, /syncDeviceEvents\(true\);\s*\n\s*listenForTaps\(\);\s*\n\s*render\(\);\s*\n\s*setTimeout\(welcome/);
 });
 
 test('a late token refresh is dropped if the session was cleared or replaced', () => {
@@ -86,4 +86,11 @@ test('token refreshes are shared so two callers cannot reject each other', () =>
 test('alerts: phones that enabled alerts before the all-events change are migrated at app start', () => {
   assert.match(src, /store\('pushSub'\) === 'all'\) return;/);
   assert.match(src, /store\('pushSub', 'all'\)/);
+});
+
+test('alerts: tapping a notification opens only /app/events/<id>, and the listener survives turning alerts on', () => {
+  assert.match(src, /pushNotificationActionPerformed/);
+  assert.match(src, /\^\\\/app\\\/events\\\/\[a-z0-9-\]\{3,80\}\$\/\.test\(u\)\) go\(u\)/);
+  assert.match(src, /removeAllListeners\(\);\s*\n\s*listenForTaps\(\);/);
+  assert.match(src, /syncDeviceEvents\(true\);\s*\n\s*listenForTaps\(\);/);
 });
