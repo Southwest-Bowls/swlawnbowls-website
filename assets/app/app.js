@@ -2688,6 +2688,15 @@
       '<div class="actions"><button class="btn' + (on ? ' btn--ghost' : '') + '" type="button" ' + (on ? 'data-push-off' : 'data-push-on') + '>' + (on ? 'Turn off alerts' : 'Turn on alerts') + '</button></div>' +
       '<p class="footnote" id="push-msg" role="status">' + (on ? 'Alerts are on for this phone.' : '') + '</p></section>';
   }
+  // Tapping an alert opens that tournament. Only addresses of the form /app/events/<id> are followed.
+  function listenForTaps() {
+    var P = pushPlugin();
+    if (!P || !P.addListener) return;
+    P.addListener('pushNotificationActionPerformed', function (a) {
+      var d = a && a.notification && a.notification.data, u = d && d.url;
+      if (typeof u === 'string' && /^\/app\/events\/[a-z0-9-]{3,80}$/.test(u)) go(u);
+    });
+  }
   function pushSay(t) { var m = document.getElementById('push-msg'); if (m) m.textContent = t; }
   function pushTurnOn() {
     var P = pushPlugin(); if (!P) return;
@@ -2695,6 +2704,7 @@
     P.requestPermissions().then(function (r) {
       if (!r || r.receive !== 'granted') { pushSay('Alerts are off. You can allow them for this app in your phone’s settings.'); return null; }
       if (P.removeAllListeners) P.removeAllListeners();
+      listenForTaps();
       P.addListener('registration', function (t) {
         memberRpc('register_device', { p_token: t.value, p_platform: window.Capacitor.getPlatform() }).then(function () {
           store('pushToken', t.value); syncDeviceEvents(); render();
@@ -4842,6 +4852,7 @@
   })();
   if (!history.state) history.replaceState({ depth: 0 }, '');
   syncDeviceEvents(true);
+  listenForTaps();
   render();
   setTimeout(welcome, 600);
 
