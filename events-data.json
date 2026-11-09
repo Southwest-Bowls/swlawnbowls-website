@@ -744,7 +744,7 @@
       "id": "izzie-forbes-vet-novice-triples-2026",
       "title": "2026 SWD Izzie Forbes Vet Novice Triples",
       "subtitle": "Women's Sponsored",
-      "date": "Saturday, October 3, 2026",
+      "date": "Sunday, December 6, 2026",
       "time": "8:00 AM – 5:00 PM",
       "schedule": [
         "8:00 AM — Green open for practice",
@@ -758,7 +758,7 @@
         "mapUrl": "https://www.google.com/maps/search/?api=1&query=1109+Federation+Dr,+Long+Beach,+CA+90804"
       },
       "fee": "$45/team",
-      "deadline": "Sept 26",
+      "deadline": "",
       "rules": [],
       "noviceDefinition": "A bowler who joined a club or division for the first time ever, less than two years (24 months) before the scheduled event.",
       "livestreamNotice": "There may be livestreaming at this event. By entering, you are consenting to be livestreamed.",
@@ -790,9 +790,8 @@
         "height": 1800,
         "width": "100%"
       },
-      "status": "postponed",
-      "alert": "This tournament has been postponed. A new date will be announced.",
-      "alertLabel": "Postponed"
+      "alert": "Rescheduled from Saturday, October 3 to Sunday, December 6.",
+      "alertLabel": "Rescheduled"
     },
     {
       "id": "womens-vet-novice-pairs-2026",
