@@ -1,5 +1,5 @@
 {
-  "_note": "SW TV livestream schedule. Read by the home page and the app. Add one entry per stream date (YYYY-MM-DD).",
+  "_note": "SW TV livestream schedule. Read by the home page and the app. Add one entry per stream date (YYYY-MM-DD). Optional: "start": "HH:MM" (24-hour, Pacific time). With a start time, phones that have alerts on get a message about 15 minutes before it begins.",
   "streams": [
     {
       "date": "2026-03-14",
