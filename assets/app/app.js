@@ -2863,7 +2863,17 @@
   // on this phone only (never uploaded). The club mark is the club's real
   // logo when clubs-data.json has one ("logo"), otherwise its real green
   // photo — logos are never redrawn or invented.
-  function memberPhoto(id) { return store('memberPhoto:' + id); }
+  // One photo for everything: the profile, the membership card and the circle on My SWD. Phones that saved it
+  // earlier under a member number keep working: that photo is used too.
+  function myPhoto() {
+    var p = store('memberPhoto:self'); if (p) return p;
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('swd:memberPhoto:') === 0) { var v = JSON.parse(localStorage.getItem(k)); if (v) return v; } } } catch (e) {}
+    return null;
+  }
+  function clearMyPhoto() {
+    try { var ks = []; for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('swd:memberPhoto:') === 0) ks.push(k); } ks.forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
+  }
+  function memberPhoto() { return myPhoto(); }
   function idCardHtml(m, club) {
     var today = todayISO();
     var photo = memberPhoto(m.id);
@@ -3414,7 +3424,7 @@
       var mine = p.name ? myResults(list, p.name) : [];
       var tourns = new Set(mine.map(function (m) { return m.r.id; })).size;
       var pod = mine.filter(function (m) { return +m.rank >= 1 && +m.rank <= 3; }).length, wins = mine.filter(function (m) { return +m.rank === 1; }).length;
-      var photo = store('memberPhoto:self');
+      var photo = myPhoto();
       var awards = []; list.forEach(function (r) { (r.t.awards || []).forEach(function (a) { if (p.name && fold(p.name).trim().indexOf(' ') >= 0 && splitNames(a.names).indexOf(fold(p.name).trim()) >= 0) awards.push({ r: r, a: a }); }); });
       var honours = (p.honours || []).slice().sort(function (a, b) { return String(b.year) > String(a.year) ? 1 : -1; });
       // Partners played with most
@@ -3501,9 +3511,9 @@
     var preview = !!store('memberPreview') || !!memberSession();
     var today = todayISO();
 
-    var pf = store('profile') || {}, pphoto = store('memberPhoto:self') || (function () { try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('swd:memberPhoto:') === 0) return JSON.parse(localStorage.getItem(k)); } } catch (e) {} return null; })(), nSaved = saved().length, nFol = followed().length;
+    var pf = store('profile') || {}, pphoto = myPhoto(), nSaved = saved().length, nFol = followed().length;
     function prow(href, ic, title, meta) { return '<a class="prow" href="' + href + '"><span class="prow__ic" aria-hidden="true">' + icon(ic) + '</span><span class="prow__t"><b>' + esc(title) + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a>'; }
-    view.innerHTML = '<header class="phero' + (store('look') ? ' phero--card' : '') + '"' + (store('look') ? ' data-pal="' + look().palette + '" data-sty="' + look().style + '"' : '') + '><span class="phero__brand"><img src="/assets/app/swd-logo.png" alt="" width="22" height="26">Southwest Bowls Division</span><a class="phero__av" href="/app/my/profile" aria-label="Open my profile">' + (pphoto ? '<img src="' + esc(pphoto) + '" alt="">' : (initials(pf.name) ? esc(initials(pf.name)) : icon('person'))) + '</a>' +
+    view.innerHTML = '<header class="phero' + (store('look') ? ' phero--card' : '') + '"' + (store('look') ? ' data-pal="' + look().palette + '" data-sty="' + look().style + '"' : '') + '><span class="phero__brand"><img src="/assets/app/swd-logo.png" alt="" width="22" height="26">Southwest Bowls Division</span><a class="phero__av" href="/app/my/profile" aria-label="Open my profile">' + (pphoto && !memberSession() ? '<img src="' + esc(pphoto) + '" alt="">' : (initials(pf.name) ? esc(initials(pf.name)) : icon('person'))) + '</a>' +
         '<h1 class="phero__name">' + (pf.name ? esc(pf.name) : 'Welcome') + '</h1>' +
         '<p class="phero__sub">' + (memberSession() ? 'Signed in' + ([pf.division, pf.club].filter(Boolean).length ? ' · ' : '') : (pf.name ? '' : 'Guest') ) + ([pf.division, pf.club].filter(Boolean).length ? [pf.division, pf.club].filter(Boolean).map(esc).join(' · ') : (memberSession() || pf.name ? '' : ' · Tap the circle to add your details')) + '</p></header>' +
       setupCard() +
@@ -3645,10 +3655,10 @@
           box.querySelector('[data-photo]').addEventListener('click', function () { input.click(); });
           input.addEventListener('change', function () {
             if (!input.files[0]) return;
-            savePhoto(input.files[0], m.id).then(function () { draw(res); toast('Photo added to your card'); }, function () { toast('That photo couldn’t be used. Try another.'); });
+            savePhoto(input.files[0], 'self').then(function () { draw(res); toast('Photo added to your card'); }, function () { toast('That photo couldn’t be used. Try another.'); });
           });
           var rm = box.querySelector('[data-photo-remove]');
-          if (rm) rm.addEventListener('click', function () { try { localStorage.removeItem('swd:memberPhoto:' + m.id); } catch (e) {} draw(res); toast('Photo removed'); });
+          if (rm) rm.addEventListener('click', function () { clearMyPhoto(); draw(res); toast('Photo removed'); });
         });
       }
       if (res.state === 'not_open') { box.innerHTML = state('empty', 'Not open yet', 'Member sign-in is being tested and will open soon.') + foot; return; }
