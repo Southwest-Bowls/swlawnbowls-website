@@ -2962,6 +2962,9 @@
       "title": "2026 Sun City Mixed/Match Triples",
       "subtitle": "Sun City Lawn Bowls Club · Mixed/Match Triples",
       "date": "Saturday, November 14, 2026",
+      "status": "cancelled",
+      "alert": "This tournament is cancelled. There will be no play on Saturday, November 14.",
+      "alertLabel": "Cancelled",
       "time": "8:30 AM check-in · 9:00 AM start",
       "schedule": [
         "8:30 AM — Check-in",
