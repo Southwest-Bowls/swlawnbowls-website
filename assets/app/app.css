@@ -2733,3 +2733,8 @@ button.section__more { background: none; border: 0; padding: 4px 0 4px 10px; fon
 .mday--sel .wday__dot--on { background: var(--cat-solid, #fff); }
 .wstrip--week { margin-bottom: 0; padding-bottom: 4px; }
 @media (min-width: 480px) { .wstrip--week { justify-content: center; } }
+
+/* Follow a player: a row with the player and a Follow button */
+.list .plrow, .plrow { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.plrow .prow { min-width: 0; }
+.plrow .btn { width: auto; min-width: 0; white-space: nowrap; padding-left: 14px; padding-right: 14px; }

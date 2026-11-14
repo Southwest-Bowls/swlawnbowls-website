@@ -95,3 +95,22 @@ test('alerts: tapping a notification opens only /app/events/<id>, and the listen
   assert.match(src, /removeAllListeners\(\);\s*\n\s*listenForTaps\(\);/);
   assert.match(src, /syncDeviceEvents\(true\);\s*\n\s*listenForTaps\(\);/);
 });
+
+test('follow a player: list kept on the phone, player pages and a Followed players row on My SWD', () => {
+  assert.match(src, /store\('followedPlayers'\)/);
+  assert.match(src, /\[\/\^\\\/app\\\/players\\\/\?\$\/, playersPage, 'my'\]/);
+  assert.match(src, /\[\/\^\\\/app\\\/player\\\/\(\[\^\/\]\+\)\\\/\?\$\/, playerPage, 'my'\]/);
+  assert.match(src, /data-follow-player/);
+  assert.match(src, /'Followed players'/);
+});
+
+test('follow a player: Home shows the followed players’ latest results', () => {
+  assert.match(src, /id="h-fp">Players you follow/);
+  assert.match(src, /followedPlayers\(\)\.length \? loadResults\(\)/);
+});
+
+test('follow a player: clubs and one-line leaderboards are not players, and a player page ignores a screen the member has left', () => {
+  assert.match(src, /!\/\\b\(club\|lbc\|lawn\|bowling\|bowls\|team\)\\b\/i\.test\(x\)/);
+  assert.match(src, /A one-line leaderboard/);
+  assert.match(src, /var root = view;\n    return loadResults\(\)\.catch\(function \(\) \{ return \[\]; \}\)\.then\(function \(list\) \{\n      if \(root !== view\) return;\n      var mine/);
+});
