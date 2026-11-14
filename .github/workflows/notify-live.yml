@@ -1,0 +1,25 @@
+# Every 5 minutes: if a livestream in streams-data.json (with a "start" time) begins in about 15 minutes, alert the phones.
+# Uses the same secrets as notify.yml. Until NOTIFY_LIVE=true is set in Vercel, the site only counts who would be alerted.
+name: Livestream alerts
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/cache@v4
+        with:
+          path: .live-sent.json
+          key: live-sent-${{ github.run_id }}
+          restore-keys: live-sent-
+      - run: node scripts/notify-live.mjs
+        env:
+          NOTIFY_URL: ${{ secrets.NOTIFY_URL }}
+          NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
