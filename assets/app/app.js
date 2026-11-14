@@ -3119,7 +3119,7 @@
   // split on commas, "&", "/" and "and"). Matching is local; nothing is sent anywhere. Names are
   // never corrected, so a spelling variant in a result will not match until the Division fixes it.
   function splitNames(str) {
-    var parts = String(str || '').split(/\s*(?:,|&|\/|·|\band\b)\s*/i).map(function (x) { return fold(x).replace(/^\d+(?:st|nd|rd|th)\s+/, '').replace(/^(?:consolation|winners?)\s+/, '').trim(); }).filter(Boolean);
+    var parts = String(str || '').split(/\s*(?:,|&|\/|\band\b)\s*/i).map(function (x) { return fold(x).replace(/^(?:consolation|winners?)\s+/, '').trim(); }).filter(Boolean);
     // "Joanne & Wilf Steckler": the first names share the surname written once at the end
     var last = parts.length > 1 ? parts[parts.length - 1].split(/\s+/) : [];
     if (last.length > 1 && parts.slice(0, -1).every(function (x) { return x.indexOf(' ') < 0; })) {
@@ -3439,13 +3439,15 @@
   }
   // Names as the Division wrote them (same splitting as splitNames, but keeping capital letters and accents)
   function displayNames(str) {
-    var parts = String(str || '').split(/\s*(?:,|&|\/|·|\band\b)\s*/i).map(function (x) { return x.replace(/^\d+(?:st|nd|rd|th)\s+/i, '').replace(/^(?:consolation|winners?)\s+/i, '').trim(); }).filter(Boolean);
+    // A one-line leaderboard ("1st Kevin Lacey · 2nd Esther Lee · ...") is a list of places, not a team: no one is listed from it
+    if (/\u00b7/.test(str) && /\b\d+(?:st|nd|rd|th)\s/i.test(str)) return [];
+    var parts = String(str || '').split(/\s*(?:,|&|\/|\band\b)\s*/i).map(function (x) { return x.replace(/^(?:consolation|winners?)\s+/i, '').trim(); }).filter(Boolean);
     var last = parts.length > 1 ? parts[parts.length - 1].split(/\s+/) : [];
     if (last.length > 1 && parts.slice(0, -1).every(function (x) { return x.indexOf(' ') < 0; })) {
       var sur = last[last.length - 1];
       parts = parts.map(function (x, i) { return i < parts.length - 1 ? x + ' ' + sur : x; });
     }
-    // Only people: a clubs or a team name ("Santa Monica Lawn Bowling Club") is not a player
+    // Only people: a club or a team name ("Santa Monica Lawn Bowling Club") is not a player
     return parts.filter(function (x) { return x.indexOf(' ') > 0 && !/\d/.test(x) && !/\b(club|lbc|lawn|bowling|bowls|team)\b/i.test(x); });
   }
   // Every player named on a podium, once each (a first name alone is never listed)
