@@ -90,7 +90,8 @@ test('alerts: phones that enabled alerts before the all-events change are migrat
 
 test('alerts: tapping a notification opens only /app/events/<id>, and the listener survives turning alerts on', () => {
   assert.match(src, /pushNotificationActionPerformed/);
-  assert.match(src, /\^\\\/app\\\/events\\\/\[a-z0-9-\]\{3,80\}\$\/\.test\(u\)\) go\(u\)/);
+  assert.match(src, /\^\\\/app\\\/events\\\/\[a-z0-9-\]\{3,80\}\$\/\.test\(u\)\)\) go\(u\)/);
+  assert.match(src, /u === '\/app\/watch'/);
   assert.match(src, /removeAllListeners\(\);\s*\n\s*listenForTaps\(\);/);
   assert.match(src, /syncDeviceEvents\(true\);\s*\n\s*listenForTaps\(\);/);
 });
