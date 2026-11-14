@@ -107,3 +107,9 @@ test('follow a player: Home shows the followed players’ latest results', () =>
   assert.match(src, /id="h-fp">Players you follow/);
   assert.match(src, /followedPlayers\(\)\.length \? loadResults\(\)/);
 });
+
+test('follow a player: clubs and one-line leaderboards are not players, and a player page ignores a screen the member has left', () => {
+  assert.match(src, /!\/\\b\(club\|lbc\|lawn\|bowling\|bowls\|team\)\\b\/i\.test\(x\)/);
+  assert.match(src, /\\s\*\(\?:,\|&\|\\\/\|\u00b7\|\\band\\b\)\\s\*/);
+  assert.match(src, /var root = view;\n    return loadResults\(\)\.catch\(function \(\) \{ return \[\]; \}\)\.then\(function \(list\) \{\n      if \(root !== view\) return;\n      var mine/);
+});
