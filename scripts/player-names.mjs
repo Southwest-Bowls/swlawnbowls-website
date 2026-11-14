@@ -1,15 +1,17 @@
 // Names on podiums, for "a player you follow placed" alerts. Mirrors displayNames()/playerKey() in assets/app/app.js.
 export const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-// "Joanne & Wilf Steckler" -> ["Joanne Steckler", "Wilf Steckler"]; a first name alone is never a player.
+// "Joanne & Wilf Steckler" -> ["Joanne Steckler", "Wilf Steckler"]. Only people: a first name alone, a club or team name,
+// and a one-line leaderboard ("1st Kevin Lacey · 2nd Esther Lee ...") are never players.
 export function displayNames(str) {
-  let parts = String(str || '').split(/\s*(?:,|&|\/|\band\b)\s*/i).map((x) => x.trim()).filter(Boolean);
+  if (/\u00b7/.test(str) && /\b\d+(?:st|nd|rd|th)\s/i.test(str)) return [];
+  let parts = String(str || '').split(/\s*(?:,|&|\/|\band\b)\s*/i).map((x) => x.replace(/^(?:consolation|winners?)\s+/i, '').trim()).filter(Boolean);
   const last = parts.length > 1 ? parts[parts.length - 1].split(/\s+/) : [];
   if (last.length > 1 && parts.slice(0, -1).every((x) => !x.includes(' '))) {
     const sur = last[last.length - 1];
     parts = parts.map((x, i) => (i < parts.length - 1 ? x + ' ' + sur : x));
   }
-  return parts.filter((x) => x.indexOf(' ') > 0);
+  return parts.filter((x) => x.indexOf(' ') > 0 && !/\d/.test(x) && !/\b(club|lbc|lawn|bowling|bowls|team)\b/i.test(x));
 }
 
 // The id a phone subscribes to for a followed player: player--gary-belk

@@ -124,6 +124,9 @@ test('player names: shared surname, first names alone dropped, key is a safe id'
   assert.deepEqual(displayNames('Joanne & Wilf Steckler'), ['Joanne Steckler', 'Wilf Steckler']);
   assert.deepEqual(displayNames('Gary Belk, Curt Mueller, Jane Blair'), ['Gary Belk', 'Curt Mueller', 'Jane Blair']);
   assert.deepEqual(displayNames('Madonna'), []);
+  assert.deepEqual(displayNames('Santa Monica Lawn Bowling Club'), []);
+  assert.deepEqual(displayNames('1st Kevin Lacey \u00b7 2nd Esther Lee \u00b7 3rd Mark De Dubovy'), []);
+  assert.deepEqual(displayNames('Consolation Joann Steckler'), ['Joann Steckler']);
   assert.equal(playerKey('Gary Belk'), 'player--gary-belk');
   assert.equal(playerKey('Mar\u00eda O\u2019Brien'), 'player--maria-o-brien');
   assert.match(playerKey('x'.repeat(200)), /^player--[a-z0-9-]{3,72}$/);

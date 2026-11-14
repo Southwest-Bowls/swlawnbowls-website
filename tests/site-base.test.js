@@ -113,3 +113,9 @@ test('follow alerts: the phone tells the server which players it follows, and sy
   assert.match(src, /p_events: \['all'\]\.concat\(followedPlayers\(\)\.slice\(0, 100\)\.map\(playerKey\)\)/);
   assert.match(src, /syncDeviceEvents\(\);   \/\/ phones with alerts on tell the server/);
 });
+
+test('follow a player: clubs and one-line leaderboards are not players, and a player page ignores a screen the member has left', () => {
+  assert.match(src, /!\/\\b\(club\|lbc\|lawn\|bowling\|bowls\|team\)\\b\/i\.test\(x\)/);
+  assert.match(src, /A one-line leaderboard/);
+  assert.match(src, /var root = view;\n    return loadResults\(\)\.catch\(function \(\) \{ return \[\]; \}\)\.then\(function \(list\) \{\n      if \(root !== view\) return;\n      var mine/);
+});
