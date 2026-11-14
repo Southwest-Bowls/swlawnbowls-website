@@ -2692,7 +2692,7 @@
     // Phones that turned alerts on before 'all' existed have no pushSub marker yet: they are brought across here
     if (onlyIfPending && !store('pushSyncPending') && store('pushSub') === 'all') return;
     store('pushSyncPending', true);
-    memberRpc('set_device_events', { p_token: tok, p_events: ['all'] }).then(function () { store('pushSyncPending', null); store('pushSub', 'all'); }, function () {});
+    memberRpc('set_device_events', { p_token: tok, p_events: ['all'].concat(followedPlayers().slice(0, 100).map(playerKey)) }).then(function () { store('pushSyncPending', null); store('pushSub', 'all'); }, function () {});
   }
   function pushSection() {
     if (!pushPlugin() || !memberSession()) return '';
@@ -2708,7 +2708,7 @@
     if (!P || !P.addListener) return;
     P.addListener('pushNotificationActionPerformed', function (a) {
       var d = a && a.notification && a.notification.data, u = d && d.url;
-      if (typeof u === 'string' && (u === '/app/watch' || /^\/app\/events\/[a-z0-9-]{3,80}$/.test(u))) go(u);
+      if (typeof u === 'string' && (u === '/app/watch' || /^\/app\/(events|results)\/[a-z0-9-]{3,80}$/.test(u))) go(u);
     });
   }
   function pushSay(t) { var m = document.getElementById('push-msg'); if (m) m.textContent = t; }
@@ -3425,6 +3425,7 @@
     var k = fold(name).trim(), f = followedPlayers().filter(function (n) { return fold(n).trim() !== k; });
     if (on) f.unshift(name);
     store('followedPlayers', f.slice(0, 100));
+    syncDeviceEvents();   // phones with alerts on tell the server, so a followed player's result can reach them
     document.querySelectorAll('[data-follow-player]').forEach(function (b) {
       if (fold(b.getAttribute('data-follow-player')).trim() !== k) return;
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -3433,6 +3434,8 @@
     toast(on ? 'Following ' + name : 'Stopped following ' + name);
     if (/^\/app\/players\/?$/.test(location.pathname)) playersPage();
   }
+  // The id our server uses for a followed player (same as playerKey() in scripts/player-names.mjs)
+  function playerKey(name) { return ('player--' + fold(name).trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')).slice(0, 80).replace(/-+$/, ''); }
   function followPlayerBtn(name) {
     var on = isFollowingPlayer(name);
     return '<button class="btn btn--ghost btn--follow" type="button" data-follow-player="' + esc(name) + '" aria-pressed="' + on + '">' + icon('star', 'i--sm') + '<span data-follow-label>' + (on ? 'Following' : 'Follow') + '</span></button>';

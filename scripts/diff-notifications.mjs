@@ -1,6 +1,7 @@
 // Works out which alerts a change to events-data.json / results-data.json should send.
 // Pure functions, no network: the workflow feeds them the old and new file.
-const MAX = 10;   // never more than this many alerts from one change
+import { podiumPlayers, playerKey, ordinal } from './player-names.mjs';
+const MAX = 60;   // never more than this many alerts from one change
 
 const nice = (e) => String((e && (e.title || e.id)) || 'A tournament').replace(/^20\d\d\s+/, '');
 const norm = (v) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
@@ -35,6 +36,10 @@ export function diffNotifications(oldEvents, newEvents, oldResults, newResults) 
     if (seen.has(r.id)) continue;
     const eventId = eventIdOf(r);
     list.push({ eventId, kind: 'results', title: 'Results are in', body: `${titleOf.get(eventId) || nice(r)}: results have been posted.` });
+    // Players who placed: phones that follow them get their own alert (one per player, top three only)
+    for (const p of podiumPlayers(r)) {
+      list.push({ eventId: playerKey(p.name), kind: 'player', resultId: r.id, forEvent: eventId, title: `${p.name} placed ${ordinal(p.rank)}`, body: `${p.name} placed ${ordinal(p.rank)} in ${titleOf.get(eventId) || nice(r)}. Tap to see the results.` });
+    }
   }
   return list.slice(0, MAX);
 }

@@ -90,7 +90,7 @@ test('alerts: phones that enabled alerts before the all-events change are migrat
 
 test('alerts: tapping a notification opens only /app/events/<id>, and the listener survives turning alerts on', () => {
   assert.match(src, /pushNotificationActionPerformed/);
-  assert.match(src, /\^\\\/app\\\/events\\\/\[a-z0-9-\]\{3,80\}\$\/\.test\(u\)\)\) go\(u\)/);
+  assert.match(src, /\^\\\/app\\\/\(events\|results\)\\\/\[a-z0-9-\]\{3,80\}\$\/\.test\(u\)\)\) go\(u\)/);
   assert.match(src, /u === '\/app\/watch'/);
   assert.match(src, /removeAllListeners\(\);\s*\n\s*listenForTaps\(\);/);
   assert.match(src, /syncDeviceEvents\(true\);\s*\n\s*listenForTaps\(\);/);
@@ -107,4 +107,9 @@ test('follow a player: list kept on the phone, player pages and a Followed playe
 test('follow a player: Home shows the followed players’ latest results', () => {
   assert.match(src, /id="h-fp">Players you follow/);
   assert.match(src, /followedPlayers\(\)\.length \? loadResults\(\)/);
+});
+
+test('follow alerts: the phone tells the server which players it follows, and syncs when you follow or unfollow', () => {
+  assert.match(src, /p_events: \['all'\]\.concat\(followedPlayers\(\)\.slice\(0, 100\)\.map\(playerKey\)\)/);
+  assert.match(src, /syncDeviceEvents\(\);   \/\/ phones with alerts on tell the server/);
 });

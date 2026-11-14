@@ -22,10 +22,10 @@ test('diff: results alerts only for results that were not there before; new even
   assert.match(out[0].body, /Alpha Pairs: results have been posted/);
 });
 
-test('diff: never more than 10 alerts from one change', () => {
-  const olds = Array.from({ length: 30 }, (_, i) => ev({ id: 'e' + i }));
+test('diff: never more than 60 alerts from one change', () => {
+  const olds = Array.from({ length: 100 }, (_, i) => ev({ id: 'e' + i }));
   const news = olds.map((e) => ({ ...e, time: 'later' }));
-  assert.equal(diffNotifications(olds, news, [], []).length, 10);
+  assert.equal(diffNotifications(olds, news, [], []).length, 60);
 });
 
 test('secretOk: exact match only', () => {
@@ -35,7 +35,7 @@ test('secretOk: exact match only', () => {
   assert.equal(secretOk('abc', ''), false);
 });
 
-test('cleanNotifications drops bad ids, trims lengths, caps at 10', () => {
+test('cleanNotifications drops bad ids, trims lengths, caps at 60', () => {
   const out = cleanNotifications([{ eventId: 'Bad Id!', kind: 'changed', title: 't', body: 'b' }, { eventId: 'ok-2026', kind: 'x', title: 't'.repeat(100), body: 'b' }]);
   assert.equal(out.length, 1); assert.equal(out[0].title.length, 60); assert.equal(out[0].kind, 'changed');
 });
@@ -116,4 +116,51 @@ test('keyless sign-in: refuses to run without configuration or a Vercel token', 
 test('diff: a result that points at an event with another id alerts under the event id', () => {
   const out = diffNotifications([ev({ id: 'mens-mix-2026' })], [ev({ id: 'mens-mix-2026' })], [], [{ id: 'mens-vet-pairs-2026', title: '2026 Pairs', eventUrl: '/event?id=mens-mix-2026' }]);
   assert.equal(out.length, 1); assert.equal(out[0].eventId, 'mens-mix-2026');
+});
+
+import { displayNames, playerKey, podiumPlayers } from '../scripts/player-names.mjs';
+
+test('player names: shared surname, first names alone dropped, key is a safe id', () => {
+  assert.deepEqual(displayNames('Joanne & Wilf Steckler'), ['Joanne Steckler', 'Wilf Steckler']);
+  assert.deepEqual(displayNames('Gary Belk, Curt Mueller, Jane Blair'), ['Gary Belk', 'Curt Mueller', 'Jane Blair']);
+  assert.deepEqual(displayNames('Madonna'), []);
+  assert.equal(playerKey('Gary Belk'), 'player--gary-belk');
+  assert.equal(playerKey('Mar\u00eda O\u2019Brien'), 'player--maria-o-brien');
+  assert.match(playerKey('x'.repeat(200)), /^player--[a-z0-9-]{3,72}$/);
+});
+
+const tourn = { id: 'groves-2026', title: '2026 Groves Mixed Triples', divisions: [{ label: 'Open', places: [{ rank: 1, names: 'Gary Belk, Curt Mueller, Jane Blair' }, { rank: 2, names: 'Giulia Gallo, Sadri Jazayeri' }, { rank: 4, names: 'Janice Walter' }] }], awards: [{ title: 'Best', names: 'Ann Lee' }] };
+
+test('podium players: top three only, each once, awards ignored', () => {
+  const p = podiumPlayers(tourn);
+  assert.deepEqual(p.map((x) => x.name + ':' + x.rank), ['Gary Belk:1', 'Curt Mueller:1', 'Jane Blair:1', 'Giulia Gallo:2', 'Sadri Jazayeri:2']);
+});
+
+test('diff: a new result also makes one alert per podium player, under the player id', () => {
+  const out = diffNotifications([ev({ id: 'groves-2026', title: '2026 Groves Mixed Triples' })], [ev({ id: 'groves-2026', title: '2026 Groves Mixed Triples' })], [], [tourn]);
+  const players = out.filter((n) => n.kind === 'player');
+  assert.equal(players.length, 5);
+  assert.equal(players[0].eventId, 'player--gary-belk'); assert.equal(players[0].resultId, 'groves-2026'); assert.equal(players[0].forEvent, 'groves-2026');
+  assert.equal(players[0].title, 'Gary Belk placed 1st');
+  assert.match(players[0].body, /Gary Belk placed 1st in Groves Mixed Triples\. Tap to see the results\./);
+});
+
+test('notify: a follower gets the player alert, not also "Results are in"; two followed teammates get one alert; tap opens the results', async () => {
+  const rows = [{ token: 't1', event_id: 'player--gary-belk', platform: 'android' }, { token: 't1', event_id: 'player--curt-mueller', platform: 'android' },
+    { token: 't1', event_id: 'groves-2026', platform: 'android' }, { token: 't2', event_id: 'groves-2026', platform: 'android' }];
+  const { f, calls } = fakeFetch(rows);
+  const list = [{ eventId: 'groves-2026', kind: 'results', title: 'Results are in', body: 'x' },
+    { eventId: 'player--gary-belk', kind: 'player', resultId: 'groves-2026', forEvent: 'groves-2026', title: 'Gary Belk placed 1st', body: 'y' },
+    { eventId: 'player--curt-mueller', kind: 'player', resultId: 'groves-2026', forEvent: 'groves-2026', title: 'Curt Mueller placed 1st', body: 'z' }];
+  const out = await notify(list, { env: { ...env, NOTIFY_LIVE: 'true' }, fetch: f, accessToken: async () => 'tok' });
+  const sent = calls.filter((c) => c.body && c.body.message).map((c) => [c.body.message.token, c.body.message.notification.title, c.body.message.data.url]);
+  assert.deepEqual(sent.sort(), [['t1', 'Gary Belk placed 1st', '/app/results/groves-2026'], ['t2', 'Results are in', '/app/events/groves-2026']].sort());
+  assert.equal(out.sent, 2);
+});
+
+test('0015 lookup: "all" subscribers never match a player id', async () => {
+  const fs = await import('node:fs');
+  const sql = fs.readFileSync(new URL('../member-platform/supabase/0015_player_alerts.sql', import.meta.url), 'utf8');
+  assert.match(sql, /NOT LIKE 'player--%'/);
+  assert.match(sql, /'all' = ANY \(d\.event_ids\)/);
 });
