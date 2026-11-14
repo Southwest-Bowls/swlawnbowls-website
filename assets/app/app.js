@@ -2694,7 +2694,7 @@
     if (!P || !P.addListener) return;
     P.addListener('pushNotificationActionPerformed', function (a) {
       var d = a && a.notification && a.notification.data, u = d && d.url;
-      if (typeof u === 'string' && /^\/app\/events\/[a-z0-9-]{3,80}$/.test(u)) go(u);
+      if (typeof u === 'string' && (u === '/app/watch' || /^\/app\/events\/[a-z0-9-]{3,80}$/.test(u))) go(u);
     });
   }
   function pushSay(t) { var m = document.getElementById('push-msg'); if (m) m.textContent = t; }

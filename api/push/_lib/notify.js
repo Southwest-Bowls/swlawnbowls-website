@@ -15,7 +15,7 @@ export function cleanNotifications(list) {
   if (!Array.isArray(list)) return [];
   return list.slice(0, 10).map((n) => ({
     eventId: String((n && n.eventId) || '').slice(0, 80),
-    kind: n && n.kind === 'results' ? 'results' : 'changed',
+    kind: n && (n.kind === 'results' || n.kind === 'live') ? n.kind : 'changed',
     title: String((n && n.title) || '').slice(0, 60),
     body: String((n && n.body) || '').slice(0, 200),
   })).filter((n) => /^[a-z0-9-]{3,80}$/.test(n.eventId) && n.title && n.body);
@@ -46,7 +46,7 @@ export async function notify(list, deps) {
     for (const token of tokens) {
       const res = await f(FCM(project), {
         method: 'POST', headers: { authorization: `Bearer ${bearer}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ message: { token, notification: { title: n.title, body: n.body }, data: { url: `/app/events/${n.eventId}` } } }),
+        body: JSON.stringify({ message: { token, notification: { title: n.title, body: n.body }, data: { url: n.kind === 'live' ? '/app/watch' : `/app/events/${n.eventId}` } } }),
       });
       if (res.ok) summary.sent++;
       else {
