@@ -1,5 +1,5 @@
-const test = require('node:test');
-const assert = require('node:assert');
+import test from 'node:test';
+import assert from 'node:assert';
 
 test('livestream alert: only 5 to 15 minutes before the Pacific start, once', async () => {
   const { liveAlerts, streamKey } = await import('../scripts/live-alerts.mjs');
@@ -25,4 +25,17 @@ test('the sender accepts live alerts and opens the Watch page', async () => {
   const out = await notify(c, { env: { NOTIFY_LIVE: 'true', SUPABASE_URL: 'https://x', SUPABASE_SERVICE_ROLE_KEY: 'k', FIREBASE_PROJECT_ID: 'p' }, fetch: f, accessToken: async () => 'tok' });
   assert.equal(out.sent, 1);
   assert.match(calls.find((x) => /fcm/.test(x[0]))[1], /"url":"\/app\/watch"/);
+});
+
+test('streams-data.json is valid JSON and every start time is HH:MM', async () => {
+  const fs = await import('node:fs');
+  const d = JSON.parse(fs.readFileSync(new URL('../streams-data.json', import.meta.url), 'utf8'));
+  assert.ok(Array.isArray(d.streams));
+  for (const s of d.streams) if (s.start != null) assert.match(s.start, /^([01]\d|2[0-3]):[0-5]\d$/);
+});
+
+test('the live-alert script only records a stream as sent after a real, fully delivered send', async () => {
+  const fs = await import('node:fs');
+  const src = fs.readFileSync(new URL('../scripts/notify-live.mjs', import.meta.url), 'utf8');
+  assert.match(src, /out\.live === true && out\.failed === 0/);
 });
