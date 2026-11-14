@@ -1000,10 +1000,11 @@
     return Promise.all([
       loadEvents(),
       getJSON('/app-home-data.json').catch(function () { return {}; }),
-      getJSON('/clubs-data.json').catch(function () { return {}; })
+      getJSON('/clubs-data.json').catch(function () { return {}; }),
+      followedPlayers().length ? loadResults().catch(function () { return null; }) : Promise.resolve(null)
     ]).then(function (all) {
       if (root !== view) return;
-      var data = { events: all[0], story: all[1].feature || null, today: today, clubs: all[2].clubs || [] };
+      var data = { events: all[0], story: all[1].feature || null, today: today, clubs: all[2].clubs || [], results: all[3] };
       drawHome(data);
       // Saving or unsaving on Home redraws it straight away
       view.addEventListener('saved-change', function (ev) {
@@ -1119,6 +1120,19 @@
         }).join('') + '</ul></section>';
     })();
 
+    if (d.results && followedPlayers().length) {   // Players you follow: their latest results
+      var fpRows = [];
+      followedPlayers().forEach(function (n) { myResults(d.results, n).slice(0, 2).forEach(function (m) { fpRows.push({ n: n, m: m }); }); });
+      fpRows.sort(function (a, b) { var da = resultDate(a.m.r), db = resultDate(b.m.r); return da < db ? 1 : da > db ? -1 : 0; });
+      if (fpRows.length) {
+        html += '<section class="hsec" aria-labelledby="h-fp"><div class="section__head"><h2 class="section__title" id="h-fp">Players you follow</h2><a class="section__more" href="/app/players">All' + icon('chev', 'i--sm') + '</a></div><ul class="list list--plain">' +
+          fpRows.slice(0, 4).map(function (x) {
+            var m = x.m, dd = resultDate(m.r);
+            return '<li><a class="rcard" href="/app/results/' + encodeURIComponent(m.r.id) + (m.slug ? '?division=' + encodeURIComponent(m.slug) : '') + '">' + placeChip(m) + '<span class="rcard__body"><span class="rcard__title">' + esc(x.n) + '</span>' +
+              '<span class="rcard__meta">' + esc([placeWord(m.rank), shortTitle(m.r.t.title), dd ? fmt(dd, { month: 'short', day: 'numeric' }) : ''].filter(Boolean).join(' · ')) + '</span></span>' + CHEV + '</a></li>';
+          }).join('') + '</ul></section>';
+      }
+    }
     html += '<div class="tagline"><span class="art-plate"><img src="/photos/home/tagline-sport-for-life.png" alt="Lawn Bowls — A Sport for Life!" width="341" height="160" decoding="async" loading="lazy"></span></div>';
     html += '<div id="home-partners"></div>';
 

@@ -102,3 +102,8 @@ test('follow a player: list kept on the phone, player pages and a Followed playe
   assert.match(src, /data-follow-player/);
   assert.match(src, /'Followed players'/);
 });
+
+test('follow a player: Home shows the followed players’ latest results', () => {
+  assert.match(src, /id="h-fp">Players you follow/);
+  assert.match(src, /followedPlayers\(\)\.length \? loadResults\(\)/);
+});
