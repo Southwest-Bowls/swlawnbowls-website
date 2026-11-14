@@ -734,7 +734,7 @@
   // screen's usual parent.
   var BACK_NAMES = [[/^\/app\/?$/, 'Home'], [/^\/app\/(my|more\/membership)\/?$/, 'My SWD'], [/^\/app\/search\/?$/, 'Search'],
     [/^\/app\/more\/?$/, 'More'], [/^\/app\/more\/news\/?$/, 'News'], [/^\/app\/more\/clubs\/[^/]+\/?$/, 'Club'],
-    [/^\/app\/watch\/?$/, 'Southwest TV'], [/^\/app\/standings\/?$/, 'Standings']];
+    [/^\/app\/watch\/?$/, 'Southwest TV'], [/^\/app\/standings\/?$/, 'Standings'], [/^\/app\/players\/?$/, 'Players'], [/^\/app\/player\/[^/]+\/?$/, 'Player']];
   function backLink(href, label) {
     var from = history.state && history.state.from;
     if (from && from.split('?')[0] !== href.split('?')[0]) {
@@ -3401,6 +3401,99 @@
     var w = String(name || '').trim().split(/\s+/).filter(Boolean);
     return w.length ? (w[0].charAt(0) + (w.length > 1 ? w[w.length - 1].charAt(0) : '')).toUpperCase() : '';
   }
+
+  /* ---------------------------------------------------------------
+     FOLLOW A PLAYER. Names come from the published results; the list is kept on this phone only (like followed clubs).
+     --------------------------------------------------------------- */
+  function followedPlayers() { var f = store('followedPlayers'); return Array.isArray(f) ? f : []; }
+  function isFollowingPlayer(name) { var k = fold(name).trim(); return followedPlayers().some(function (n) { return fold(n).trim() === k; }); }
+  function setFollowingPlayer(name, on) {
+    var k = fold(name).trim(), f = followedPlayers().filter(function (n) { return fold(n).trim() !== k; });
+    if (on) f.unshift(name);
+    store('followedPlayers', f.slice(0, 100));
+    document.querySelectorAll('[data-follow-player]').forEach(function (b) {
+      if (fold(b.getAttribute('data-follow-player')).trim() !== k) return;
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var t = b.querySelector('[data-follow-label]'); if (t) t.textContent = on ? 'Following' : 'Follow';
+    });
+    toast(on ? 'Following ' + name : 'Stopped following ' + name);
+    if (/^\/app\/players\/?$/.test(location.pathname)) playersPage();
+  }
+  function followPlayerBtn(name) {
+    var on = isFollowingPlayer(name);
+    return '<button class="btn btn--ghost btn--follow" type="button" data-follow-player="' + esc(name) + '" aria-pressed="' + on + '">' + icon('star', 'i--sm') + '<span data-follow-label>' + (on ? 'Following' : 'Follow') + '</span></button>';
+  }
+  // Names as the Division wrote them (same splitting as splitNames, but keeping capital letters and accents)
+  function displayNames(str) {
+    var parts = String(str || '').split(/\s*(?:,|&|\/|\band\b)\s*/i).map(function (x) { return x.trim(); }).filter(Boolean);
+    var last = parts.length > 1 ? parts[parts.length - 1].split(/\s+/) : [];
+    if (last.length > 1 && parts.slice(0, -1).every(function (x) { return x.indexOf(' ') < 0; })) {
+      var sur = last[last.length - 1];
+      parts = parts.map(function (x, i) { return i < parts.length - 1 ? x + ' ' + sur : x; });
+    }
+    return parts.filter(function (x) { return x.indexOf(' ') > 0; });
+  }
+  // Every player named on a podium, once each (a first name alone is never listed)
+  function allPlayers(list) {
+    var seen = {}, out = [];
+    list.forEach(function (r) {
+      (r.t.divisions || []).forEach(function (dv) {
+        divisionPlaces(dv).forEach(function (g) {
+          g.places.forEach(function (pl) {
+            displayNames(pl.names).forEach(function (n) { var k = fold(n).trim(); if (!seen[k]) { seen[k] = 1; out.push(n); } });
+          });
+        });
+      });
+    });
+    return out.sort(function (a, b) { return fold(a) < fold(b) ? -1 : 1; });
+  }
+  function playerStats(mine) {
+    var tourns = new Set(mine.map(function (m) { return m.r.id; })).size;
+    return { t: tourns, p: mine.filter(function (m) { return +m.rank >= 1 && +m.rank <= 3; }).length, w: mine.filter(function (m) { return +m.rank === 1; }).length };
+  }
+  function playerPage(params, name) {
+    name = String(name || '').trim();
+    setTitle(name || 'Player');
+    return loadResults().catch(function () { return []; }).then(function (list) {
+      var mine = myResults(list, name), s = playerStats(mine);
+      view.innerHTML = backLink('/app/players', 'Players') +
+        '<section class="pro"><span class="pro__photo" aria-hidden="true">' + esc(initials(name) || '?') + '</span>' +
+          '<div class="pro__text"><h1 class="pro__name">' + esc(name) + '</h1></div>' + followPlayerBtn(name) + '</section>' +
+        (mine.length ? '<div class="hub__stats mystats">' + metric('pl-t', s.t, 'Tournaments', 'With a result') + metric('pl-p', s.p, 'Podiums', 'Top three') + metric('pl-w', s.w, 'Wins', 'First places') + '</div>' : '') +
+        '<section class="block"><h2>Results' + (mine.length ? ' (' + mine.length + ')' : '') + '</h2>' +
+          (mine.length ? '<ul class="list list--plain">' + mine.map(myResultRow).join('') + '</ul>' : '<p class="muted">No published results under this name yet. Results are matched by the full name as the Division published it.</p>') + '</section>' +
+        '<p class="footnote">Players you follow are kept on this phone only. Results come from the Division’s published results.</p>';
+      rollIn(view);
+    });
+  }
+  function playersPage() {
+    setTitle('Players');
+    var root = view;
+    return loadResults().catch(function () { return []; }).then(function (list) {
+      if (root !== view) return;
+      var fl = followedPlayers();
+      var rows = fl.map(function (n) {
+        var mine = myResults(list, n), top = mine[0];
+        var meta = top ? [shortTitle(top.r.t.title), placeWord(top.rank)].filter(Boolean).join(' · ') : 'No published results yet';
+        return '<li class="plrow"><a class="prow" href="/app/player/' + encodeURIComponent(n) + '"><span class="prow__ic" aria-hidden="true">' + icon('person') + '</span><span class="prow__t"><b>' + esc(n) + '</b><small>' + esc(meta) + '</small></span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a>' + followPlayerBtn(n) + '</li>';
+      });
+      view.innerHTML = backLink('/app/my', 'My SWD') + pageHead('Players', 'Follow a player to see their results') +
+        '<form class="search search--page" role="search" onsubmit="return false">' + icon('search') + '<label class="sr-only" for="plq">Find a player</label><input id="plq" type="search" placeholder="Find a player by name" autocomplete="off" enterkeyhint="search"></form>' +
+        '<div id="pl-found"></div>' +
+        '<section class="block"><h2>Players you follow' + (fl.length ? ' (' + fl.length + ')' : '') + '</h2>' +
+          (rows.length ? '<ul class="list list--plain">' + rows.join('') + '</ul>' : '<p class="muted">Search for a player above and tap Follow. Their results will show here.</p>') + '</section>' +
+        '<p class="footnote">Players you follow are kept on this phone only.</p>';
+      var all = allPlayers(list), inp = document.getElementById('plq'), out = document.getElementById('pl-found');
+      inp.addEventListener('input', function () {
+        var q = fold(inp.value).trim();
+        if (q.length < 2) { out.innerHTML = ''; return; }
+        var words = q.split(/\s+/), hits = all.filter(function (n) { var k = fold(n); return words.every(function (w) { return k.indexOf(w) >= 0; }); }).slice(0, 12);
+        out.innerHTML = hits.length ? '<ul class="list list--plain">' + hits.map(function (n) {
+          return '<li class="plrow"><a class="prow" href="/app/player/' + encodeURIComponent(n) + '"><span class="prow__ic" aria-hidden="true">' + icon('person') + '</span><span class="prow__t"><b>' + esc(n) + '</b></span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a>' + followPlayerBtn(n) + '</li>';
+        }).join('') + '</ul>' : '<p class="muted">No player with that name in the published results.</p>';
+      });
+    });
+  }
   function profileHeader() {
     var p = store('profile') || {};
     var first = String(p.name || '').trim().split(/\s+/)[0];
@@ -3443,7 +3536,7 @@
         (awards.length ? '<section class="block"><h2>Awards</h2><ul class="honours">' + awards.map(function (x) { return '<li><span class="honours__yr">' + esc(x.r.year || '') + '</span><a href="/app/results/' + encodeURIComponent(x.r.id) + '">' + esc(x.a.title + ' · ' + shortTitle(x.r.t.title)) + '</a></li>'; }).join('') + '</ul></section>' : '') +
         '<section class="block"><h2>Other honors</h2>' + (honours.length ? '<ul class="honours">' + honours.map(function (h) { return '<li><span class="honours__yr">' + esc(h.year || '') + '</span><span>' + esc(h.text) + '</span></li>'; }).join('') + '</ul>'
           : '<p class="muted">Anything else you want to list, such as a title from another division or year. Add it with Edit.</p>') + '</section>' +
-        (partners.length ? '<section class="block"><h2>Played most with</h2><p>' + partners.map(esc).join(' · ') + '</p></section>' : '') +
+        (partners.length ? '<section class="block"><h2>Played most with</h2><p>' + partners.map(function (n) { return '<a class="textlink" href="/app/player/' + encodeURIComponent(n) + '">' + esc(n) + '</a>'; }).join(' · ') + '</p></section>' : '') +
         '<section class="block"><h2>Results' + (mine.length ? ' (' + mine.length + ')' : '') + '</h2>' +
           (mine.length ? '<ul class="list list--plain">' + mine.map(myResultRow).join('') + '</ul>'
             : '<p class="muted">' + (p.name ? (String(p.name).trim().indexOf(' ') < 0 ? 'To see your published results, add your first and last name with Edit, exactly as the Division publishes it.' : 'No published results under “' + esc(p.name) + '”. Results match the full name exactly as the Division published it.') : 'Add your name with Edit to see your published results.') + '</p>') + '</section>' +
@@ -3521,7 +3614,7 @@
         (memberSession() ? '' : '<span class="tag tag--preview">Preview</span>') + '</div><div id="m-box">' + loading() + '</div></section>' : '') +
       '<div class="psheet">' +
         (memberSession() ? '' : '<a class="pbanner" href="/app/signin"><span class="pbanner__t"><b>Sign in or create an account</b><small>Enter tournaments and keep your details</small></span><span class="pbanner__art" aria-hidden="true">' + icon('person') + '</span></a>') +
-        '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honors and results' : 'Add your name and bio') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + '</div>' +
+        '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honors and results' : 'Add your name and bio') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + prow('/app/players', 'person', 'Followed players', followedPlayers().length ? followedPlayers().length + ' following' : 'Find a player to follow') + '</div>' +
         '<div class="pgroup"><button type="button" class="prow prow--btn" data-open-interests><span class="prow__ic" aria-hidden="true">' + icon('star') + '</span><span class="prow__t"><b>My interests</b><small>' + (interests() && (interests().topics || []).length ? (interests().topics.length + ' picked') : 'Choose what you want first') + '</small></span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></button>' + prow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline') + '</div>' +
       '</div>' +
       '<div id="my-res"></div><div id="run-entry"></div>' + myEntriesHtml();
@@ -3832,6 +3925,8 @@
     [/^\/app\/more\/(play|division|ladies-day|archives|follow|resources)\/?$/, subsection, 'more'],
     [/^\/app\/signin\/?$/, signInScreen, 'my'],
     [/^\/app\/my\/profile\/?$/, profilePage, 'my'],
+    [/^\/app\/players\/?$/, playersPage, 'my'],
+    [/^\/app\/player\/([^/]+)\/?$/, playerPage, 'my'],
     [/^\/app\/search\/?$/, searchScreen, 'home'],
     [/^\/app\/page\/about-us\/?$/, aboutScreen, 'more'],
     [/^\/app\/(privacy|terms)\/?$/, legalScreen, 'more'],
@@ -3940,6 +4035,8 @@
     }
     var sh = ev.target.closest('[data-share]');
     if (sh) { share(sh.getAttribute('data-share-title'), sh.getAttribute('data-share')); return; }
+    var fp = ev.target.closest('[data-follow-player]');
+    if (fp) { var pn = fp.getAttribute('data-follow-player'); setFollowingPlayer(pn, !isFollowingPlayer(pn)); return; }
     var fo = ev.target.closest('[data-follow]');
     if (fo) { var fid = fo.getAttribute('data-follow'); setFollowing(fid, !isFollowing(fid), fo.getAttribute('data-name') || ''); return; }
     // Appearance and text size

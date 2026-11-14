@@ -12,7 +12,7 @@
       {
         "h": "If you use the app without an account",
         "p": [
-          "We do not ask for or store anything about you. Your saved events, followed clubs, interests, text size and theme stay on your phone only. Like any website, our hosting provider (Vercel) sees your IP address in routine server logs."
+          "We do not ask for or store anything about you. Your saved events, followed clubs, followed players, interests, text size and theme stay on your phone only. Like any website, our hosting provider (Vercel) sees your IP address in routine server logs."
         ]
       },
       {
@@ -25,7 +25,7 @@
       {
         "h": "What stays on your phone",
         "p": [
-          "Your profile text, honors, photo (including the photo on your membership card), saved events, followed clubs, interests and profile design are kept on your phone, not on our servers."
+          "Your profile text, honors, photo (including the photo on your membership card), saved events, followed clubs, followed players, interests and profile design are kept on your phone, not on our servers."
         ]
       },
       {
