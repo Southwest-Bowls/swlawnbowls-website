@@ -209,6 +209,19 @@
       ]
     },
     {
+      "id": "palm-desert",
+      "name": "Palm Desert",
+      "city": "Palm Desert",
+      "status": "open",
+      "website": "https://www.palmdesertlawnbowling.com",
+      "email": "",
+      "lat": 33.7262,
+      "lng": -116.3788,
+      "summary": "The Coachella Valley\u2019s only public lawn bowling green, bowling Monday, Wednesday and Friday at the Joslyn Center.",
+      "details": "Located at the Joslyn Center, 73-750 Catalina Way, Palm Desert, the club has been the Coachella Valley\u2019s only public lawn bowling facility since 1986. The eight-rink green is the seasonal home (November through April) to many Canadian and UK visitors, and more local residents bowl year round. The club bowls Monday, Wednesday and Friday with check-in at 8:30 AM (triples on Monday and Friday, pairs on Wednesday). Newcomers are welcome, free introductory lessons are offered, and it helps to arrive by 8:15 AM for orientation.",
+      "image": "/photos/clubs/palm-desert.jpg"
+    },
+    {
       "id": "pasadena",
       "name": "Pasadena",
       "city": "Pasadena",
