@@ -1,6 +1,41 @@
 {
   "tournaments": [
     {
+      "id": "womens-vet-novice-triples-2026",
+      "title": "2026 SWD Women's Vet/Novice Triples",
+      "meta": "November 15 \u00b7 Newport Harbor LBC",
+      "navLabel": "Women's Vet/Novice Triples",
+      "eventUrl": "/event?id=womens-vet-novice-triples-2026",
+      "divisions": [
+        {
+          "label": null,
+          "columns": 2,
+          "places": [
+            {
+              "rank": 1,
+              "names": "Anne Nunes, Candy DeFazio, Monica Kim",
+              "photo": "/photos/womens-vet-novice-triples-2026/1th-nunes-defazio-kim.jpg"
+            },
+            {
+              "rank": 2,
+              "names": "Nancy Santos, Lisa Coutee, Merrill Stanton",
+              "photo": "/photos/womens-vet-novice-triples-2026/2th-santos-coutee-stanton.jpg"
+            },
+            {
+              "rank": 3,
+              "names": "Dee McSparran, Mary Spease, Emalee Bowles",
+              "photo": "/photos/womens-vet-novice-triples-2026/3th-mcsparran-spease-bowles.jpg"
+            },
+            {
+              "rank": 4,
+              "names": "Giulia Gallo, Trish Soto, Andrea Ramella",
+              "photo": "/photos/womens-vet-novice-triples-2026/4th-gallo-soto-ramella.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "waterbury-2026",
       "title": "2026 SWD Waterbury",
       "meta": "October 25 · Laguna Woods LBC",
