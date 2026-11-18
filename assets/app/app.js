@@ -2689,10 +2689,12 @@
   function syncDeviceEvents(onlyIfPending) {
     var tok = store('pushToken');
     if (!tok || !memberSession() || !pushPlugin()) return;
-    // Phones that turned alerts on before 'all' existed have no pushSub marker yet: they are brought across here
-    if (onlyIfPending && !store('pushSyncPending') && store('pushSub') === 'all') return;
+    // What this phone tells the server it wants: every tournament, and the players it follows. pushSub remembers exactly what was
+    // last sent ('all|player--a,player--b'), so a phone that sent an older list (just 'all') sends the new one once, at the next app start.
+    var evs = ['all'].concat(followedPlayers().slice(0, 100).map(playerKey)), sig = evs.join('|');
+    if (onlyIfPending && !store('pushSyncPending') && store('pushSub') === sig) return;
     store('pushSyncPending', true);
-    memberRpc('set_device_events', { p_token: tok, p_events: ['all'].concat(followedPlayers().slice(0, 100).map(playerKey)) }).then(function () { store('pushSyncPending', null); store('pushSub', 'all'); }, function () {});
+    memberRpc('set_device_events', { p_token: tok, p_events: evs }).then(function () { store('pushSyncPending', null); store('pushSub', sig); }, function () {});
   }
   function pushSection() {
     if (!pushPlugin() || !memberSession()) return '';

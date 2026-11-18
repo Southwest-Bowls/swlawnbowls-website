@@ -63,7 +63,7 @@ test('reviewer sign-in: a password screen exists only behind ?review=1 and uses 
 
 test('alerts: every phone with alerts on is subscribed to all events, and a slow token refresh cannot undo a sign-out', () => {
   assert.match(src, /function syncDeviceEvents\(onlyIfPending\)/);
-  assert.match(src, /p_events: \['all'\]/);
+  assert.match(src, /p_events: evs/);
   assert.doesNotMatch(src, /p_events: saved\(\)/);
   assert.match(src, /store\('pushToken', t\.value\); syncDeviceEvents\(\);/);
   assert.match(src, /function finishSignOut\(\) \{\s*\n\s*sessionEpoch\+\+;/);
@@ -84,8 +84,8 @@ test('token refreshes are shared so two callers cannot reject each other', () =>
 });
 
 test('alerts: phones that enabled alerts before the all-events change are migrated at app start', () => {
-  assert.match(src, /store\('pushSub'\) === 'all'\) return;/);
-  assert.match(src, /store\('pushSub', 'all'\)/);
+  assert.match(src, /store\('pushSub'\) === sig\) return;/);
+  assert.match(src, /store\('pushSub', sig\)/);
 });
 
 test('alerts: tapping a notification opens only /app/events/<id>, and the listener survives turning alerts on', () => {
@@ -110,7 +110,7 @@ test('follow a player: Home shows the followed players’ latest results', () =>
 });
 
 test('follow alerts: the phone tells the server which players it follows, and syncs when you follow or unfollow', () => {
-  assert.match(src, /p_events: \['all'\]\.concat\(followedPlayers\(\)\.slice\(0, 100\)\.map\(playerKey\)\)/);
+  assert.match(src, /var evs = \['all'\]\.concat\(followedPlayers\(\)\.slice\(0, 100\)\.map\(playerKey\)\), sig = evs\.join\('\|'\);/);
   assert.match(src, /syncDeviceEvents\(\);   \/\/ phones with alerts on tell the server/);
 });
 
