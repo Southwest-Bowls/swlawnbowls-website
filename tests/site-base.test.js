@@ -114,3 +114,13 @@ test('follow a player: clubs and one-line leaderboards are not players, and a pl
   assert.match(src, /A one-line leaderboard/);
   assert.match(src, /var root = view;\n    return loadResults\(\)\.catch\(function \(\) \{ return \[\]; \}\)\.then\(function \(list\) \{\n      if \(root !== view\) return;\n      var mine/);
 });
+
+test('Anne\u2019s quick wins: saved tournaments on Home, zoom for sheets, rules at a glance, venue forecast', () => {
+  assert.match(src, /var SAVE_ON = true;/);
+  assert.match(src, /id="h-sv">Your saved tournaments/);
+  assert.match(src, /EMBED_ZOOMS = \[1, 0\.8, 0\.65, 0\.5\]/);
+  assert.match(src, /data-zoom="out"/);
+  assert.match(src, /id="h-rules">Rules at a glance/);
+  assert.match(src, /https:\/\/api\.open-meteo\.com\/v1\/forecast/);
+  assert.match(src, /start > addDays\(today, 14\)/);
+});
