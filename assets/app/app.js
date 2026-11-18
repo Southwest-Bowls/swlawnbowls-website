@@ -734,7 +734,7 @@
   // screen's usual parent.
   var BACK_NAMES = [[/^\/app\/?$/, 'Home'], [/^\/app\/(my|more\/membership)\/?$/, 'My SWD'], [/^\/app\/search\/?$/, 'Search'],
     [/^\/app\/more\/?$/, 'More'], [/^\/app\/more\/news\/?$/, 'News'], [/^\/app\/more\/clubs\/[^/]+\/?$/, 'Club'],
-    [/^\/app\/watch\/?$/, 'Southwest TV'], [/^\/app\/standings\/?$/, 'Standings'], [/^\/app\/players\/?$/, 'Players'], [/^\/app\/player\/[^/]+\/?$/, 'Player']];
+    [/^\/app\/watch\/?$/, 'Southwest TV'], [/^\/app\/standings\/?$/, 'Standings'], [/^\/app\/players\/?$/, 'Players'], [/^\/app\/entry-lists\/?$/, 'Entry lists'], [/^\/app\/player\/[^/]+\/?$/, 'Player']];
   function backLink(href, label) {
     var from = history.state && history.state.from;
     if (from && from.split('?')[0] !== href.split('?')[0]) {
@@ -1675,6 +1675,7 @@
       if (schedRows.length) h += '<section class="block"><h2>Schedule</h2><ol class="tline">' + schedRows.join('') + '</ol></section>';
     }
     if (phase === 'past' || (st && st.kind === 'closed')) h += docsBlock(e, flyer, cops);
+    h += partnerCard(x, phase);
     if (e.noviceDefinition) {
       var nd = String(e.noviceDefinition), dm = /^(.{2,40}?)\s[—–]\s(.+)$/.exec(nd), term = dm ? dm[1] : 'Novice', rest = dm ? dm[2] : nd;
       var sents = rest.match(/[^.!?]+[.!?]+(\s|$)/g) || [rest], lead = sents[0].trim(), more = sents.slice(1).map(function (z) { return z.trim(); });
@@ -1684,6 +1685,38 @@
     if (e.livestreamNotice) h += '<section class="block"><h2>Livestreaming</h2><p>' + esc(e.livestreamNotice) + '</p></section>';
     h += '<ul class="rows" style="margin-top:24px">' + linkRow('/event?id=' + encodeURIComponent(x.id), 'globe', 'This event on the website', '', { ext: true }) + '</ul>';
     return h;
+  }
+
+  // Who I'm bowling with: a private note for each tournament, kept on this phone only
+  function partnerNotes() { var n = store('partnerNotes'); return n && typeof n === 'object' && !Array.isArray(n) ? n : {}; }
+  function partnerCard(x, phase) {
+    var e = x.e;
+    if (phase === 'past' || String(e.format || '').toLowerCase() === 'singles' || e.status === 'cancelled') return '';
+    return '<section class="block" aria-labelledby="h-pn"><h2 id="h-pn">Who I’m bowling with</h2>' +
+      '<label class="sr-only" for="pn-in">Who you are bowling with at ' + esc(e.title || 'this tournament') + '</label>' +
+      '<input class="pninput" id="pn-in" type="text" maxlength="120" autocomplete="off" placeholder="Partner or team names" data-partner-note="' + esc(x.id) + '" value="' + esc(partnerNotes()[x.id] || '') + '">' +
+      '<p class="footnote">A note for yourself. It is kept on this phone only.</p></section>';
+  }
+  // Entry lists: every tournament that has a published entry list, upcoming first, then the ones already played
+  function entryListsPage() {
+    setTitle('Entry lists');
+    var root = view, today = todayISO();
+    return loadEvents().then(function (events) {
+      if (root !== view) return;
+      var withList = events.filter(function (x) { return x.e.entries && x.e.entries.pubUrl && x.dates; });
+      var up = withList.filter(function (x) { return x.dates.end >= today; }).sort(function (a, b) { return a.dates.start < b.dates.start ? -1 : 1; });
+      var past = withList.filter(function (x) { return x.dates.end < today; }).sort(function (a, b) { return a.dates.start < b.dates.start ? 1 : -1; });
+      function row(x) {
+        return '<li><a class="prow" href="/app/events/' + encodeURIComponent(x.id) + '?tab=entries"><span class="prow__ic" aria-hidden="true">' + icon('people') + '</span><span class="prow__t"><b>' + esc(shortTitle(x.e.title)) + '</b><small>' +
+          esc(fmt(x.dates.start, { weekday: 'short', month: 'short', day: 'numeric' }) + (x.club ? ' · ' + x.club : '')) + '</small></span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a></li>';
+      }
+      view.innerHTML = backLink('/app/more', 'More') + pageHead('Entry lists', 'See who has entered, or who played with whom, to find a partner') +
+        (up.length ? '<section class="block"><h2>Coming up (' + up.length + ')</h2><ul class="list list--plain">' + up.map(row).join('') + '</ul></section>' : '') +
+        (past.length ? '<section class="block"><h2>Already played (' + past.length + ')</h2><ul class="list list--plain">' + past.map(row).join('') + '</ul></section>' : '') +
+        (withList.length ? '' : state('empty', 'No entry lists yet', 'Entry lists appear here when a tournament publishes one.')) +
+        '<p class="footnote">These are the entry lists the Division publishes for each tournament.</p>';
+      rollIn(view);
+    });
   }
   function docsBlock(e, flyer, cops) {
     var docs = [];
@@ -2391,6 +2424,7 @@
           mrow('/app/more/news', 'news', 'News', news[0] ? news[0].title : '', 'blue'),
           mrow('/app/more/play', 'flag', 'Learn bowls', 'Learn to bowl, coaching, umpires, markers', 'blue'),
           mrow('/app/watch', 'tv', 'Southwest TV', 'Livestreams and replays', 'blue'),
+          mrow('/app/entry-lists', 'people', 'Entry lists', 'Who has entered each tournament', 'blue'),
           mrow('/app/more/resources', 'doc', 'Resources', '', 'blue')]) +
         group('About', [
           mrow('/app/page/about-us', 'info', 'About Southwest', '', 'blush'),
@@ -3945,6 +3979,7 @@
     [/^\/app\/signin\/?$/, signInScreen, 'my'],
     [/^\/app\/my\/profile\/?$/, profilePage, 'my'],
     [/^\/app\/players\/?$/, playersPage, 'my'],
+    [/^\/app\/entry-lists\/?$/, entryListsPage, 'more'],
     [/^\/app\/player\/([^/]+)\/?$/, playerPage, 'my'],
     [/^\/app\/search\/?$/, searchScreen, 'home'],
     [/^\/app\/page\/about-us\/?$/, aboutScreen, 'more'],
@@ -4043,6 +4078,14 @@
     render().then(function () { view.focus({ preventScroll: true }); });
   });
 
+  document.addEventListener('input', function (ev) {
+    var pn = ev.target && ev.target.closest && ev.target.closest('[data-partner-note]');
+    if (!pn) return;
+    var id = pn.getAttribute('data-partner-note'), all = Object.assign({}, partnerNotes()), v = String(pn.value || '').slice(0, 120);
+    if (v.trim()) all[id] = v; else delete all[id];
+    var keys = Object.keys(all); if (keys.length > 60) keys.slice(0, keys.length - 60).forEach(function (k) { delete all[k]; });
+    store('partnerNotes', all);
+  });
   document.addEventListener('click', function (ev) {
     // Save / unsave
     var sv = ev.target.closest('[data-save]');
