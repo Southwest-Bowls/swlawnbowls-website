@@ -481,8 +481,8 @@
   /* ---------------------------------------------------------------
      Saved events (no account — kept on this phone)
      --------------------------------------------------------------- */
-  // Save (bookmark) is switched off for now. Set to true to bring the ribbon, the Saved tab and My SWD row back.
-  var SAVE_ON = false;
+  // Save (bookmark): the ribbon, the Saved tab and the My SWD row. Set to false to switch them off everywhere.
+  var SAVE_ON = true;
   function saved() { return SAVE_ON ? (store('saved') || []) : []; }
   function isSaved(id) { return saved().indexOf(id) >= 0; }
   // Followed clubs: kept on this phone only. Following never turns on
@@ -1110,6 +1110,10 @@
     }).join('') + '</nav>';
 
     // Your clubs: the clubs you follow, one tap to each (shown only when you follow some)
+    if (SAVE_ON && mineNext.length) {   // Saved tournaments: the ones you plan to play, soonest first
+      html += '<section class="hsec" aria-labelledby="h-sv"><div class="section__head"><h2 class="section__title" id="h-sv">Your saved tournaments</h2><a class="section__more" href="/app/events?show=saved">All' + icon('chev', 'i--sm') + '</a></div>' +
+        '<ul class="vcards">' + mineNext.slice(0, 3).map(function (x) { return eventRow(x, today).replace('class="evcard"', 'class="evcard evcard--calm"'); }).join('') + '</ul></section>';
+    }
     (function () {
       var fol = followed(), mineC = (d.clubs || []).filter(function (c) { return fol.indexOf(c.id || slugify(c.name)) >= 0; });
       if (!mineC.length || !showT('clubs')) return;
@@ -1546,7 +1550,7 @@
         panel.setAttribute('aria-labelledby', 'tab-' + name);
         panel.innerHTML = name === 'entry' ? entryPanel(x, flyer, cops)
           : name === 'entries' ? entriesPanel(e) : name === 'draw' ? drawPanel(e)
-          : name === 'results' ? resultsPanel(result) : overviewPanel(x, phase, st, flyer, cops, !!result);
+          : name === 'results' ? resultsPanel(result) : overviewPanel(x, phase, st, flyer, cops, !!result, hostClub && hostClub.lat != null && hostClub.lng != null ? { lat: hostClub.lat, lng: hostClub.lng } : null);
         if (name === 'draw' && ls.gated) loadGated(id);
         var u = new URL(location.href);
         if (name === 'overview') u.searchParams.delete('tab'); else u.searchParams.set('tab', name);
@@ -1619,7 +1623,7 @@
     });
     return { badges: out, notes: notes };
   }
-  function overviewPanel(x, phase, st, flyer, cops, hasResult) {
+  function overviewPanel(x, phase, st, flyer, cops, hasResult, hostLL) {
     var e = x.e, h = '';
     // Date, venue, format, deadline, fee and schedule first
     if (st && st.kind === 'closed') h += '<div class="note" role="note"><b>Entries are closed</b>' + ((e.contact && (e.contact.email || e.contact.phone)) ? 'Contact the organizer to ask about a late entry.' : 'Check the flyer for details.') + '</div>';
@@ -1675,6 +1679,8 @@
       if (schedRows.length) h += '<section class="block"><h2>Schedule</h2><ol class="tline">' + schedRows.join('') + '</ol></section>';
     }
     if (phase === 'past' || (st && st.kind === 'closed')) h += docsBlock(e, flyer, cops);
+    h += rulesBlock(e);
+    h += weatherBlock(x, phase, hostLL);
     h += partnerCard(x, phase);
     if (e.noviceDefinition) {
       var nd = String(e.noviceDefinition), dm = /^(.{2,40}?)\s[—–]\s(.+)$/.exec(nd), term = dm ? dm[1] : 'Novice', rest = dm ? dm[2] : nd;
@@ -1687,6 +1693,36 @@
     return h;
   }
 
+  // Rules at a glance: the published rules, with the ones people ask about during the day first
+  var RULE_KEY = /time limit|trial end|\bhead\b|visit|practice|dress|plus point|late|forfeit|lobbing|rolling|tie|winner|bowls? (?:per|each)|\bends?\b/i;
+  function rulesBlock(e) {
+    var rs = (e.rules || []).map(String).filter(Boolean);
+    if (!rs.length) return '';
+    var key = rs.filter(function (r) { return RULE_KEY.test(r); }), top = (key.length ? key : rs).slice(0, 6), rest = rs.filter(function (r) { return top.indexOf(r) < 0; });
+    return '<section class="block" aria-labelledby="h-rules"><h2 id="h-rules">Rules at a glance</h2><ul class="rulelist">' + top.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>' +
+      (rest.length ? '<details class="nov__more"><summary>All ' + rs.length + ' rules</summary><ul class="rulelist">' + rest.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul></details>' : '') + '</section>';
+  }
+  // Weather forecast at the venue, for events in the next two weeks (free Open-Meteo service: it only receives the venue's position and the dates)
+  function weatherBlock(x, phase, ll) {
+    if (!ll || !x.dates || phase === 'past') return '';
+    var today = todayISO(), start = x.dates.start < today ? today : x.dates.start, end = x.dates.end;
+    if (end < today || start > addDays(today, 14)) return '';
+    if (end > addDays(today, 15)) end = addDays(today, 15);
+    var id = 'wx-' + Math.random().toString(36).slice(2, 7);
+    if (navigator.onLine) {
+      fetch('https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(ll.lat) + '&longitude=' + encodeURIComponent(ll.lng) + '&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&start_date=' + start + '&end_date=' + end)
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function (d) {
+          var box = document.getElementById(id), q = d && d.daily; if (!box || !q || !q.time) return;
+          var rows = q.time.map(function (t, i) {
+            return '<li><b>' + esc(fmt(t, { weekday: 'long', month: 'short', day: 'numeric' })) + '</b><span>High ' + Math.round(q.temperature_2m_max[i]) + '°F · Low ' + Math.round(q.temperature_2m_min[i]) + '°F · ' +
+              (q.precipitation_probability_max[i] == null ? '' : q.precipitation_probability_max[i] + '% chance of rain · ') + 'Wind up to ' + Math.round(q.wind_speed_10m_max[i]) + ' mph</span></li>';
+          });
+          box.innerHTML = '<h2>Weather forecast</h2><ul class="wxlist">' + rows.join('') + '</ul><p class="footnote">Forecast for the venue from Open-Meteo. The Division announces rain delays and cancellations.</p>';
+        }, function () { var box = document.getElementById(id); if (box) box.remove(); });
+    }
+    return '<section class="block" id="' + id + '"></section>';
+  }
   // Who I'm bowling with: a private note for each tournament, kept on this phone only
   function partnerNotes() { var n = store('partnerNotes'); return n && typeof n === 'object' && !Array.isArray(n) ? n : {}; }
   function partnerCard(x, phase) {
@@ -1807,6 +1843,17 @@
   function docRow(url, label, type) {
     var kind = type === 'image' ? 'Image' : type === 'gdoc' ? 'Google Doc' : /\.pdf$/i.test(url) ? 'PDF' : 'Document';
     return linkRow(url, 'doc', label, 'Opens in a new window', { ext: true, extText: kind });
+  }
+  // Sheets are made for a big screen. A smaller zoom shows more of the sheet on a small phone; the choice is remembered.
+  var EMBED_ZOOMS = [1, 0.8, 0.65, 0.5];
+  function embedZoom() { var z = Number(store('embedZoom')); return EMBED_ZOOMS.indexOf(z) >= 0 ? z : 1; }
+  function applyEmbedZoom(box, z) {
+    var f = box && box.querySelector('iframe'), w = box && box.querySelector('.embed__frame'), h = parseInt(box && box.getAttribute('data-h'), 10) || 650;
+    if (!f || !w) return;
+    f.style.width = (100 / z) + '%'; f.style.height = h + 'px'; f.style.transform = 'scale(' + z + ')'; f.style.transformOrigin = '0 0';
+    w.style.height = Math.round(h * z) + 'px';
+    var out = box.querySelector('[data-zoom="out"]'), inn = box.querySelector('[data-zoom="in"]');
+    if (out) out.disabled = z <= EMBED_ZOOMS[EMBED_ZOOMS.length - 1]; if (inn) inn.disabled = z >= 1;
   }
   function embedCard(title, why, url, height, kind) {
     var key = 'emb-' + Math.random().toString(36).slice(2, 8);
@@ -3672,7 +3719,7 @@
         (memberSession() ? '' : '<span class="tag tag--preview">Preview</span>') + '</div><div id="m-box">' + loading() + '</div></section>' : '') +
       '<div class="psheet">' +
         (memberSession() ? '' : '<a class="pbanner" href="/app/signin"><span class="pbanner__t"><b>Sign in or create an account</b><small>Enter tournaments and keep your details</small></span><span class="pbanner__art" aria-hidden="true">' + icon('person') + '</span></a>') +
-        '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honors and results' : 'Add your name and bio') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + prow('/app/players', 'person', 'Followed players', followedPlayers().length ? followedPlayers().length + ' following' : 'Find a player to follow') + '</div>' +
+        '<div class="pgroup">' + prow('/app/my/profile', 'person', 'My profile', pf.name ? 'Bio, honors and results' : 'Add your name and bio') + (SAVE_ON ? prow('/app/events?show=saved', 'cal', 'Saved tournaments', nSaved ? nSaved + ' saved' : 'Tap Save on a tournament to keep it here') : '') + prow('/app/more/clubs', 'star', 'Followed clubs', nFol ? nFol + ' following' : 'Find a club to follow') + prow('/app/players', 'person', 'Followed players', followedPlayers().length ? followedPlayers().length + ' following' : 'Find a player to follow') + '</div>' +
         '<div class="pgroup"><button type="button" class="prow prow--btn" data-open-interests><span class="prow__ic" aria-hidden="true">' + icon('star') + '</span><span class="prow__t"><b>My interests</b><small>' + (interests() && (interests().topics || []).length ? (interests().topics.length + ' picked') : 'Choose what you want first') + '</small></span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></button>' + prow('/app/more/settings', 'sliders', 'App settings', 'Appearance, text size, offline') + '</div>' +
       '</div>' +
       '<div id="my-res"></div><div id="run-entry"></div>' + myEntriesHtml();
@@ -4123,8 +4170,19 @@
     if (em) {
       var box = document.getElementById(em.getAttribute('data-embed'));
       if (!navigator.onLine) { box.innerHTML = '<p class="muted">This needs a connection.</p>'; return; }
-      box.innerHTML = '<div class="embed"><iframe src="' + esc(em.getAttribute('data-url')) + '" height="' + em.getAttribute('data-h') + '" title="' + esc(em.getAttribute('data-title')) + '" loading="lazy"></iframe></div>';
+      var zh = parseInt(em.getAttribute('data-h'), 10) || 650, z0 = embedZoom();
+      box.innerHTML = '<div class="embed" data-h="' + zh + '"><div class="embed__bar"><span>Zoom</span><button class="btn btn--ghost btn--sm" type="button" data-zoom="out" aria-label="Zoom out: see more of the sheet">−</button>' +
+        '<button class="btn btn--ghost btn--sm" type="button" data-zoom="in" aria-label="Zoom in: bigger text">+</button></div>' +
+        '<div class="embed__frame"><iframe src="' + esc(em.getAttribute('data-url')) + '" title="' + esc(em.getAttribute('data-title')) + '" loading="lazy"></iframe></div></div>';
+      applyEmbedZoom(box.querySelector('.embed'), z0);
       em.remove();
+      return;
+    }
+    var zm = ev.target.closest('[data-zoom]');
+    if (zm) {
+      var zi = EMBED_ZOOMS.indexOf(embedZoom()), zn = EMBED_ZOOMS[Math.max(0, Math.min(EMBED_ZOOMS.length - 1, zi + (zm.getAttribute('data-zoom') === 'in' ? -1 : 1)))];
+      store('embedZoom', zn);
+      document.querySelectorAll('.embed[data-h]').forEach(function (e2) { applyEmbedZoom(e2, zn); });
       return;
     }
     // Play a video in place

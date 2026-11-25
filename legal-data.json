@@ -12,7 +12,7 @@
       {
         "h": "If you use the app without an account",
         "p": [
-          "We do not ask for or store anything about you. Your saved events, followed clubs, followed players, interests, text size and theme stay on your phone only. Like any website, our hosting provider (Vercel) sees your IP address in routine server logs."
+          "We do not ask for or store anything about you. Your saved events, followed clubs, followed players, interests, text size and theme stay on your phone only. Like any website, our hosting provider (Vercel) sees your IP address in routine server logs. To show a weather forecast for a tournament, the app asks the free Open-Meteo weather service for the forecast at the venue; it receives only the venue's position and the dates, not anything about you."
         ]
       },
       {
