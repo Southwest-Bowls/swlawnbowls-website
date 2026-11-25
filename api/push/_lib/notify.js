@@ -68,10 +68,13 @@ export async function notify(list, deps) {
         continue;
       }
       if (!bearer) { summary.failed++; continue; }
-      const res = await f(FCM(project), {
-        method: 'POST', headers: { authorization: `Bearer ${bearer}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ message: { token, notification: { title: n.title, body: n.body }, data: { url } } }),
-      });
+      let res;
+      try {
+        res = await f(FCM(project), {
+          method: 'POST', headers: { authorization: `Bearer ${bearer}`, 'content-type': 'application/json' },
+          body: JSON.stringify({ message: { token, notification: { title: n.title, body: n.body }, data: { url } } }),
+        });
+      } catch { summary.failed++; continue; }   // a dropped connection must not stop the other phones
       if (res.ok) summary.sent++;
       else {
         summary.failed++;
@@ -92,8 +95,11 @@ export async function notify(list, deps) {
   }
   if (dead.length) {
     const gone = [...new Set(dead)];
-    const fr = await f(`${sb}/forget_devices`, { method: 'POST', headers: hdr, body: JSON.stringify({ p_tokens: gone }) });
-    if (fr.ok) summary.removed = gone.length;
+    // Tidying up: if it fails, the alerts have still gone out, so report them rather than an error.
+    try {
+      const fr = await f(`${sb}/forget_devices`, { method: 'POST', headers: hdr, body: JSON.stringify({ p_tokens: gone }) });
+      if (fr.ok) summary.removed = gone.length;
+    } catch { /* the tokens are tried again next time */ }
   }
   return summary;
 }

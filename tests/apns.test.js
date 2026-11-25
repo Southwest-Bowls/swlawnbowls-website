@@ -116,3 +116,13 @@ test('notify: iPhones are sent even when Google sign-in fails; Google is not ask
   const only = await notify(one, { env, fetch: iosOnly, accessToken: async () => { throw new Error('must not be asked'); }, apns });
   assert.deepEqual([only.iosSent, only.failed, only.googleError], [2, 0, undefined]);
 });
+
+test('notify: a dropped connection to Firebase or the database tidy-up does not stop iPhone alerts', async () => {
+  const f = async (url) => {
+    if (url.endsWith('/devices_for_events')) return { ok: true, status: 200, json: async () => rows };
+    throw new Error('connection reset');
+  };
+  const apns = async () => [{ token: tok('a'), ok: true }, { token: tok('b'), ok: false, gone: true }];
+  const out = await notify(one, { env, fetch: f, accessToken: async () => 't', apns });
+  assert.deepEqual([out.sent, out.iosSent, out.failed, out.removed], [1, 1, 1, 0]);
+});
