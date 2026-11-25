@@ -105,3 +105,14 @@ test('notify: dry run counts iPhones once Apple is configured and sends nothing'
   const out = await notify(one, { env: { ...env, NOTIFY_LIVE: '' }, fetch: fakeFetch().f, accessToken: async () => { throw new Error('no'); }, apns: async () => { throw new Error('no'); } });
   assert.equal(out.alerts[0].devices, 3); assert.equal(out.sent, 0);
 });
+
+test('notify: iPhones are sent even when Google sign-in fails; Google is not asked when there is no Android phone', async () => {
+  const apns = async (list) => list.map((m) => ({ token: m.token, ok: true }));
+  const { f, calls } = fakeFetch();
+  const out = await notify(one, { env, fetch: f, accessToken: async () => { throw new Error('google down'); }, apns });
+  assert.deepEqual([out.iosSent, out.sent, out.failed, out.googleError], [2, 2, 1, 'Google sign-in failed']);
+  assert.equal(calls.filter((c) => c.url.includes('fcm.googleapis')).length, 0);
+  const iosOnly = async (url) => ({ ok: true, status: 200, json: async () => (url.endsWith('/devices_for_events') ? rows.filter((r) => r.platform === 'ios') : {}) });
+  const only = await notify(one, { env, fetch: iosOnly, accessToken: async () => { throw new Error('must not be asked'); }, apns });
+  assert.deepEqual([only.iosSent, only.failed, only.googleError], [2, 0, undefined]);
+});

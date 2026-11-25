@@ -44,7 +44,11 @@ export async function notify(list, deps) {
   const iosQueue = [];
   const dead = [];
   const project = env.FIREBASE_PROJECT_ID;
-  const bearer = live ? await deps.accessToken() : null;
+  // Google sign-in is needed only for Android phones. If it fails, those count as failed and iPhones are still sent.
+  let bearer = null;
+  if (live && rows.some((x) => x.platform === 'android')) {
+    try { bearer = await deps.accessToken(); } catch { summary.googleError = 'Google sign-in failed'; }
+  }
   // Player alerts go first. A phone that gets "X placed 1st" does not also get "Results are in" for the same event,
   // and a phone that follows two players from one result gets one alert.
   items.sort((a, b) => (b.kind === 'player') - (a.kind === 'player'));
@@ -63,6 +67,7 @@ export async function notify(list, deps) {
         iosQueue.push({ token, title: n.title, body: n.body, url, collapseId: `${n.kind}-${n.eventId}`, ttlSeconds: n.kind === 'live' ? 3600 : 86400 });
         continue;
       }
+      if (!bearer) { summary.failed++; continue; }
       const res = await f(FCM(project), {
         method: 'POST', headers: { authorization: `Bearer ${bearer}`, 'content-type': 'application/json' },
         body: JSON.stringify({ message: { token, notification: { title: n.title, body: n.body }, data: { url } } }),
