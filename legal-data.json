@@ -1,7 +1,7 @@
 {
   "privacy": {
     "title": "Privacy Policy",
-    "updated": "Last updated October 16, 2026",
+    "updated": "Last updated November 25, 2026",
     "sections": [
       {
         "h": "Who we are",
@@ -20,6 +20,12 @@
         "p": [
           "We keep your email address. If you choose to add them, we also keep your name, club and phone number. If your email matches the SWD membership roster, we show you your own membership details (club, dues status, novice date). Nobody else sees them in the app.",
           "Your email is used to send you a sign-in code. We do not send marketing or newsletters from the app."
+        ]
+      },
+      {
+        "h": "Tournament alerts",
+        "p": [
+          "In the iPhone and Android app, signed-in members can turn on Tournament alerts. We then keep, in our private database, a code that lets notices reach that phone (a push token), linked to your account, together with the names of any players you follow. Apple (for iPhone and iPad) or Google (for Android) delivers the notices. Turning alerts off, or deleting your account, removes them."
         ]
       },
       {
@@ -68,7 +74,7 @@
         "h": "Your choices",
         "p": [
           "You can edit your profile in the app at any time.",
-          "To delete your account and data, email webmaster@swlawnbowls.org from the address you signed in with. We delete the account within 30 days, and deleted data may remain in backups for up to 7 days. In the app, More, then App settings, then Delete my account and data clears everything stored on your phone. For a signed-in account, it also asks us to delete the account, and if that does not complete the app tells you to email us.",
+          "To delete your account and data, open the app, go to More, then App settings, then Delete my account and data, and confirm. A signed-in account is deleted straight away, and then everything stored on your phone is cleared. You can also email webmaster@swlawnbowls.org from the address you signed in with, and we delete the account within 30 days. Copies in our hosting provider’s backups may remain for a short time.",
           "California residents may ask to know, correct or delete their personal information using the same contact."
         ]
       },
