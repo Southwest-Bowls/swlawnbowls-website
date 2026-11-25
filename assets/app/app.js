@@ -734,7 +734,7 @@
   // screen's usual parent.
   var BACK_NAMES = [[/^\/app\/?$/, 'Home'], [/^\/app\/(my|more\/membership)\/?$/, 'My SWD'], [/^\/app\/search\/?$/, 'Search'],
     [/^\/app\/more\/?$/, 'More'], [/^\/app\/more\/news\/?$/, 'News'], [/^\/app\/more\/clubs\/[^/]+\/?$/, 'Club'],
-    [/^\/app\/watch\/?$/, 'Southwest TV'], [/^\/app\/standings\/?$/, 'Standings'], [/^\/app\/players\/?$/, 'Players'], [/^\/app\/player\/[^/]+\/?$/, 'Player']];
+    [/^\/app\/watch\/?$/, 'Southwest TV'], [/^\/app\/standings\/?$/, 'Standings'], [/^\/app\/players\/?$/, 'Players'], [/^\/app\/entry-lists\/?$/, 'Entry lists'], [/^\/app\/player\/[^/]+\/?$/, 'Player']];
   function backLink(href, label) {
     var from = history.state && history.state.from;
     if (from && from.split('?')[0] !== href.split('?')[0]) {
@@ -1681,6 +1681,7 @@
     if (phase === 'past' || (st && st.kind === 'closed')) h += docsBlock(e, flyer, cops);
     h += rulesBlock(e);
     h += weatherBlock(x, phase, hostLL);
+    h += partnerCard(x, phase);
     if (e.noviceDefinition) {
       var nd = String(e.noviceDefinition), dm = /^(.{2,40}?)\s[—–]\s(.+)$/.exec(nd), term = dm ? dm[1] : 'Novice', rest = dm ? dm[2] : nd;
       var sents = rest.match(/[^.!?]+[.!?]+(\s|$)/g) || [rest], lead = sents[0].trim(), more = sents.slice(1).map(function (z) { return z.trim(); });
@@ -1721,6 +1722,37 @@
         }, function () { var box = document.getElementById(id); if (box) box.remove(); });
     }
     return '<section class="block" id="' + id + '"></section>';
+  }
+  // Who I'm bowling with: a private note for each tournament, kept on this phone only
+  function partnerNotes() { var n = store('partnerNotes'); return n && typeof n === 'object' && !Array.isArray(n) ? n : {}; }
+  function partnerCard(x, phase) {
+    var e = x.e;
+    if (phase === 'past' || String(e.format || '').toLowerCase() === 'singles' || e.status === 'cancelled') return '';
+    return '<section class="block" aria-labelledby="h-pn"><h2 id="h-pn">Who I’m bowling with</h2>' +
+      '<label class="sr-only" for="pn-in">Who you are bowling with at ' + esc(e.title || 'this tournament') + '</label>' +
+      '<input class="pninput" id="pn-in" type="text" maxlength="120" autocomplete="off" placeholder="Partner or team names" data-partner-note="' + esc(x.id) + '" value="' + esc(partnerNotes()[x.id] || '') + '">' +
+      '<p class="footnote">A note for yourself. It is kept on this phone only.</p></section>';
+  }
+  // Entry lists: every tournament that has a published entry list, upcoming first, then the ones already played
+  function entryListsPage() {
+    setTitle('Entry lists');
+    var root = view, today = todayISO();
+    return loadEvents().then(function (events) {
+      if (root !== view) return;
+      var withList = events.filter(function (x) { return x.e.entries && x.e.entries.pubUrl && x.dates; });
+      var up = withList.filter(function (x) { return x.dates.end >= today; }).sort(function (a, b) { return a.dates.start < b.dates.start ? -1 : 1; });
+      var past = withList.filter(function (x) { return x.dates.end < today; }).sort(function (a, b) { return a.dates.start < b.dates.start ? 1 : -1; });
+      function row(x) {
+        return '<li><a class="prow" href="/app/events/' + encodeURIComponent(x.id) + '?tab=entries"><span class="prow__ic" aria-hidden="true">' + icon('people') + '</span><span class="prow__t"><b>' + esc(shortTitle(x.e.title)) + '</b><small>' +
+          esc(fmt(x.dates.start, { weekday: 'short', month: 'short', day: 'numeric' }) + (x.club ? ' · ' + x.club : '')) + '</small></span><span class="prow__go" aria-hidden="true">' + icon('chev', 'i--sm') + '</span></a></li>';
+      }
+      view.innerHTML = backLink('/app/more', 'More') + pageHead('Entry lists', 'See who has entered, or who played with whom, to find a partner') +
+        (up.length ? '<section class="block"><h2>Coming up (' + up.length + ')</h2><ul class="list list--plain">' + up.map(row).join('') + '</ul></section>' : '') +
+        (past.length ? '<section class="block"><h2>Already played (' + past.length + ')</h2><ul class="list list--plain">' + past.map(row).join('') + '</ul></section>' : '') +
+        (withList.length ? '' : state('empty', 'No entry lists yet', 'Entry lists appear here when a tournament publishes one.')) +
+        '<p class="footnote">These are the entry lists the Division publishes for each tournament.</p>';
+      rollIn(view);
+    });
   }
   function docsBlock(e, flyer, cops) {
     var docs = [];
@@ -2439,6 +2471,7 @@
           mrow('/app/more/news', 'news', 'News', news[0] ? news[0].title : '', 'blue'),
           mrow('/app/more/play', 'flag', 'Learn bowls', 'Learn to bowl, coaching, umpires, markers', 'blue'),
           mrow('/app/watch', 'tv', 'Southwest TV', 'Livestreams and replays', 'blue'),
+          mrow('/app/entry-lists', 'people', 'Entry lists', 'Who has entered each tournament', 'blue'),
           mrow('/app/more/resources', 'doc', 'Resources', '', 'blue')]) +
         group('About', [
           mrow('/app/page/about-us', 'info', 'About Southwest', '', 'blush'),
@@ -2737,10 +2770,12 @@
   function syncDeviceEvents(onlyIfPending) {
     var tok = store('pushToken');
     if (!tok || !memberSession() || !pushPlugin()) return;
-    // Phones that turned alerts on before 'all' existed have no pushSub marker yet: they are brought across here
-    if (onlyIfPending && !store('pushSyncPending') && store('pushSub') === 'all') return;
+    // What this phone tells the server it wants: every tournament, and the players it follows. pushSub remembers exactly what was
+    // last sent ('all|player--a,player--b'), so a phone that sent an older list (just 'all') sends the new one once, at the next app start.
+    var evs = ['all'].concat(followedPlayers().slice(0, 100).map(playerKey)), sig = evs.join('|');
+    if (onlyIfPending && !store('pushSyncPending') && store('pushSub') === sig) return;
     store('pushSyncPending', true);
-    memberRpc('set_device_events', { p_token: tok, p_events: ['all'] }).then(function () { store('pushSyncPending', null); store('pushSub', 'all'); }, function () {});
+    memberRpc('set_device_events', { p_token: tok, p_events: evs }).then(function () { store('pushSyncPending', null); store('pushSub', sig); }, function () {});
   }
   function pushSection() {
     if (!pushPlugin() || !memberSession()) return '';
@@ -2756,7 +2791,7 @@
     if (!P || !P.addListener) return;
     P.addListener('pushNotificationActionPerformed', function (a) {
       var d = a && a.notification && a.notification.data, u = d && d.url;
-      if (typeof u === 'string' && (u === '/app/watch' || /^\/app\/events\/[a-z0-9-]{3,80}$/.test(u))) go(u);
+      if (typeof u === 'string' && (u === '/app/watch' || /^\/app\/(events|results)\/[a-z0-9-]{3,80}$/.test(u))) go(u);
     });
   }
   function pushSay(t) { var m = document.getElementById('push-msg'); if (m) m.textContent = t; }
@@ -3473,6 +3508,7 @@
     var k = fold(name).trim(), f = followedPlayers().filter(function (n) { return fold(n).trim() !== k; });
     if (on) f.unshift(name);
     store('followedPlayers', f.slice(0, 100));
+    syncDeviceEvents();   // phones with alerts on tell the server, so a followed player's result can reach them
     document.querySelectorAll('[data-follow-player]').forEach(function (b) {
       if (fold(b.getAttribute('data-follow-player')).trim() !== k) return;
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -3481,6 +3517,8 @@
     toast(on ? 'Following ' + name : 'Stopped following ' + name);
     if (/^\/app\/players\/?$/.test(location.pathname)) playersPage();
   }
+  // The id our server uses for a followed player (same as playerKey() in scripts/player-names.mjs)
+  function playerKey(name) { return ('player--' + fold(name).trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')).slice(0, 80).replace(/-+$/, ''); }
   function followPlayerBtn(name) {
     var on = isFollowingPlayer(name);
     return '<button class="btn btn--ghost btn--follow" type="button" data-follow-player="' + esc(name) + '" aria-pressed="' + on + '">' + icon('star', 'i--sm') + '<span data-follow-label>' + (on ? 'Following' : 'Follow') + '</span></button>';
@@ -3993,6 +4031,7 @@
     [/^\/app\/signin\/?$/, signInScreen, 'my'],
     [/^\/app\/my\/profile\/?$/, profilePage, 'my'],
     [/^\/app\/players\/?$/, playersPage, 'my'],
+    [/^\/app\/entry-lists\/?$/, entryListsPage, 'more'],
     [/^\/app\/player\/([^/]+)\/?$/, playerPage, 'my'],
     [/^\/app\/search\/?$/, searchScreen, 'home'],
     [/^\/app\/page\/about-us\/?$/, aboutScreen, 'more'],
@@ -4091,6 +4130,14 @@
     render().then(function () { view.focus({ preventScroll: true }); });
   });
 
+  document.addEventListener('input', function (ev) {
+    var pn = ev.target && ev.target.closest && ev.target.closest('[data-partner-note]');
+    if (!pn) return;
+    var id = pn.getAttribute('data-partner-note'), all = Object.assign({}, partnerNotes()), v = String(pn.value || '').slice(0, 120);
+    if (v.trim()) all[id] = v; else delete all[id];
+    var keys = Object.keys(all); if (keys.length > 60) keys.slice(0, keys.length - 60).forEach(function (k) { delete all[k]; });
+    store('partnerNotes', all);
+  });
   document.addEventListener('click', function (ev) {
     // Save / unsave
     var sv = ev.target.closest('[data-save]');

@@ -2750,3 +2750,6 @@ button.section__more { background: none; border: 0; padding: 4px 0 4px 10px; fon
 .wxlist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
 .wxlist li { display: grid; gap: 2px; }
 .wxlist li span { color: var(--text-2); }
+
+/* Who I'm bowling with */
+.pninput { width: 100%; box-sizing: border-box; font: inherit; padding: 14px 16px; min-height: 48px; border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface); color: var(--text); }

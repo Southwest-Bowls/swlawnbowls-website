@@ -63,7 +63,7 @@ test('reviewer sign-in: a password screen exists only behind ?review=1 and uses 
 
 test('alerts: every phone with alerts on is subscribed to all events, and a slow token refresh cannot undo a sign-out', () => {
   assert.match(src, /function syncDeviceEvents\(onlyIfPending\)/);
-  assert.match(src, /p_events: \['all'\]/);
+  assert.match(src, /p_events: evs/);
   assert.doesNotMatch(src, /p_events: saved\(\)/);
   assert.match(src, /store\('pushToken', t\.value\); syncDeviceEvents\(\);/);
   assert.match(src, /function finishSignOut\(\) \{\s*\n\s*sessionEpoch\+\+;/);
@@ -84,13 +84,13 @@ test('token refreshes are shared so two callers cannot reject each other', () =>
 });
 
 test('alerts: phones that enabled alerts before the all-events change are migrated at app start', () => {
-  assert.match(src, /store\('pushSub'\) === 'all'\) return;/);
-  assert.match(src, /store\('pushSub', 'all'\)/);
+  assert.match(src, /store\('pushSub'\) === sig\) return;/);
+  assert.match(src, /store\('pushSub', sig\)/);
 });
 
 test('alerts: tapping a notification opens only /app/events/<id>, and the listener survives turning alerts on', () => {
   assert.match(src, /pushNotificationActionPerformed/);
-  assert.match(src, /\^\\\/app\\\/events\\\/\[a-z0-9-\]\{3,80\}\$\/\.test\(u\)\)\) go\(u\)/);
+  assert.match(src, /\^\\\/app\\\/\(events\|results\)\\\/\[a-z0-9-\]\{3,80\}\$\/\.test\(u\)\)\) go\(u\)/);
   assert.match(src, /u === '\/app\/watch'/);
   assert.match(src, /removeAllListeners\(\);\s*\n\s*listenForTaps\(\);/);
   assert.match(src, /syncDeviceEvents\(true\);\s*\n\s*listenForTaps\(\);/);
@@ -109,6 +109,11 @@ test('follow a player: Home shows the followed players’ latest results', () =>
   assert.match(src, /followedPlayers\(\)\.length \? loadResults\(\)/);
 });
 
+test('follow alerts: the phone tells the server which players it follows, and syncs when you follow or unfollow', () => {
+  assert.match(src, /var evs = \['all'\]\.concat\(followedPlayers\(\)\.slice\(0, 100\)\.map\(playerKey\)\), sig = evs\.join\('\|'\);/);
+  assert.match(src, /syncDeviceEvents\(\);   \/\/ phones with alerts on tell the server/);
+});
+
 test('follow a player: clubs and one-line leaderboards are not players, and a player page ignores a screen the member has left', () => {
   assert.match(src, /!\/\\b\(club\|lbc\|lawn\|bowling\|bowls\|team\)\\b\/i\.test\(x\)/);
   assert.match(src, /A one-line leaderboard/);
@@ -123,4 +128,11 @@ test('Anne\u2019s quick wins: saved tournaments on Home, zoom for sheets, rules 
   assert.match(src, /id="h-rules">Rules at a glance/);
   assert.match(src, /https:\/\/api\.open-meteo\.com\/v1\/forecast/);
   assert.match(src, /start > addDays\(today, 14\)/);
+});
+
+test('Anne\u2019s list: a private partner note for each tournament and an Entry lists page', () => {
+  assert.match(src, /data-partner-note="' \+ esc\(x\.id\)/);
+  assert.match(src, /store\('partnerNotes', all\)/);
+  assert.match(src, /\[\/\^\\\/app\\\/entry-lists\\\/\?\$\/, entryListsPage, 'more'\]/);
+  assert.match(src, /\?tab=entries/);
 });
