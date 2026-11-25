@@ -36,3 +36,19 @@ Then add these Vercel environment variables (plain "Config" values, none is secr
 The public site and its /api are served by the Vercel project named `swd-tournament-hub.vercel.app` (see docs/succession-and-accounts.md), NOT `swd-google-calendar`; all environment variables go on that project. In that Vercel project, Settings > Security > "Secure backend access with OIDC federation" must be on, in Team mode.
 
 If the pool commands are refused by an organization policy, the message names the policy; tell the webmaster.
+
+## iPhone and iPad alerts
+
+iPhones do not go through Firebase. The sender talks to Apple directly and needs a key from the Division's
+Apple Developer account (webmaster does this once):
+
+1. developer.apple.com, Certificates, Identifiers & Profiles, Keys: add a key with Apple Push Notifications service
+   (APNs) switched on, for Sandbox and Production. Download the `.p8` file (Apple lets you download it only once) and
+   note the Key ID. The Team ID is on the Membership details page.
+2. In the same Vercel project as above, add `APNS_KEY_P8` (the whole text of the file; mark it Sensitive),
+   `APNS_KEY_ID` and `APNS_TEAM_ID`. Redeploy. Never put the file or its text in git or in a chat.
+3. Check with a TestFlight build: turn alerts on in App settings, then send a test alert. The answer shows
+   `iosSent` and `iosFailed`, with Apple's reason in `iosError` when something fails.
+
+Until those three values exist, iPhone phones are counted as `skippedIos` and nothing is sent to them.
+

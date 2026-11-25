@@ -2,6 +2,7 @@
 // POST /api/push/notify   header: x-notify-secret   body: { notifications: [{ eventId, kind, title, body }] }
 // Safe by default: unless NOTIFY_LIVE is exactly "true" it only counts who WOULD get each alert.
 import crypto from 'node:crypto';
+import { apnsConfig, sendApns } from './apns.js';
 
 const FCM = (project) => `https://fcm.googleapis.com/v1/projects/${project}/messages:send`;
 
@@ -23,20 +24,24 @@ export function cleanNotifications(list) {
   })).filter((n) => /^[a-z0-9-]{3,80}$/.test(n.eventId) && n.title && n.body && (n.kind !== 'player' || (n.resultId && n.eventId.startsWith('player--'))));
 }
 
-// deps: { env, fetch, accessToken() }
+// deps: { env, fetch, accessToken(), apns? (messages, config) for tests }
 export async function notify(list, deps) {
   const { env, fetch: f } = deps;
   const items = cleanNotifications(list);
   const live = env.NOTIFY_LIVE === 'true';
-  const summary = { live, alerts: [], sent: 0, failed: 0, removed: 0, skippedIos: 0 };
+  const summary = { live, alerts: [], sent: 0, failed: 0, removed: 0, skippedIos: 0, iosSent: 0, iosFailed: 0 };
   if (!items.length) return summary;
   const sb = `${env.SUPABASE_URL}/rest/v1/rpc`, hdr = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, 'content-type': 'application/json' };
   const r = await f(`${sb}/devices_for_events`, { method: 'POST', headers: hdr, body: JSON.stringify({ p_events: items.map((n) => n.eventId) }) });
   if (!r.ok) throw new Error('device lookup failed: HTTP ' + r.status);
   const all = await r.json();   // [{ token, event_id, platform }]
-  // Android tokens are Firebase tokens. iPhone tokens from the app are Apple tokens, which Firebase rejects: skip them until iPhone push is set up.
-  const rows = all.filter((x) => x.platform === 'android');
-  summary.skippedIos = new Set(all.filter((x) => x.platform !== 'android').map((x) => x.token)).size;
+  // Android tokens are Firebase tokens. iPhone tokens from the app are Apple tokens, which Firebase rejects, so they
+  // go to Apple (apns.js). Until the Apple key is configured they are skipped.
+  const apple = apnsConfig(env);
+  const rows = all.filter((x) => x.platform === 'android' || (apple && x.platform === 'ios'));
+  summary.skippedIos = apple ? 0 : new Set(all.filter((x) => x.platform !== 'android').map((x) => x.token)).size;
+  const isIos = new Set(all.filter((x) => x.platform === 'ios').map((x) => x.token));
+  const iosQueue = [];
   const dead = [];
   const project = env.FIREBASE_PROJECT_ID;
   const bearer = live ? await deps.accessToken() : null;
@@ -52,10 +57,15 @@ export async function notify(list, deps) {
     const entry = { eventId: n.eventId, kind: n.kind, devices: tokens.length };
     summary.alerts.push(entry);
     if (!live) continue;
+    const url = n.kind === 'live' ? '/app/watch' : n.kind === 'player' ? `/app/results/${n.resultId}` : `/app/events/${n.eventId}`;
     for (const token of tokens) {
+      if (isIos.has(token)) {
+        iosQueue.push({ token, title: n.title, body: n.body, url, collapseId: `${n.kind}-${n.eventId}`, ttlSeconds: n.kind === 'live' ? 3600 : 86400 });
+        continue;
+      }
       const res = await f(FCM(project), {
         method: 'POST', headers: { authorization: `Bearer ${bearer}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ message: { token, notification: { title: n.title, body: n.body }, data: { url: n.kind === 'live' ? '/app/watch' : n.kind === 'player' ? `/app/results/${n.resultId}` : `/app/events/${n.eventId}` } } }),
+        body: JSON.stringify({ message: { token, notification: { title: n.title, body: n.body }, data: { url } } }),
       });
       if (res.ok) summary.sent++;
       else {
@@ -65,9 +75,20 @@ export async function notify(list, deps) {
       }
     }
   }
+  if (iosQueue.length) {
+    for (const res of await (deps.apns || sendApns)(iosQueue, apple)) {
+      if (res.ok) { summary.sent++; summary.iosSent++; }
+      else if (res.gone) dead.push(res.token);
+      else { summary.iosFailed++; summary.iosError = res.reason; }
+    }
+    // The livestream job tries a whole alert again when "failed" is above zero. Count iPhone failures there only
+    // when nothing at all got through, so an Apple problem never makes Android phones get the same alert twice.
+    if (!summary.sent) summary.failed += summary.iosFailed;
+  }
   if (dead.length) {
-    const fr = await f(`${sb}/forget_devices`, { method: 'POST', headers: hdr, body: JSON.stringify({ p_tokens: dead }) });
-    if (fr.ok) summary.removed = dead.length;
+    const gone = [...new Set(dead)];
+    const fr = await f(`${sb}/forget_devices`, { method: 'POST', headers: hdr, body: JSON.stringify({ p_tokens: gone }) });
+    if (fr.ok) summary.removed = gone.length;
   }
   return summary;
 }
