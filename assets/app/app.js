@@ -2838,7 +2838,7 @@
         '<p>' + (memberSession() ? 'This deletes your sign-in account and everything kept for it, and clears this phone. It cannot be undone.' : 'You are using the app without an account. This clears your saved events, followed clubs, profile and photo from this phone. It cannot be undone.') + '</p>' +
         '<div id="del-box"><div class="actions"><button class="btn btn--ghost btn--danger" type="button" data-del-start>Delete my ' + (memberSession() ? 'account and data' : 'data from this phone') + '</button></div></div>' +
         '<p class="footnote">Published tournament results stay public. They are the Division’s record and are not part of your account.</p></section>' +
-      (!standalone ? '<section class="settings" aria-labelledby="h-inst"><h2 id="h-inst">Add to your home screen</h2><p>Get the Southwest Bowls icon on your phone.</p><div class="actions"><a class="btn" href="/get-the-app" target="_blank" rel="noopener">How to add it</a></div></section>' : '') +
+      (!standalone && !SITE ? '<section class="settings" aria-labelledby="h-inst"><h2 id="h-inst">Add to your home screen</h2><p>Get the Southwest Bowls icon on your phone.</p><div class="actions"><a class="btn" href="/get-the-app" target="_blank" rel="noopener">How to add it</a></div></section>' : '') +
       '<section class="settings" aria-labelledby="h-legal"><h2 id="h-legal">Privacy and terms</h2><ul class="rows rows--cards">' + linkRow('/app/privacy', 'lock', 'Privacy Policy', 'What we keep and why') + linkRow('/app/terms', 'doc', 'Terms of Use', 'The simple rules') + '</ul></section>' +
       '<p class="footnote">Southwest Bowls app · information from swlawnbowls.org</p>';
     // Followed clubs list (names from clubs-data.json); unfollow in place
