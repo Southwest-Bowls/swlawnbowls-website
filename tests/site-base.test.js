@@ -119,3 +119,10 @@ test('follow a player: clubs and one-line leaderboards are not players, and a pl
   assert.match(src, /A one-line leaderboard/);
   assert.match(src, /var root = view;\n    return loadResults\(\)\.catch\(function \(\) \{ return \[\]; \}\)\.then\(function \(list\) \{\n      if \(root !== view\) return;\n      var mine/);
 });
+
+test('Anne\u2019s list: a private partner note for each tournament and an Entry lists page', () => {
+  assert.match(src, /data-partner-note="' \+ esc\(x\.id\)/);
+  assert.match(src, /store\('partnerNotes', all\)/);
+  assert.match(src, /\[\/\^\\\/app\\\/entry-lists\\\/\?\$\/, entryListsPage, 'more'\]/);
+  assert.match(src, /\?tab=entries/);
+});
